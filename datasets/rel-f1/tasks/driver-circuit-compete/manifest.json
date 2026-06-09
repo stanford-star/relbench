@@ -1,0 +1,20 @@
+{
+  "name": "driver-circuit-compete",
+  "kind": "forecast",
+  "task_type": "link_prediction",
+  "target_col": "circuitId",
+  "time_col": "date",
+  "src_entity_table": "drivers",
+  "src_entity_col": "driverId",
+  "dst_entity_table": "circuits",
+  "dst_entity_col": "circuitId",
+  "eval_k": 10,
+  "timedelta": "365 days",
+  "metrics": [
+    "link_prediction_precision",
+    "link_prediction_recall",
+    "link_prediction_map"
+  ],
+  "sql": "SELECT\n    t.timestamp as date,\n    re.driverId as driverId,\n    LIST(DISTINCT race.circuitId) as circuitId\nFROM\n    timestamps t\nLEFT JOIN\n    races race\nON\n    race.date <= t.timestamp + INTERVAL '{timedelta}'\n    and race.date > t.timestamp\nLEFT JOIN\n    results re\nON\n    re.raceId = race.raceId\nGROUP BY t.timestamp, re.driverId",
+  "manifest_version": 1
+}

@@ -17,7 +17,6 @@ from relbench.tasks import (
     event,
     f1,
     hm,
-    mimic,
     ratebeer,
     stack,
     tgb,
@@ -104,6 +103,14 @@ def get_task(dataset_name: str, task_name: str, download=False) -> BaseTask:
     scratch, the cache will be used. `download=True` will verify that the
     cached task tables matches the RelBench version even in this case.
     """
+
+    from relbench import hf
+
+    if hf.is_registered(dataset_name):
+        # Migrated datasets are served by the new manifest/HF loader.
+        from relbench.load import load_task as _load_task
+
+        return _load_task(dataset_name, task_name)
 
     if download:
         download_task(dataset_name, task_name)
@@ -503,8 +510,6 @@ register_task(
         ("salesdocumentitem", "ITEMINCOTERMSCLASSIFICATION"),
     ],
 )
-
-register_task("rel-mimic", "patient-iculengthofstay", mimic.ICULengthOfStayTask)
 
 register_task("rel-ratebeer", "beer-churn", ratebeer.BeerRatingChurnTask)
 register_task("rel-ratebeer", "user-churn", ratebeer.UserRatingChurnTask)

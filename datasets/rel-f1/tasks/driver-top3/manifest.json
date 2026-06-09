@@ -1,0 +1,19 @@
+{
+  "name": "driver-top3",
+  "kind": "forecast",
+  "task_type": "binary_classification",
+  "entity_table": "drivers",
+  "entity_col": "driverId",
+  "target_col": "qualifying",
+  "time_col": "date",
+  "timedelta": "30 days",
+  "metrics": [
+    "average_precision",
+    "accuracy",
+    "f1",
+    "roc_auc"
+  ],
+  "sql": "SELECT\n    t.timestamp as date,\n    qu.driverId as driverId,\n    CAST(\n        CASE WHEN MIN(qu.position) <= 3 THEN 1 ELSE 0 END AS BIGINT\n    ) AS qualifying\nFROM\n    timestamps t\nLEFT JOIN\n    qualifying qu\nON\n    qu.date <= t.timestamp + INTERVAL '{timedelta}'\n    and qu.date > t.timestamp\nWHERE\n    qu.driverId IN (\n        SELECT DISTINCT driverId\n        FROM qualifying\n        WHERE date > t.timestamp - INTERVAL '1 year'\n    )\nGROUP BY t.timestamp, qu.driverId",
+  "num_eval_timestamps": 40,
+  "manifest_version": 1
+}

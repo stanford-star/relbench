@@ -1,69 +1,72 @@
 # Contributing to RelBench
 
-We welcome and appreciate contributions to RelBench from the community. Please reach out if you have something in mind. We expect our handling of contributions to become more streamlined as the project matures.
-
+We welcome and appreciate contributions to RelBench from the community. Please reach out if you have something in mind.
 
 ## Issues, bug fixes, discussions
 
-Please submit GitHub issues and open Pull Requests if you find some bug or other issue in RelBench.
+Please submit GitHub issues and open Pull Requests if you find a bug or other issue in RelBench.
 
+## How RelBench data works
 
-## Contributing datasets
+A RelBench dataset is a **self-describing folder** (hosted on the Hugging Face Hub) — no Python classes required:
 
-While the RelBench team maintains the core datasets which form the official RelBench benchmark, we envision RelBench to also serve as a repository of datasets with contributions from the community. To work with your own datasets in RelBench, please take a look at the tutorial [tutorials/custom_dataset.ipynb](tutorials/custom_dataset.ipynb), also available on [Google Colab](https://colab.research.google.com/github/snap-stanford/relbench/blob/main/tutorials/custom_dataset.ipynb). Once you have a working dataset within RelBench, make a PR to get it added to RelBench. To help RelBench maintainers, please follow these conventions:
-
-1. The dataset name is a single word (in singular), e.g. `amazon`.
-2. The dataset class name is the dataset name followed by `Dataset` in camel case, e.g. `AmazonDataset`.
-3. The dataset class is defined in `relbench/datasets/<dataset_name>.py`, e.g., `relbench/datasets/amazon.py`.
-4. Import and register the dataset in `relbench/datasets/__init__.py` with name `rel-<dataset_name>`, e.g., `register_dataset("rel-amazon", amazon.AmazonDataset). (If you add args, you can use `rel-<dataset_name>-<qualifier>`, e.g., `register_dataset("rel-amazon-fashion", amazon.AmazonDataset, category="fashion")`)
-5. After registering the dataset and loading it, it will be available at the location `~/.cache/relbench/rel-<dataset_name>`. Zip the database as follows:
-```bash
-cd ~/.cache/relbench/rel-amazon
-zip -r db db
 ```
-6. Get the SHA256 hash of `db.zip`:
-```bash
-cd ~/.cache/relbench/rel-amazon
-sha256sum db.zip
+<dataset>/
+  manifest.json                 # tables, primary keys, the foreign-key graph, val/test timestamps
+  db/<table>.parquet            # the relational tables (plain parquet, native dtypes only)
+  tasks/<task>/
+    manifest.json               # task spec (+ duckdb SQL for `forecast` tasks)
+    {train,val,test}.parquet    # cached labels
 ```
-7. Add the hash to `relbench/datasets/hashes.json`:
-```
-{
-... existing hashes ...
-    "rel-amazon/db.zip": "db71c7701b892a4eb7481ff04d14d25465795501dba3a5931aabee9930805efe"
-}
-```
-8. Submit a PR with these changes, a link to `db.zip` and a description of your dataset. Be liberal with docstrings and comments to document your dataset and processing steps in the code too.
 
+The `manifest.json` is the **sole source of truth** for relational semantics; parquet files
+carry only their native column schema, so they load directly with pandas/duckdb. Load with:
 
-## Contributing tasks
-
-Similar to above you can also contribute tasks to existing datasets (including community-contributed ones). To define your own tasks in RelBench, please take a look at the tutorial [tutorials/custom_task.ipynb](tutorials/custom_task.ipynb), also available on [Google Colab](https://colab.research.google.com/github/snap-stanford/relbench/blob/main/tutorials/custom_task.ipynb). Once you have a working task within RelBench, make a PR to get it added to RelBench. To help RelBench maintainers, please follow these conventions:
-
-1. The task name is `<entity_name>-<single_word>` for entity tasks and `<src_entity_name>-<dst_entity_name>-<single_word>` for recommendation tasks, e.g., `user-churn` and `user-item-review`.
-2. The task class name is the task name followed by `Task` in camel case, e.g., `UserChurnTask` and `UserItemReviewTask`.
-3. The task class is defined in `relbench/tasks/<dataset_name>.py`, e.g., `relbench/tasks/amazon.py`.
-4. Import and register the task in `relbench/tasks/__init__.py`, e.g.:
 ```python
-register_task("rel-amazon", "user-churn", amazon.UserChurnTask)
-register_task("rel-amazon", "user-item-review", amazon.UserItemReviewTask)
+import relbench
+ds   = relbench.load_dataset("rel-f1")            # registered name, "org/name" Hub repo, or a local path
+task = relbench.load_task("rel-f1", "driver-position")
+db   = ds.get_db()
+train = task.get_table("train")
+task.evaluate(pred)
 ```
-5. After registering the task and loading it, it will be available at the location `~/.cache/relbench/rel-<dataset_name>/tasks`. Zip the task as follows:
-```bash
-cd ~/.cache/relbench/rel-amazon/tasks
-zip -r user-churn user-churn
-```
-6. Get the SHA256 hash of `<task-name>.zip`:
-```bash
-cd ~/.cache/relbench/rel-amazon/tasks
-sha256sum user-churn.zip
-```
-7. Add the hash to `relbench/tasks/hashes.json`:
-```
-{
-... existing hashes ...
-    "rel-amazon/tasks/user-item-review.zip": "f4e2f2db27bcf30b148b4d00662101f42f68dce545f8ca57b970f534aef74c36",
-    "rel-amazon/tasks/user-churn.zip": "cddd511a1f609aea286cf2e20803f489ab9b3158e18cea66e0888d174b1515f0"
-}
-```
-8. Submit a PR with these changes, a link to `<task-name>.zip` and a description of your task. Be liberal with docstrings and comments to document your task and task table construction logic in the code too.
+
+### Task kinds
+
+- **`forecast`** — temporal-aggregation labels regenerated by a duckdb `sql` query stored in the
+  task manifest. The SQL sees a `timestamps(timestamp)` relation (the per-split seed timestamps),
+  every db table as a view by name, and `{timedelta}` substituted as a duckdb INTERVAL.
+- **`autocomplete`** — predict an existing column of an entity table (declarative; no SQL).
+- **`external`** — labels built/sourced externally and served as-is (e.g. TGB, 4DBInfer).
+
+## Contributing a dataset
+
+1. Produce the folder layout above. A build script under `build/<dataset>.py` should output
+   `db/*.parquet` + `manifest.json` (see `build/rel_f1.py`). Build scripts are the runnable
+   record of how a database was produced — keep them in the repo for provenance.
+2. Push the folder to the Hub as a dataset repo (`huggingface_hub.upload_folder`). Use your own
+   namespace for community datasets; `relbench.load_dataset("your-org/your-dataset")` works with no
+   code changes.
+3. For inclusion in the **official** benchmark, open a PR adding an entry to
+   `relbench/registry.json` mapping the name to `{repo_id, revision}` — pinning the commit
+   `revision` is what makes labels reproducible.
+
+There is **no `Dataset` class to write** and no `hashes.json` to maintain.
+
+## Contributing a task
+
+Adding a task is just **adding a directory** — the loader discovers tasks by enumerating
+`tasks/*/manifest.json`:
+
+1. Create `tasks/<task>/manifest.json`. Name entity tasks `<entity>-<word>` and link tasks
+   `<src>-<dst>-<word>`. For a `forecast` task, include the duckdb `sql`; the generic loader
+   regenerates labels with it.
+2. Generate and include the cached labels (`{train,val,test}.parquet`); `relbench.load_task(...,
+   regenerate=True)` produces them from the SQL.
+3. Push to the dataset repo (and, for official tasks, bump the pinned `revision` in the PR).
+
+### Provenance check
+
+For `forecast` tasks, CI regenerates labels from the manifest SQL and asserts they match the
+shipped cached labels (`build/check_provenance.py`). A task's provenance is therefore its SQL +
+the pinned database revision. Please ensure this passes for any task you add or change.

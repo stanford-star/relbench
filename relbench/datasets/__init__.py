@@ -14,7 +14,6 @@ from relbench.datasets import (
     event,
     f1,
     hm,
-    mimic,
     ratebeer,
     salt,
     stack,
@@ -72,11 +71,6 @@ def download_dataset(name: str) -> None:
     `dataset.get_db()` is called.
     """
 
-    if name == "rel-mimic":
-        from relbench.datasets.mimic import verify_mimic_access
-
-        verify_mimic_access()
-
     DOWNLOAD_REGISTRY.fetch(
         f"{name}/db.zip",
         processor=pooch.Unzip(extract_dir="."),
@@ -105,6 +99,14 @@ def get_dataset(name: str, download=True) -> Dataset:
     cached database matches the RelBench version even in this case.
     """
 
+    from relbench import hf
+
+    if hf.is_registered(name):
+        # Migrated datasets are served by the new manifest/HF loader.
+        from relbench.load import load_dataset as _load_dataset
+
+        return _load_dataset(name)
+
     if download:
         download_dataset(name)
 
@@ -116,19 +118,7 @@ def get_dataset(name: str, download=True) -> Dataset:
                 "Redelex is not installed. Please install it with `pip install redelex`."
             )
 
-    # Handle lazy import for mimic dataset
-    if name == "rel-mimic":
-        from relbench.datasets import mimic
-
-        mimic.verify_mimic_access()
-
-        cls, args, kwargs = (
-            mimic.MimicDataset,
-            (),
-            {"cache_dir": f"{get_relbench_cache_dir()}/{name}"},
-        )
-    else:
-        cls, args, kwargs = dataset_registry[name]
+    cls, args, kwargs = dataset_registry[name]
 
     dataset = cls(*args, **kwargs)
     return dataset
@@ -140,7 +130,6 @@ register_dataset("rel-event", event.EventDataset)
 register_dataset("rel-f1", f1.F1Dataset)
 register_dataset("rel-hm", hm.HMDataset)
 register_dataset("rel-stack", stack.StackDataset)
-register_dataset("rel-mimic", mimic.MimicDataset)
 register_dataset("rel-trial", trial.TrialDataset)
 register_dataset("rel-arxiv", arxiv.ArxivDataset)
 register_dataset("rel-salt", salt.SALTDataset)

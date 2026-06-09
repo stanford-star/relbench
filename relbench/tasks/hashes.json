@@ -48,7 +48,6 @@
   "rel-amazon/tasks/user-ltv.zip": "645d6d318e7da4f493c6953e24ab62ffdd6f4d0ba64726b5e3b36df4ba8a1a18",
   "rel-amazon/tasks/review-rating.zip": "8ce38f120b06c84daafb3d181564d0daf05bf9f5e8108c6f6304d70b6994a25c",
   "rel-amazon/tasks/review-verified.zip": "edeb9d6a780496c20e11d0e3d9c20aedc35f97f718037b72c6113174cf42b419",
-  "rel-mimic/tasks/patient-iculengthofstay.zip": "cb43fa0d0d83c3d597911404da2e669f86fd0ca93c32488a8713580310abf445",
   "rel-arxiv/tasks/author-category.zip": "23a216a0b028313b4e2d726c59f7ed2550580dfa6e19cda6be64c82db3d8d926",
   "rel-arxiv/tasks/author-publication.zip": "2573f95da55862c1e0d47a6cdfe79ec4f3d2038399f458eaeec4c76d575244da",
   "rel-arxiv/tasks/paper-paper-cocitation.zip": "9c4757c4708f29830bd12d38a5b498df7e5e77e3fce1a645a089919985d238d3",
