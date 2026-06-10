@@ -1,4 +1,29 @@
 {
+  "dbinfer-diginetica": {
+    "path": "dbinfer-diginetica",
+    "repo_id": "relbench/dbinfer",
+    "revision": "65658928b0d0cba2d12505abbfff362ca27d2fc6"
+  },
+  "dbinfer-outbrain-small": {
+    "path": "dbinfer-outbrain-small",
+    "repo_id": "relbench/dbinfer",
+    "revision": "df25c295c70f0449f90df58237ce6e6ab1e2db9b"
+  },
+  "dbinfer-retailrocket": {
+    "path": "dbinfer-retailrocket",
+    "repo_id": "relbench/dbinfer",
+    "revision": "f004c412fd296dadc0acd989d806b21b257dc2c4"
+  },
+  "dbinfer-seznam": {
+    "path": "dbinfer-seznam",
+    "repo_id": "relbench/dbinfer",
+    "revision": "2732e988a9a943ae446f76fc9304c5d13208c43e"
+  },
+  "dbinfer-stackexchange": {
+    "path": "dbinfer-stackexchange",
+    "repo_id": "relbench/dbinfer",
+    "revision": "49642feb424e9b86ec4ee316b5caffd7f573cbc5"
+  },
   "rel-amazon": {
     "path": "rel-amazon",
     "repo_id": "relbench/v1",
@@ -48,5 +73,65 @@
     "path": "rel-trial",
     "repo_id": "relbench/v1",
     "revision": "ee39dd546e90a7ae454db5fd8f652e30b8ed12d3"
+  },
+  "tgbl-coin": {
+    "path": "tgbl-coin",
+    "repo_id": "relbench/tgb",
+    "revision": "87767c29981283b9f0597d4a96e142be4e5b9bf5"
+  },
+  "tgbl-comment": {
+    "path": "tgbl-comment",
+    "repo_id": "relbench/tgb",
+    "revision": "ee88f1b64ad5c3f4df11f893540e95a08265f424"
+  },
+  "tgbl-flight": {
+    "path": "tgbl-flight",
+    "repo_id": "relbench/tgb",
+    "revision": "cc5ea4910ec565b8fe04c48012027f71ef56bbfd"
+  },
+  "tgbl-review": {
+    "path": "tgbl-review",
+    "repo_id": "relbench/tgb",
+    "revision": "e49a4dc7ddcfab192b8f4d29c45f743d45f64136"
+  },
+  "tgbl-review-v2": {
+    "path": "tgbl-review-v2",
+    "repo_id": "relbench/tgb",
+    "revision": "6278cf097d57e0dcb2c50bdbbc937155cf60ec8d"
+  },
+  "tgbl-wiki": {
+    "path": "tgbl-wiki",
+    "repo_id": "relbench/tgb",
+    "revision": "63eb471550604f9e061a720f16d1ee818c8d78de"
+  },
+  "tgbl-wiki-v2": {
+    "path": "tgbl-wiki-v2",
+    "repo_id": "relbench/tgb",
+    "revision": "3ee3b358ad0043b2562796e6e520fc23680c2187"
+  },
+  "tgbn-trade": {
+    "path": "tgbn-trade",
+    "repo_id": "relbench/tgb",
+    "revision": "e99cedbaaf5c7ea8a97cbd6dd03775912369f4ec"
+  },
+  "thgl-forum": {
+    "path": "thgl-forum",
+    "repo_id": "relbench/tgb",
+    "revision": "f468c30c2d427dc279cf5aceceb1926b0530c146"
+  },
+  "thgl-github": {
+    "path": "thgl-github",
+    "repo_id": "relbench/tgb",
+    "revision": "5c1c2c4d6b62666f5b2d01461cb8dcb0f13b8672"
+  },
+  "thgl-myket": {
+    "path": "thgl-myket",
+    "repo_id": "relbench/tgb",
+    "revision": "e3e25e0c5155f530507881c4d21ec4bb2154b687"
+  },
+  "thgl-software": {
+    "path": "thgl-software",
+    "repo_id": "relbench/tgb",
+    "revision": "74042c78aadcdfd815978b029cf34790b52191ea"
   }
 }
