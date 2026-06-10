@@ -410,9 +410,9 @@
     "revision": "25247753cedca85ab1cd4a64da7ad50e40c699db"
   },
   "rel-f1": {
-    "path": "rel-f1",
-    "repo_id": "relbench/v1",
-    "revision": "61581e8bd2725ec2fc0ab0f617c41986386cd4e6"
+    "path": "",
+    "repo_id": "relbench/rel-f1",
+    "revision": "0ca87867d2cade344bc3a5dca1a1e648211ad32a"
   },
   "rel-hm": {
     "path": "rel-hm",
