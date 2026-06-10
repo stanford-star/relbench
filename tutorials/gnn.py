@@ -20,9 +20,8 @@ def _(mo):
         A Graph Neural Network baseline for a RelBench entity task, with PyTorch Geometric
         (graph) and PyTorch Frame (tabular features).
 
-        > **Download and run locally.** This notebook needs `torch`, `torch_geometric` and
-        > ideally a GPU, so — unlike the data tutorials — it cannot run in the browser.
-        > Install with `pip install relbench[full]` then open it with
+        > **Download and run locally.** This notebook needs `torch` and `torch_geometric`
+        > and is best on a GPU. Install with `pip install relbench[full]`, then open it with
         > `marimo edit gnn.py` (or run it as a script: `python gnn.py`).
         """
     )
@@ -140,42 +139,48 @@ def _(mo):
 
 @app.cell
 def _(F, encoder, entity, gnn, head, loaders, optimizer, torch):
-    for epoch in range(1, 4):
-        encoder.train(), gnn.train(), head.train()
-        for batch in loaders["train"]:
-            seed = batch[entity].batch_size
-            x = encoder(batch.tf_dict)
-            x = gnn(
-                x,
-                batch.edge_index_dict,
-                batch.num_sampled_nodes_dict,
-                batch.num_sampled_edges_dict,
-            )
-            pred = head(x[entity][:seed]).squeeze(-1)
-            optimizer.zero_grad()
-            loss = F.binary_cross_entropy_with_logits(pred, batch[entity].y.float())
-            loss.backward()
-            optimizer.step()
-        print(f"epoch {epoch}: train loss {loss.item():.4f}")
+    def train():
+        for epoch in range(1, 4):
+            encoder.train(), gnn.train(), head.train()
+            for batch in loaders["train"]:
+                seed = batch[entity].batch_size
+                x = encoder(batch.tf_dict)
+                x = gnn(
+                    x,
+                    batch.edge_index_dict,
+                    batch.num_sampled_nodes_dict,
+                    batch.num_sampled_edges_dict,
+                )
+                pred = head(x[entity][:seed]).squeeze(-1)
+                optimizer.zero_grad()
+                loss = F.binary_cross_entropy_with_logits(pred, batch[entity].y.float())
+                loss.backward()
+                optimizer.step()
+            print(f"epoch {epoch}: train loss {loss.item():.4f}")
+
+    train()
     return
 
 
 @app.cell
 def _(encoder, entity, gnn, head, loaders, task, torch):
-    encoder.eval(), gnn.eval(), head.eval()
-    preds = []
-    for batch in loaders["test"]:
-        seed = batch[entity].batch_size
-        with torch.no_grad():
-            x = encoder(batch.tf_dict)
-            x = gnn(
-                x,
-                batch.edge_index_dict,
-                batch.num_sampled_nodes_dict,
-                batch.num_sampled_edges_dict,
-            )
-            preds.append(head(x[entity][:seed]).squeeze(-1).sigmoid().cpu())
-    test_metrics = task.evaluate(torch.cat(preds).numpy())
+    def predict():
+        encoder.eval(), gnn.eval(), head.eval()
+        preds = []
+        for batch in loaders["test"]:
+            seed = batch[entity].batch_size
+            with torch.no_grad():
+                x = encoder(batch.tf_dict)
+                x = gnn(
+                    x,
+                    batch.edge_index_dict,
+                    batch.num_sampled_nodes_dict,
+                    batch.num_sampled_edges_dict,
+                )
+                preds.append(head(x[entity][:seed]).squeeze(-1).sigmoid().cpu())
+        return torch.cat(preds).numpy()
+
+    test_metrics = task.evaluate(predict())
     test_metrics
     return
 

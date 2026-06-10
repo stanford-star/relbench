@@ -20,8 +20,8 @@ def _(mo):
         Load a RelBench dataset and task straight from the Hugging Face Hub, explore the
         relational schema, and train a trivial baseline — all with **no per-dataset code**.
 
-        This notebook runs entirely in your browser (pandas + DuckDB via WebAssembly); no
-        install, no server.
+        Read the rendered version on the website, or run it yourself:
+        `pip install relbench[tutorial]` then `marimo edit quickstart.py`.
         """
     )
     return
@@ -54,7 +54,7 @@ def _(relbench):
 def _(mo):
     mo.md(
         "The dataset is a set of tables linked by a foreign-key graph — all described by "
-        "its `manifest.json`:"
+        "its `manifest.yaml`:"
     )
     return
 
