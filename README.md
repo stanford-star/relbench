@@ -55,15 +55,16 @@ implementation on [PyTorch Geometric](https://github.com/pyg-team/pytorch_geomet
 
 ### Tutorials
 
-Interactive [marimo](https://marimo.io) notebooks, hosted on the website:
+[marimo](https://marimo.io) notebooks — read the rendered version on the website, then
+download and run it yourself:
 
 | Tutorial | What it covers | |
 |---|---|---|
-| [**Quickstart**](https://relbench.stanford.edu/tutorials/quickstart/) | Load a dataset/task, explore the schema, run a baseline | runs in your browser |
-| [**Training a GNN**](https://relbench.stanford.edu/tutorials/gnn/) | A GNN baseline for an entity task (PyG + PyTorch Frame) | download & run on a GPU |
+| [**Quickstart**](https://relbench.stanford.edu/tutorials/quickstart/) | Load a dataset/task, explore the schema, run a baseline | rendered + download |
+| [**Training a GNN**](https://relbench.stanford.edu/tutorials/gnn/) | A GNN baseline for an entity task (PyG + PyTorch Frame) | rendered + download (needs a GPU) |
 
-The notebook sources live in [`tutorials/`](tutorials) (plain `.py`); run them locally with
-`pip install relbench[tutorial]` then `marimo edit tutorials/quickstart.py`.
+Run locally with `pip install relbench[tutorial]` (add `[full]` for the GNN), then
+`marimo edit tutorials/quickstart.py` — the sources live in [`tutorials/`](tutorials).
 
 ## Contributing
 
