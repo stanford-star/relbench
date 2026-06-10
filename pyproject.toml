@@ -49,6 +49,9 @@ dbinfer=[
 ctu=[
 	"redelex",
 ]
+tutorial=[
+	"marimo",
+]
 
 [project.urls]
 Home = "https://relbench.stanford.edu"
