@@ -16,7 +16,8 @@ parquet. There are **no Python classes to write**:
 ```
 <dataset>/
   manifest.yaml                       # description, tables, primary keys, fkey graph, splits
-  README.md                           # dataset card with a Mermaid schema diagram (auto-generated)
+  README.md                           # dataset card (auto-generated)
+  schema.svg                          # ER diagram: every column + the fkey graph (auto-generated)
   db/<table>.parquet                  # one parquet per table (plain parquet, native dtypes)
   tasks/<task>/
     manifest.yaml                     # task spec + description (+ a duckdb query, for `forecast`)
@@ -37,7 +38,8 @@ train = task.get_table("train")     # train/val/test label tables
 task.evaluate(pred)                 # standardized metrics (chosen automatically by task type)
 ```
 
-**`datasets/rel-f1/` in this repo is a complete worked example — copy it.**
+**The published [`rel-f1`](https://huggingface.co/datasets/relbench/v1/tree/main/rel-f1)
+dataset is a complete worked example — browse its `manifest.yaml`, `tasks/`, and `schema.svg`.**
 
 ### Task kinds
 
@@ -85,19 +87,21 @@ validate_dataset_manifest(manifest, out / "db")   # checks the named columns exi
 Conventions: primary keys are 0..N-1 integers; foreign keys are integer indices into the
 referenced table; time columns are `datetime64`.
 
-**(b) Generate the dataset card** (a `README.md` with a Mermaid schema diagram that renders
-on the Hub) — add it after you've written the task manifests (§3):
+**(b) Generate the schema diagram and dataset card** — after you've written the task
+manifests (§3). `render_schema_svg` reads every column from the parquet, so point it at the
+`db/` folder; it needs the `relbench[schema]` extra and the Graphviz `dot` binary on PATH:
 
 ```python
-from relbench.schema import dataset_card
+from relbench.schema import dataset_card, render_schema_svg
 from relbench.manifest import TaskManifest
+render_schema_svg(manifest, out / "schema.svg", db_dir=out / "db")   # ER diagram (all columns)
 tasks = [TaskManifest.load(p / "manifest.yaml") for p in sorted((out / "tasks").iterdir())]
-(out / "README.md").write_text(dataset_card(manifest, tasks))
+(out / "README.md").write_text(dataset_card(manifest, tasks))        # embeds schema.svg
 ```
 
-**(c) Keep your processing script** under `build/<dataset>.py` for provenance (it produces
-the folder). Datasets are taken as the root of trust, but a reproducible build is
-encouraged. See `build/_common.py` (shared repackaging helpers) and `build/port_all.py`.
+**(c) Keep your processing script** for provenance (it produces the folder). Datasets are the
+root of trust, but a reproducible build is encouraged. The script lives wherever you develop
+the dataset — it is not shipped in the `relbench` package.
 
 ---
 
@@ -154,8 +158,9 @@ Semantics: the label for an entity at anchor time `t` is computed from the windo
 
 For **link prediction**, set `task_type="link_prediction"`, use
 `src_entity_table`/`src_entity_col`/`dst_entity_table`/`dst_entity_col` + `eval_k`, and emit
-a list of destination ids (e.g. `LIST(DISTINCT o.product_id) AS product_id`). See
-`datasets/rel-f1/tasks/` for entity, binary, and link examples.
+a list of destination ids (e.g. `LIST(DISTINCT o.product_id) AS product_id`). See the
+[`rel-f1` tasks](https://huggingface.co/datasets/relbench/v1/tree/main/rel-f1/tasks) for
+entity, binary, and link examples.
 
 Metrics are **not** specified — they default from `task_type` (regression → R²/MAE/RMSE,
 binary → AP/accuracy/F1/AUROC, link → precision/recall/MAP@k).
@@ -191,7 +196,7 @@ create_repo("your-org/my-dataset", repo_type="dataset")
 upload_folder(folder_path="my-dataset", repo_id="your-org/my-dataset", repo_type="dataset")
 ```
 
-The Hub renders your `README.md` card (including the Mermaid schema). Anyone can now
+The Hub renders your `README.md` card with the embedded `schema.svg`. Anyone can now
 `relbench.load_dataset("your-org/my-dataset")`.
 
 ---
@@ -212,7 +217,7 @@ For `forecast` tasks, ensure the provenance check passes — it regenerates labe
 SQL and asserts they match the shipped parquet:
 
 ```bash
-python build/check_provenance.py path/to/my-dataset
+python -m relbench.check_provenance path/to/my-dataset
 ```
 
 Describe the dataset/tasks in your PR and link the Hub repo. Thanks for contributing!

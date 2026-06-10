@@ -1,7 +1,0 @@
-name: studies-enrollment
-kind: autocomplete
-task_type: regression
-description: Predict the `enrollment` column of the `studies` table.
-entity_table: studies
-target_col: enrollment
-manifest_version: 1

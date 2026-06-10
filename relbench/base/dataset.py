@@ -103,8 +103,8 @@ class Dataset:
         else:
             print("Making Database object from scratch...")
             print(
-                "(You can also use `get_dataset(..., download=True)` "
-                "for datasets prepared by the RelBench team.)"
+                "(For datasets prepared by the RelBench team, use "
+                "`relbench.load_dataset(name)`.)"
             )
             tic = time.time()
             db = self.make_db()
@@ -198,11 +198,6 @@ class Dataset:
                         f"Column {remove_col} not found in table {table}. "
                         "Skipping removal from this table."
                     )
-
-        # Clear the get_dataset cache as the dataset instance was modified.
-        from relbench.datasets import get_dataset
-
-        get_dataset.cache_clear()
 
         return db
 

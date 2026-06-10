@@ -1,13 +1,10 @@
 import pandas as pd
 
 from relbench.base import AutoCompleteTask, TaskType
-from relbench.datasets import get_dataset
-from relbench.datasets.fake import FakeDataset
-from relbench.tasks import get_task
 
 
-def test_autocomplete_task():
-    dataset = FakeDataset()
+def test_autocomplete_task(fake_dataset):
+    dataset = fake_dataset()
     assert dataset is not None
     task = AutoCompleteTask(
         dataset=dataset,

@@ -52,7 +52,11 @@ ctu=[
 ]
 tutorial=[
 	"marimo",
-	"graphviz",
+]
+schema=[
+	"sqlalchemy",
+	"sqlalchemy-schemadisplay",
+	"pydot",
 ]
 
 [project.urls]

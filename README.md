@@ -24,7 +24,7 @@ Alongside our paper, we also integrate the [Temporal Graph Benchmark](https://tg
 
 **January 12, 2026: RelBench v2 is now released!**
 - Introducing Autocomplete tasks: new task paradigm to predict existing columns in the database.
-- 4 new databases: [SALT](https://relbench.stanford.edu/datasets/rel-salt), [RateBeer](https://relbench.stanford.edu/datasets/rel-ratebeer), [arXiv](https://relbench.stanford.edu/datasets/rel-arxiv), and [MIMIC-IV](https://relbench.stanford.edu/datasets/rel-mimic).
+- 3 new databases: [SALT](https://relbench.stanford.edu/datasets/rel-salt), [RateBeer](https://relbench.stanford.edu/datasets/rel-ratebeer), and [arXiv](https://relbench.stanford.edu/datasets/rel-arxiv).
 - 36 new predictive tasks, including 23 Autocomplete tasks across new and existing databases.
 - CTU integration: 70+ relational datasets from the CTU repository via [ReDeLEx](https://github.com/jakubpeleska/redelex).
 - Direct SQL database connectivity via [ReDeLEx](https://github.com/jakubpeleska/redelex).
@@ -153,7 +153,7 @@ If you use the 4DBInfer datasets in your work, please cite [4DBInfer](https://gi
 
 **Using TGB datasets**
 
-[TGB](https://tgb.complexdatalab.com/) datasets and tasks can be loaded in the RelBench format, and they cover bipartite link prediction (`tgbl-*`), heterogeneous link prediction (`thgl-*`), and node property prediction (`tgbn-*`). See `relbench/tasks/tgb.py` for the official TGB evaluation protocols (one-vs-many MRR / Hits@10 for link prediction, NDCG@10 for node property prediction). Standard RelBench style evaluation works as it is.
+[TGB](https://tgb.complexdatalab.com/) datasets and tasks can be loaded in the RelBench format, and they cover bipartite link prediction (`tgbl-*`), heterogeneous link prediction (`thgl-*`), and node property prediction (`tgbn-*`). They use the official TGB evaluation protocols (one-vs-many MRR / Hits@10 for link prediction, NDCG@10 for node property prediction); standard RelBench-style evaluation also works as-is.
 
 If you use the TGB datasets in your work, please cite [TGB](https://tgb.complexdatalab.com/) as below:
 ```bibtex

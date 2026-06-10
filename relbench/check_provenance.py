@@ -1,25 +1,25 @@
-r"""CI provenance check for a RelBench dataset folder (local path or registered name).
+r"""Provenance check for a RelBench dataset (registered name, ``org/name``, or local path).
 
 For every ``forecast`` task, regenerate labels from the database via the manifest SQL and
-assert they match the shipped cached labels. This is the guarantee that a task's hosted
-labels are exactly what its SQL produces against the pinned database revision; it fails
-on drift (SQL edited without refreshing labels, or vice versa). Autocomplete/external
-tasks are skipped (autocomplete is checked separately; external labels have no SQL).
+assert they match the shipped labels. This is the guarantee that a task's hosted labels are
+exactly what its SQL produces against the pinned database revision; it fails on drift (SQL
+edited without refreshing labels, or vice versa). Autocomplete and external tasks have no
+regenerating SQL and are skipped.
 
-    pixi run --frozen python build/check_provenance.py [DATASET]   # default rel-f1 artifact
+    python -m relbench.check_provenance rel-f1
+    python -m relbench.check_provenance your-org/your-dataset
+    python -m relbench.check_provenance ./path/to/local/dataset
 """
 
 from __future__ import annotations
 
 import sys
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 from relbench.base import RecommendationTask
 from relbench.load import get_task_names, load_task
-from relbench.manifest import KIND_FORECAST, TaskManifest
 
 SPLITS = ["train", "val", "test"]
 
@@ -45,17 +45,13 @@ def _match(a: pd.DataFrame, b: pd.DataFrame, keys, target, is_list) -> bool:
     return bool((pd.Series(x).fillna("∅").astype(str) == pd.Series(y).fillna("∅").astype(str)).all())
 
 
-def main() -> None:
-    dataset = sys.argv[1] if len(sys.argv) > 1 else "/tmp/relbench-build/rel-f1"
-    names = get_task_names(dataset)
+def check_provenance(dataset: str) -> bool:
+    r"""Return True iff every ``forecast`` task's regenerated labels match its hosted labels."""
     ok_all, checked = True, 0
-    for name in names:
-        tm = TaskManifest.load(Path(dataset) / "tasks" / name / "manifest.yaml") \
-            if Path(dataset).exists() else None
-        # When loading by registered name, kind is read off the loaded task instead.
+    for name in get_task_names(dataset):
         regen = load_task(dataset, name, regenerate=True)
-        if tm is not None and tm.kind != KIND_FORECAST:
-            continue
+        if not getattr(regen, "_sql", None):
+            continue  # only forecast tasks carry regenerating SQL; nothing to check
         cached = load_task(dataset, name, regenerate=False)
         keys, target, is_list = _keys_target(regen)
         for split in SPLITS:
@@ -64,10 +60,17 @@ def main() -> None:
             ok = _match(r, c, keys, target, is_list)
             ok_all &= ok
             checked += 1
-            print(f"{name:<24} {split:<5} regen={len(r):>6} cached={len(c):>6} "
+            print(f"{name:<24} {split:<5} regen={len(r):>7} cached={len(c):>7} "
                   f"{'PASS' if ok else 'FAIL'}", flush=True)
     print(f"\n{'PROVENANCE OK' if ok_all else 'PROVENANCE DRIFT'} ({checked} checks)")
-    sys.exit(0 if ok_all else 1)
+    return ok_all
+
+
+def main() -> None:
+    if len(sys.argv) != 2:
+        print(__doc__)
+        sys.exit(2)
+    sys.exit(0 if check_provenance(sys.argv[1]) else 1)
 
 
 if __name__ == "__main__":

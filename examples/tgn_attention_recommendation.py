@@ -37,9 +37,8 @@ from torch_geometric.seed import seed_everything
 from torch_geometric.utils import scatter
 from tqdm import tqdm
 
+from relbench import load_dataset, load_task
 from relbench.base import Dataset, RecommendationTask, Table, TaskType
-from relbench.datasets import get_dataset
-from relbench.tasks import get_task
 
 
 class TimeEncoder(torch.nn.Module):
@@ -747,10 +746,8 @@ def main() -> None:
         torch.set_num_threads(1)
 
     try:
-        dataset: Dataset = get_dataset(args.dataset, download=bool(args.download))
-        task: RecommendationTask = get_task(
-            args.dataset, args.task, download=bool(args.download)
-        )
+        dataset: Dataset = load_dataset(args.dataset)
+        task: RecommendationTask = load_task(args.dataset, args.task)
     except Exception:
         if bool(args.download):
             print(

@@ -8,14 +8,13 @@ from torch_geometric.loader import NeighborLoader
 from torch_geometric.nn import MLP
 
 from relbench.base import TaskType
-from relbench.datasets.fake import FakeDataset
 from relbench.modeling.graph import get_node_train_table_input, make_pkey_fkey_graph
 from relbench.modeling.nn import HeteroEncoder, HeteroGraphSAGE
 from relbench.modeling.utils import get_stype_proposal
 
 
-def test_node_train_fake_product_dataset(tmp_path, make_churn_task):
-    dataset = FakeDataset()
+def test_node_train_fake_product_dataset(tmp_path, make_churn_task, fake_dataset):
+    dataset = fake_dataset()
 
     db = dataset.get_db()
     data, col_stats_dict = make_pkey_fkey_graph(
@@ -149,10 +148,10 @@ def test_node_train_fake_product_dataset(tmp_path, make_churn_task):
             task.evaluate(pred)
 
 
-def test_node_train_empty_graph(tmp_path):
+def test_node_train_empty_graph(tmp_path, fake_dataset):
     # Make a very sparse graph
     num_customers = 50
-    dataset = FakeDataset(num_customers=num_customers, num_reviews=1)
+    dataset = fake_dataset(num_customers=num_customers, num_reviews=1)
 
     db = dataset.get_db()
     data, col_stats_dict = make_pkey_fkey_graph(

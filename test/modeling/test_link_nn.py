@@ -11,7 +11,6 @@ from torch_geometric.loader import NeighborLoader
 from torch_geometric.typing import NodeType
 
 from relbench.base import RecommendationTask, TaskType
-from relbench.datasets.fake import FakeDataset
 from relbench.modeling.graph import get_link_train_table_input, make_pkey_fkey_graph
 from relbench.modeling.loader import LinkNeighborLoader
 from relbench.modeling.nn import HeteroEncoder, HeteroGraphSAGE
@@ -22,8 +21,8 @@ from relbench.modeling.utils import get_stype_proposal, to_unix_time
     "share_same_time",
     [True, False],
 )
-def test_link_train_fake_product_dataset(tmp_path, share_same_time, make_purchase_task):
-    dataset = FakeDataset()
+def test_link_train_fake_product_dataset(tmp_path, share_same_time, make_purchase_task, fake_dataset):
+    dataset = fake_dataset()
 
     data, col_stats_dict = make_pkey_fkey_graph(
         dataset.get_db(),

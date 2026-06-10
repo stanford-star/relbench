@@ -1,7 +1,0 @@
-name: transactions-price
-kind: autocomplete
-task_type: regression
-description: Predict the `price` column of the `transactions` table.
-entity_table: transactions
-target_col: price
-manifest_version: 1

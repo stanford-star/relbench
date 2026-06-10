@@ -1,10 +1,8 @@
 import copy
 
-from relbench.datasets.fake import FakeDataset
 
-
-def test_fake_reviews_dataset(make_churn_task):
-    dataset = FakeDataset()
+def test_fake_reviews_dataset(make_churn_task, fake_dataset):
+    dataset = fake_dataset()
     assert dataset.get_db().max_timestamp <= dataset.test_timestamp
     assert str(dataset) == "FakeDataset()"
 
@@ -26,8 +24,8 @@ def test_fake_reviews_dataset(make_churn_task):
     }
 
 
-def test_reindex():
-    dataset = FakeDataset()
+def test_reindex(fake_dataset):
+    dataset = fake_dataset()
     db = dataset.make_db()
     db_indexed = copy.deepcopy(db)
     db_indexed.reindex_pkeys_and_fkeys()

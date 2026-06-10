@@ -2,51 +2,51 @@
   "rel-amazon": {
     "path": "rel-amazon",
     "repo_id": "relbench/v1",
-    "revision": "2e3d725bc9e013f0adb131356f7c44ed7a125bdd"
+    "revision": "8ec79370277b97430382d7736ee1d52f26792a18"
   },
   "rel-arxiv": {
     "path": "rel-arxiv",
     "repo_id": "relbench/v2",
-    "revision": "fc853c37bfb2ec73bd1615b0fbe4bd7cc773e6cd"
+    "revision": "e657664e4597f99b7538f36a135a291ab8114553"
   },
   "rel-avito": {
     "path": "rel-avito",
     "repo_id": "relbench/v1",
-    "revision": "075c09d271020291ac04362a195e4406e9cb444f"
+    "revision": "e367f4a439b2359323c7bc6cb1f7c2583df0084e"
   },
   "rel-event": {
     "path": "rel-event",
     "repo_id": "relbench/v1",
-    "revision": "45969321c3ef39b16bef20675c935380b1e492fe"
+    "revision": "25247753cedca85ab1cd4a64da7ad50e40c699db"
   },
   "rel-f1": {
     "path": "rel-f1",
     "repo_id": "relbench/v1",
-    "revision": "9c2e06ac3a67231cbd1e430750e70eac84707dd6"
+    "revision": "61581e8bd2725ec2fc0ab0f617c41986386cd4e6"
   },
   "rel-hm": {
     "path": "rel-hm",
     "repo_id": "relbench/v1",
-    "revision": "867214518d2d941ff3660c58d996e18a917f4e60"
+    "revision": "c0ba2be1ec121037611e98db99a6e1a0682af25c"
   },
   "rel-ratebeer": {
     "path": "rel-ratebeer",
     "repo_id": "relbench/v2",
-    "revision": "2bc0fcf4508d2b8356b9f8674e082c1e324ee0f7"
+    "revision": "a200e5a1ab7c85c6a6f31efdce778158a18dbe8b"
   },
   "rel-salt": {
     "path": "rel-salt",
     "repo_id": "relbench/v2",
-    "revision": "923929daa405ed6b0c4ccdf8d79225b5bf306ff1"
+    "revision": "a0d602e41f5f95758ccd3f8d5330937416539739"
   },
   "rel-stack": {
     "path": "rel-stack",
     "repo_id": "relbench/v1",
-    "revision": "cc3d1eb1f7a07b0d8190926e1f4d55cc105ffd4c"
+    "revision": "f5974791a6d18b12efa0f643c8ee4b6db2314198"
   },
   "rel-trial": {
     "path": "rel-trial",
     "repo_id": "relbench/v1",
-    "revision": "2fd652229aedfc385a428a9c2068d22d3abea04c"
+    "revision": "ee39dd546e90a7ae454db5fd8f652e30b8ed12d3"
   }
 }

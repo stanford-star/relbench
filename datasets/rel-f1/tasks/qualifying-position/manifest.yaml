@@ -1,7 +1,0 @@
-name: qualifying-position
-kind: autocomplete
-task_type: regression
-description: Predict the `position` column of the `qualifying` table.
-entity_table: qualifying
-target_col: position
-manifest_version: 1

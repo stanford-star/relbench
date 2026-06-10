@@ -17,9 +17,9 @@ from torch_frame.gbdt import LightGBM
 from torch_frame.typing import Metric
 from torch_geometric.seed import seed_everything
 
+from relbench import load_task
 from relbench.base import EntityTask, TaskType
 from relbench.modeling.utils import get_stype_proposal, remove_pkey_fkey
-from relbench.tasks import get_task
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-f1")
@@ -38,12 +38,6 @@ parser.add_argument(
     default=os.path.expanduser("~/.cache/relbench_examples"),
 )
 parser.add_argument("--left_join_fkey", action="store_true", default=False)
-parser.add_argument(
-    "--download",
-    action="store_true",
-    default=False,
-    help="Download the dataset if not already present.",
-)
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -51,7 +45,7 @@ if torch.cuda.is_available():
     torch.set_num_threads(1)
 seed_everything(args.seed)
 
-task: EntityTask = get_task(args.dataset, args.task, download=args.download)
+task: EntityTask = load_task(args.dataset, args.task)
 dataset = task.dataset
 
 train_table = task.get_table("train")

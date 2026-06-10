@@ -1,70 +1,104 @@
 r"""Generate a schema diagram + dataset card for a RelBench dataset.
 
-The diagram is a `Mermaid <https://mermaid.js.org>`_ ``erDiagram`` built from the
-manifest's foreign-key graph. Hugging Face dataset cards (README.md) render Mermaid code
-fences natively, so embedding it there gives a zoomable schema view on the Hub with no
-image dependencies (and it degrades to readable text everywhere else).
+The diagram is rendered with `sqlalchemy_schemadisplay
+<https://pypi.org/project/sqlalchemy-schemadisplay/>`_: we reconstruct a SQLAlchemy
+``MetaData`` from the parquet column schemas (every column, with its type) plus the
+manifest's primary-/foreign-key graph, and let the library draw a standard ER diagram via
+graphviz. The result is a standalone ``schema.svg`` that the Hugging Face file viewer
+renders as a zoomable image.
 """
 
 from __future__ import annotations
 
-from typing import Iterable, Optional
+from pathlib import Path
+from typing import Iterable, Optional, Union
 
 from relbench.manifest import DatasetManifest, TaskManifest
 
 
-def mermaid_er(manifest: DatasetManifest) -> str:
-    r"""Return a Mermaid ``erDiagram`` of the dataset's tables and foreign-key graph."""
-    lines = ["erDiagram"]
+def _arrow_to_sa(arrow_type):
+    r"""Map a pyarrow column type to a generic SQLAlchemy type (for display only)."""
+    import pyarrow as pa
+    import sqlalchemy as sa
+
+    if pa.types.is_boolean(arrow_type):
+        return sa.Boolean()
+    if pa.types.is_integer(arrow_type):
+        return sa.BigInteger() if pa.types.is_int64(arrow_type) else sa.Integer()
+    if pa.types.is_floating(arrow_type) or pa.types.is_decimal(arrow_type):
+        return sa.Float()
+    if pa.types.is_date(arrow_type):
+        return sa.Date()
+    if pa.types.is_timestamp(arrow_type):
+        return sa.DateTime()
+    return sa.Text()
+
+
+def _metadata_from_db(manifest: DatasetManifest, db_dir: Union[str, Path]):
+    r"""Build a SQLAlchemy ``MetaData`` (all columns + types + PK/FK graph) for the dataset.
+
+    Columns and types come from the parquet schemas in ``db_dir``; primary keys, foreign
+    keys, and time columns come from the manifest. Tables whose parquet is missing fall back
+    to the columns named in the manifest (pkey / fkeys / time_col) so rendering never fails.
+    """
+    import pyarrow.parquet as pq
+    import sqlalchemy as sa
+
+    db_dir = Path(db_dir)
+    md = sa.MetaData()
+    parent_pkey = {t: s.pkey for t, s in manifest.tables.items()}
+
     for tname, spec in manifest.tables.items():
-        lines.append(f"    {tname} {{")
-        if spec.pkey:
-            lines.append(f"        key {spec.pkey} PK")
-        for fkey in spec.fkeys:
-            lines.append(f"        key {fkey} FK")
-        if spec.time_col:
-            lines.append(f"        datetime {spec.time_col}")
-        lines.append("    }")
-    for tname, spec in manifest.tables.items():
-        for fkey, parent in spec.fkeys.items():
-            # child many-to-one parent, labeled by the foreign-key column.
-            lines.append(f"    {tname} }}o--|| {parent} : {fkey}")
-    return "\n".join(lines)
+        path = db_dir / f"{tname}.parquet"
+        if path.exists():
+            schema = pq.read_schema(path)
+            cols = [(f.name, _arrow_to_sa(f.type)) for f in schema]
+        else:  # fall back to the manifest-named columns
+            named = [c for c in [spec.pkey, spec.time_col, *spec.fkeys] if c]
+            cols = [(c, sa.Text()) for c in dict.fromkeys(named)]
+
+        columns = []
+        for cname, ctype in cols:
+            args = []
+            parent = spec.fkeys.get(cname)
+            if parent and parent_pkey.get(parent):
+                args.append(sa.ForeignKey(f"{parent}.{parent_pkey[parent]}"))
+            columns.append(
+                sa.Column(cname, ctype, *args, primary_key=(cname == spec.pkey))
+            )
+        sa.Table(tname, md, *columns)
+
+    return md
 
 
-def graphviz_er(manifest: DatasetManifest):
-    r"""Build a graphviz ER diagram (tables with PK/FK/time, edges for the fkey graph)."""
-    import graphviz
+def render_schema_svg(
+    manifest: DatasetManifest, path, db_dir: Optional[Union[str, Path]] = None
+) -> None:
+    r"""Render the ER diagram to a standalone SVG at ``path`` (zoomable on the HF Hub).
 
-    g = graphviz.Digraph("schema")
-    g.attr(rankdir="LR", bgcolor="white", pad="0.3")
-    g.attr("node", shape="plaintext", fontname="Helvetica")
-    g.attr("edge", color="#555555", fontname="Helvetica", fontsize="10", arrowhead="crow")
-    for tname, spec in manifest.tables.items():
-        rows = [f'<tr><td bgcolor="#4C78A8" align="center">'
-                f'<font color="white"><b>{tname}</b></font></td></tr>']
-        if spec.pkey:
-            rows.append(f'<tr><td align="left"><b>PK</b>  {spec.pkey}</td></tr>')
-        for fkey in spec.fkeys:
-            rows.append(f'<tr><td align="left"><b>FK</b>  {fkey}</td></tr>')
-        if spec.time_col:
-            rows.append(f'<tr><td align="left"><i>time</i>  {spec.time_col}</td></tr>')
-        label = ('<<table border="0" cellborder="1" cellspacing="0" cellpadding="4">'
-                 + "".join(rows) + "</table>>")
-        g.node(tname, label=label)
-    for tname, spec in manifest.tables.items():
-        for fkey, parent in spec.fkeys.items():
-            g.edge(tname, parent, label=fkey)
-    return g
-
-
-def render_schema_svg(manifest: DatasetManifest, path) -> None:
-    r"""Render the ER diagram to a standalone SVG at ``path`` (zoomable on the HF Hub)."""
-    from pathlib import Path
+    ``db_dir`` is the dataset's ``db/`` folder; when given, every column and its type is
+    shown. It defaults to ``<path>/../db`` (the standard dataset layout).
+    """
+    import sqlalchemy as sa
+    from sqlalchemy_schemadisplay import create_schema_graph
 
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    graphviz_er(manifest).render(outfile=str(path), cleanup=True)
+    if db_dir is None:
+        db_dir = path.parent / "db"
+
+    md = _metadata_from_db(manifest, db_dir)
+    graph = create_schema_graph(
+        engine=sa.create_engine("sqlite://"),
+        metadata=md,
+        show_datatypes=True,
+        show_indexes=False,
+        show_column_keys=True,
+        rankdir="LR",
+        concentrate=False,
+        font="Helvetica",
+    )
+    graph.write_svg(str(path), prog="dot")
 
 
 def dataset_card(
@@ -89,8 +123,9 @@ def dataset_card(
         "",
         "![schema diagram](schema.svg)",
         "",
-        "Open [`schema.svg`](schema.svg) for a zoomable view of the foreign-key graph "
-        "(PK = primary key, FK = foreign key).",
+        "Open [`schema.svg`](schema.svg) for a zoomable view: each table lists all of its "
+        "columns and types, with primary keys, foreign keys, and the foreign-key edges "
+        "between tables.",
         "",
         f"Splits: validation `{manifest.val_timestamp}`, test `{manifest.test_timestamp}` "
         "(rows up to a split's timestamp are the inputs for that split).",
