@@ -1,0 +1,11 @@
+name: item-churn
+kind: forecast
+task_type: binary_classification
+description: Churn for a product is 1 if the product recieves at least one review in the time window, else 0.
+entity_table: product
+entity_col: product_id
+target_col: churn
+time_col: timestamp
+timedelta: 91 days
+sql: "\n            SELECT\n                timestamp,\n                product_id,\n                CAST(\n                    NOT EXISTS (\n                        SELECT 1\n                        FROM review\n                        WHERE\n                            review.product_id = product.product_id AND\n                            review_time > timestamp AND\n                            review_time <= timestamp + INTERVAL '{timedelta}'\n                    ) AS INTEGER\n                ) AS churn\n            FROM\n                timestamps,\n                product,\n            WHERE\n                EXISTS (\n                    SELECT 1\n                    FROM review\n                    WHERE\n                        review.product_id = product.product_id AND\n                        review_time > timestamp - INTERVAL '{timedelta}' AND\n                        review_time <= timestamp\n                )\n            "
+manifest_version: 1

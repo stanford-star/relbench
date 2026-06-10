@@ -1,4 +1,9 @@
 {
+  "rel-amazon": {
+    "path": "rel-amazon",
+    "repo_id": "relbench/v1",
+    "revision": "2e3d725bc9e013f0adb131356f7c44ed7a125bdd"
+  },
   "rel-arxiv": {
     "path": "rel-arxiv",
     "repo_id": "relbench/v2",
