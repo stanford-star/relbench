@@ -1,4 +1,14 @@
 {
+  "dbinfer-amazon": {
+    "path": "dbinfer-amazon",
+    "repo_id": "relbench/dbinfer",
+    "revision": "506743f9d7aa4444d9cafb3850dd9d0c6d52b376"
+  },
+  "dbinfer-avs": {
+    "path": "dbinfer-avs",
+    "repo_id": "relbench/dbinfer",
+    "revision": "19d9cab4d44f20592c6ff65fffb992b0e4520c5b"
+  },
   "dbinfer-diginetica": {
     "path": "dbinfer-diginetica",
     "repo_id": "relbench/dbinfer",
