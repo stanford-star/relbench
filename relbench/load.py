@@ -26,7 +26,6 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Optional, Union
 
-import duckdb
 import pandas as pd
 
 from relbench import hf, metrics
@@ -150,6 +149,8 @@ def _run_task_sql(
     every db table as a view by name, and substitutes ``{timedelta}`` with the duckdb
     INTERVAL string -- the same environment the legacy ``make_table`` queries assumed.
     """
+    import duckdb  # lazy: keeps `import relbench` importable where duckdb isn't (e.g. Pyodide)
+
     con = duckdb.connect()
     try:
         # A memory limit makes duckdb raise a catchable OOM (and spill to disk) rather

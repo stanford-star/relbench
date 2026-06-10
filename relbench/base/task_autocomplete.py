@@ -1,6 +1,5 @@
 from typing import Optional
 
-import duckdb
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import OrdinalEncoder
@@ -172,6 +171,8 @@ class AutoCompleteTask(EntityTask):
         timestamp_df = pd.DataFrame({"timestamp": timestamps})
         min_timestamp = timestamp_df["timestamp"].min()
         max_timestamp = timestamp_df["timestamp"].max()
+
+        import duckdb  # lazy: keeps `import relbench` importable where duckdb isn't (Pyodide)
 
         df = duckdb.sql(f"""
             SELECT
