@@ -1,7 +1,7 @@
 name: driver-position
 kind: forecast
 task_type: regression
-description: Predict each driver's average finishing position across races in the next 2 months.
+description: Predict the average finishing position of each driver all races in the next 2 months.
 entity_table: drivers
 entity_col: driverId
 target_col: position

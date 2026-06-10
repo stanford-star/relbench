@@ -1,0 +1,22 @@
+name: item-incoterms
+kind: autocomplete
+task_type: multiclass_classification
+description: Predict the `ITEMINCOTERMSCLASSIFICATION` column of the `salesdocumentitem` table.
+entity_table: salesdocumentitem
+target_col: ITEMINCOTERMSCLASSIFICATION
+remove_columns:
+- - salesdocument
+  - SALESOFFICE
+- - salesdocument
+  - SALESGROUP
+- - salesdocument
+  - CUSTOMERPAYMENTTERMS
+- - salesdocument
+  - SHIPPINGCONDITION
+- - salesdocument
+  - HEADERINCOTERMSCLASSIFICATION
+- - salesdocumentitem
+  - PLANT
+- - salesdocumentitem
+  - SHIPPINGPOINT
+manifest_version: 1

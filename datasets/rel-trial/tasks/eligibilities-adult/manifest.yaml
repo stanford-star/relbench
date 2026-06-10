@@ -1,0 +1,22 @@
+name: eligibilities-adult
+kind: autocomplete
+task_type: binary_classification
+description: Predict the `adult` column of the `eligibilities` table.
+entity_table: eligibilities
+target_col: adult
+remove_columns:
+- - eligibilities
+  - child
+- - eligibilities
+  - older_adult
+- - eligibilities
+  - minimum_age
+- - eligibilities
+  - maximum_age
+- - eligibilities
+  - population
+- - eligibilities
+  - criteria
+- - eligibilities
+  - gender_description
+manifest_version: 1

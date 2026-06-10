@@ -1,0 +1,22 @@
+name: sales-shipcond
+kind: autocomplete
+task_type: multiclass_classification
+description: Predict the `SHIPPINGCONDITION` column of the `salesdocument` table.
+entity_table: salesdocument
+target_col: SHIPPINGCONDITION
+remove_columns:
+- - salesdocument
+  - SALESOFFICE
+- - salesdocument
+  - SALESGROUP
+- - salesdocument
+  - CUSTOMERPAYMENTTERMS
+- - salesdocument
+  - HEADERINCOTERMSCLASSIFICATION
+- - salesdocumentitem
+  - PLANT
+- - salesdocumentitem
+  - SHIPPINGPOINT
+- - salesdocumentitem
+  - ITEMINCOTERMSCLASSIFICATION
+manifest_version: 1

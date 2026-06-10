@@ -1,0 +1,22 @@
+name: beer_ratings-total_score
+kind: external
+task_type: regression
+description: regression task on `beer_ratings`.
+entity_table: beer_ratings
+target_col: total_score
+remove_columns:
+- - beer_ratings
+  - aroma
+- - beer_ratings
+  - flavor
+- - beer_ratings
+  - mouthfeel
+- - beer_ratings
+  - appearance
+- - beer_ratings
+  - overall
+- - beer_ratings
+  - comments
+- - beer_ratings
+  - description_score
+manifest_version: 1

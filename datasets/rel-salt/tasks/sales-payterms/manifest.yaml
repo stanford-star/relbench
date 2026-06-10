@@ -1,0 +1,22 @@
+name: sales-payterms
+kind: autocomplete
+task_type: multiclass_classification
+description: Predict the `CUSTOMERPAYMENTTERMS` column of the `salesdocument` table.
+entity_table: salesdocument
+target_col: CUSTOMERPAYMENTTERMS
+remove_columns:
+- - salesdocument
+  - SALESOFFICE
+- - salesdocument
+  - SALESGROUP
+- - salesdocument
+  - SHIPPINGCONDITION
+- - salesdocument
+  - HEADERINCOTERMSCLASSIFICATION
+- - salesdocumentitem
+  - PLANT
+- - salesdocumentitem
+  - SHIPPINGPOINT
+- - salesdocumentitem
+  - ITEMINCOTERMSCLASSIFICATION
+manifest_version: 1

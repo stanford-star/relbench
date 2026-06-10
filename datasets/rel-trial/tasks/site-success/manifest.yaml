@@ -1,0 +1,37 @@
+name: site-success
+kind: forecast
+task_type: regression
+description: Predict the success rate of a trial site in the next 1 year.
+entity_table: facilities
+entity_col: facility_id
+target_col: success_rate
+time_col: timestamp
+timedelta: 365 days
+sql: |-
+  WITH TRIAL_INFO AS (
+      SELECT
+          oa.nct_id,
+          MIN(CASE WHEN oa.p_value < 0.05 THEN 1 ELSE 0 END) AS is_successful, -- Determine if the trial is successful
+          oa.date,
+      FROM outcome_analyses oa
+      LEFT JOIN outcomes o
+      ON oa.outcome_id = o.id
+      WHERE (oa.p_value_modifier is null or oa.p_value_modifier != '>')
+      and oa.p_value >=0
+      and oa.p_value <=1
+      and o.outcome_type = 'Primary'
+      GROUP BY oa.nct_id, oa.date
+  )
+
+  SELECT
+      t.timestamp,
+      fs.facility_id,
+      SUM(tr.is_successful)/COUNT(tr.is_successful) AS success_rate
+  FROM timestamps t
+  LEFT JOIN TRIAL_INFO tr
+  LEFT JOIN facilities_studies fs ON fs.nct_id = tr.nct_id
+  ON tr.date > t.timestamp
+      and tr.date <= t.timestamp + INTERVAL '{timedelta}'
+  WHERE fs.facility_id is not null
+  GROUP BY t.timestamp, fs.facility_id;
+manifest_version: 1

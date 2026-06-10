@@ -1,0 +1,7 @@
+name: studies-has_dmc
+kind: autocomplete
+task_type: binary_classification
+description: Predict the `has_dmc` column of the `studies` table.
+entity_table: studies
+target_col: has_dmc
+manifest_version: 1

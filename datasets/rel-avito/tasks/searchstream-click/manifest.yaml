@@ -1,0 +1,7 @@
+name: searchstream-click
+kind: autocomplete
+task_type: binary_classification
+description: Predict the `IsClick` column of the `SearchStream` table.
+entity_table: SearchStream
+target_col: IsClick
+manifest_version: 1

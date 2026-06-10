@@ -1,0 +1,11 @@
+name: user-churn
+kind: external
+task_type: binary_classification
+description: Predict whether a user will give a beer rating in the next 90 days.
+entity_table: users
+entity_col: user_id
+target_col: user_churn
+time_col: timestamp
+timedelta: 90 days
+sql: "\n            SELECT\n                t.timestamp,\n                u.user_id AS user_id,\n                CAST(\n                    NOT EXISTS (\n                        SELECT 1\n                        FROM beer_ratings\n                        WHERE\n                            beer_ratings.user_id = u.user_id\n                            AND beer_ratings.created_at > t.timestamp\n                            AND beer_ratings.created_at <= t.timestamp + INTERVAL '{timedelta}'\n                    ) AS INTEGER\n                ) AS user_churn\n            FROM\n                timestamps t,\n                users u\n            WHERE\n                EXISTS (\n                    SELECT 1\n                    FROM beer_ratings AS br2\n                    WHERE\n                        br2.user_id = u.user_id\n                        AND br2.created_at > t.timestamp - INTERVAL '{timedelta}'\n                        AND br2.created_at <= t.timestamp\n                )\n            GROUP BY\n                t.timestamp,\n                u.user_id\n            "
+manifest_version: 1

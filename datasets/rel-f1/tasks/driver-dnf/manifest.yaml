@@ -1,7 +1,7 @@
 name: driver-dnf
 kind: forecast
 task_type: binary_classification
-description: Predict whether each driver will fail to finish (DNF) a race in the next month.
+description: Predict the if each driver will DNF (not finish) a race in the next 1 month.
 entity_table: drivers
 entity_col: driverId
 target_col: did_not_finish

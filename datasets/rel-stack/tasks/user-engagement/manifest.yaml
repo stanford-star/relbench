@@ -1,0 +1,11 @@
+name: user-engagement
+kind: forecast
+task_type: binary_classification
+description: Predict if a user will make any votes/posts/comments in the next 2 years.
+entity_table: users
+entity_col: OwnerUserId
+target_col: contribution
+time_col: timestamp
+timedelta: 91 days
+sql: "\n            WITH\n            ALL_ENGAGEMENT AS (\n                SELECT\n                    p.id,\n                    p.owneruserid as userid,\n                    p.creationdate\n                FROM\n                    posts p\n                UNION\n                SELECT\n                    v.id,\n                    v.userid,\n                    v.creationdate\n                FROM\n                    votes v\n                UNION\n                SELECT\n                    c.id,\n                    c.userid,\n                    c.creationdate\n                FROM\n                    comments c\n            ),\n\n            ACTIVE_USERS AS (\n                 SELECT\n                    t.timestamp,\n                    u.id,\n                    count(distinct a.id) as n_engagement\n                FROM timestamps t\n                CROSS JOIN users u\n                LEFT JOIN all_engagement a\n                ON u.id = a.UserId\n                    and a.CreationDate <= t.timestamp\n                WHERE u.id != -1\n                GROUP BY t.timestamp, u.id\n             )\n                SELECT\n                    u.timestamp,\n                    u.id as OwnerUserId,\n                    IF(count(distinct a.id) >= 1, 1, 0) as contribution\n                FROM\n                    active_users u\n                LEFT JOIN\n                    all_engagement a\n                ON\n                    u.id = a.UserId AND\n                    a.CreationDate > u.timestamp AND\n                    a.CreationDate <= u.timestamp + INTERVAL '{timedelta}'\n                where\n                    u.n_engagement >= 1\n                GROUP BY\n                    u.timestamp, u.id\n            ;\n\n            "
+manifest_version: 1

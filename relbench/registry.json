@@ -1,7 +1,47 @@
 {
-  "rel-f1": {
+  "rel-arxiv": {
+    "path": "rel-arxiv",
+    "repo_id": "relbench/v2",
+    "revision": "d1cf3ca3c5b13c77b85d86f876d1093499d69a78"
+  },
+  "rel-avito": {
+    "path": "rel-avito",
     "repo_id": "relbench/v1",
-    "revision": "40c26f87fff3b44496d0f354d763167923a5e549",
-    "path": "rel-f1"
+    "revision": "78b6b8fe76277f8d41a10a77ede15e9d5d19fe6b"
+  },
+  "rel-event": {
+    "path": "rel-event",
+    "repo_id": "relbench/v1",
+    "revision": "94a7bfadc335bdfc16037ee4040b2c3fb1a31273"
+  },
+  "rel-f1": {
+    "path": "rel-f1",
+    "repo_id": "relbench/v1",
+    "revision": "9c5f96c66cbb540f518893c02629236287af976a"
+  },
+  "rel-hm": {
+    "path": "rel-hm",
+    "repo_id": "relbench/v1",
+    "revision": "ff824d968386fac8098c9a7c5789db6b7bc2eeb1"
+  },
+  "rel-ratebeer": {
+    "path": "rel-ratebeer",
+    "repo_id": "relbench/v2",
+    "revision": "e0119630ffcd50284d6d05b6d77b66e38594e928"
+  },
+  "rel-salt": {
+    "path": "rel-salt",
+    "repo_id": "relbench/v2",
+    "revision": "e90eab0ab2176a947d315d4cb4115a06eccf62fe"
+  },
+  "rel-stack": {
+    "path": "rel-stack",
+    "repo_id": "relbench/v1",
+    "revision": "5e8aa4672a4aeadd05b03671d2b07aedf2489098"
+  },
+  "rel-trial": {
+    "path": "rel-trial",
+    "repo_id": "relbench/v1",
+    "revision": "4621df08d7c17f5b4af9a2b7a7334d1a07918570"
   }
 }

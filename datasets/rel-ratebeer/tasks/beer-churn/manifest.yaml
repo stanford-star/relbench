@@ -1,0 +1,11 @@
+name: beer-churn
+kind: external
+task_type: binary_classification
+description: Predict whether a beer will receive a rating in the next 90 days.
+entity_table: beers
+entity_col: beer_id
+target_col: rating_churn
+time_col: timestamp
+timedelta: 90 days
+sql: "\n            SELECT\n                t.timestamp,\n                b.beer_id AS beer_id,\n                CAST(\n                    NOT EXISTS (\n                        SELECT 1\n                        FROM beer_ratings\n                        WHERE\n                            beer_ratings.beer_id = b.beer_id\n                            AND beer_ratings.created_at > t.timestamp\n                            AND beer_ratings.created_at <= t.timestamp + INTERVAL '{timedelta}'\n                    ) AS INTEGER\n                ) AS rating_churn\n            FROM\n                timestamps t,\n                beers b\n            WHERE\n                EXISTS (\n                    SELECT 1\n                    FROM beer_ratings AS br2\n                    WHERE\n                        br2.beer_id = b.beer_id\n                        AND br2.created_at > t.timestamp - INTERVAL '{timedelta}'\n                        AND br2.created_at <= t.timestamp\n                )\n            GROUP BY\n                t.timestamp,\n                b.beer_id\n            "
+manifest_version: 1

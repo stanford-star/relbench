@@ -1,0 +1,11 @@
+name: ad-ctr
+kind: forecast
+task_type: regression
+description: Assuming the ad will be clicked in the next 4 days, predict the Click-Through- Rate (CTR) for each ad.
+entity_table: AdsInfo
+entity_col: AdID
+target_col: num_click
+time_col: timestamp
+timedelta: 4 days
+sql: "\n            SELECT\n                search_ads.AdID,\n                t.timestamp,\n                COALESCE(SUM(search_ads.isClick), 0) / COALESCE(COUNT(search_ads.SearchID), 1) AS num_click\n            FROM\n                timestamps t\n            LEFT JOIN (\n                AdsInfo\n                    LEFT JOIN\n                SearchStream\n                    ON\n                AdsInfo.AdID == SearchStream.AdID\n            ) search_ads\n            ON\n                search_ads.SearchDate > t.timestamp AND\n                search_ads.SearchDate <= t.timestamp + INTERVAL '{timedelta}'\n            GROUP BY\n                t.timestamp,\n                search_ads.AdID\n            HAVING\n                SUM(search_ads.isClick) > 0\n            "
+manifest_version: 1

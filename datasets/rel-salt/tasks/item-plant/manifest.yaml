@@ -1,0 +1,22 @@
+name: item-plant
+kind: autocomplete
+task_type: multiclass_classification
+description: Predict the `PLANT` column of the `salesdocumentitem` table.
+entity_table: salesdocumentitem
+target_col: PLANT
+remove_columns:
+- - salesdocument
+  - SALESOFFICE
+- - salesdocument
+  - SALESGROUP
+- - salesdocument
+  - CUSTOMERPAYMENTTERMS
+- - salesdocument
+  - SHIPPINGCONDITION
+- - salesdocument
+  - HEADERINCOTERMSCLASSIFICATION
+- - salesdocumentitem
+  - SHIPPINGPOINT
+- - salesdocumentitem
+  - ITEMINCOTERMSCLASSIFICATION
+manifest_version: 1

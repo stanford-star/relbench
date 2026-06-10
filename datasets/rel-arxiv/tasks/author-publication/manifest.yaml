@@ -1,0 +1,11 @@
+name: author-publication
+kind: forecast
+task_type: regression
+description: Predict how many papers an author will publish in the next six months.
+entity_table: authors
+entity_col: Author_ID
+target_col: publication_count
+time_col: date
+timedelta: 182 days
+sql: "\n            WITH author_pubs AS (\n                SELECT\n                    t.timestamp AS date,\n                    pa.Author_ID,\n                    COUNT(pa.Paper_ID) AS publication_count\n                FROM timestamps t\n                JOIN paperAuthors pa\n                    ON pa.Submission_Date > t.timestamp\n                    AND pa.Submission_Date <= t.timestamp + INTERVAL '{timedelta}'\n                GROUP BY t.timestamp, pa.Author_ID\n            )\n            SELECT date, Author_ID, publication_count FROM author_pubs;\n            "
+manifest_version: 1

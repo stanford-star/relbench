@@ -1,0 +1,20 @@
+name: rel-hm
+manifest_version: 1
+description: 'H&M e-commerce: customers, articles, and time-stamped purchase transactions.'
+val_timestamp: '2020-09-07'
+test_timestamp: '2020-09-14'
+tables:
+  transactions:
+    pkey: null
+    time_col: t_dat
+    fkeys:
+      customer_id: customer
+      article_id: article
+  article:
+    pkey: article_id
+    time_col: null
+    fkeys: {}
+  customer:
+    pkey: customer_id
+    time_col: null
+    fkeys: {}

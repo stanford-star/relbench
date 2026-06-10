@@ -1,0 +1,7 @@
+name: searchinfo-isuserloggedon
+kind: autocomplete
+task_type: binary_classification
+description: Predict the `IsUserLoggedOn` column of the `SearchInfo` table.
+entity_table: SearchInfo
+target_col: IsUserLoggedOn
+manifest_version: 1

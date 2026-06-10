@@ -1,0 +1,14 @@
+name: user-place-liked
+kind: external
+task_type: link_prediction
+description: Predict the list of distinct places each active user rates at least 80.0 / 100.0 in the next 90 days.
+target_col: place_id
+time_col: timestamp
+src_entity_table: users
+src_entity_col: user_id
+dst_entity_table: places
+dst_entity_col: place_id
+eval_k: 10
+timedelta: 90 days
+sql: "\n            SELECT\n                t.timestamp,\n                pr.user_id,\n                LIST(DISTINCT pr.place_id) AS place_id\n            FROM\n                timestamps t\n            LEFT JOIN\n                place_ratings as pr\n                ON pr.created_at > t.timestamp\n                AND pr.created_at <= t.timestamp + INTERVAL '{timedelta}'\n            WHERE\n                pr.user_id IS NOT NULL and pr.place_id IS NOT NULL\n                AND pr.total_score >= 80\n                AND EXISTS (\n                    SELECT 1\n                    FROM place_ratings as pr2\n                    WHERE pr2.user_id = pr.user_id\n                    AND pr2.created_at > t.timestamp - INTERVAL '{timedelta}'\n                    AND pr2.created_at <= t.timestamp\n                )\n                OR EXISTS (\n                    SELECT 1\n                    FROM beer_ratings as br\n                    WHERE br.user_id = pr.user_id\n                    AND br.created_at > t.timestamp - INTERVAL '{timedelta}'\n                    AND br.created_at <= t.timestamp\n                )\n            GROUP BY\n                t.timestamp,\n                pr.user_id\n            "
+manifest_version: 1

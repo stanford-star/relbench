@@ -1,0 +1,14 @@
+name: user-beer-liked
+kind: external
+task_type: link_prediction
+description: Predict the list of distinct beers each active user rates at least 4.0 / 5.0 in the next 90 days.
+target_col: beer_id
+time_col: timestamp
+src_entity_table: users
+src_entity_col: user_id
+dst_entity_table: beers
+dst_entity_col: beer_id
+eval_k: 10
+timedelta: 90 days
+sql: "\n            SELECT\n                t.timestamp,\n                br.user_id,\n                LIST(DISTINCT br.beer_id) AS beer_id\n            FROM\n                timestamps t\n            LEFT JOIN\n                beer_ratings as br\n                ON br.created_at > t.timestamp\n                AND br.created_at <= t.timestamp + INTERVAL '{timedelta}'\n            WHERE\n                br.user_id IS NOT NULL and br.beer_id IS NOT NULL\n                AND br.total_score >= 4.0\n                AND EXISTS (\n                    SELECT 1\n                    FROM beer_ratings as br2\n                    WHERE br2.user_id = br.user_id\n                    AND br2.created_at > t.timestamp - INTERVAL '{timedelta}'\n                    AND br2.created_at <= t.timestamp\n                )\n            GROUP BY\n                t.timestamp,\n                br.user_id\n            "
+manifest_version: 1

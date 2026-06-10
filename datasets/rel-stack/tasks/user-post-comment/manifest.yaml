@@ -1,0 +1,14 @@
+name: user-post-comment
+kind: forecast
+task_type: link_prediction
+description: Predict a list of existing posts that a user will comment in the next two years.
+target_col: PostId
+time_col: timestamp
+src_entity_table: users
+src_entity_col: UserId
+dst_entity_table: posts
+dst_entity_col: PostId
+eval_k: 100
+timedelta: 91 days
+sql: "\n            SELECT\n                t.timestamp,\n                c.UserId as UserId,\n                LIST(DISTINCT p.id) AS PostId\n            FROM\n                timestamps t\n            LEFT JOIN\n                posts p\n            ON\n                p.CreationDate <= t.timestamp\n            LEFT JOIN\n                comments c\n            ON\n                p.id = c.PostId AND\n                c.CreationDate > t.timestamp AND\n                c.CreationDate <= t.timestamp + INTERVAL '{timedelta}'\n            WHERE\n                c.UserId is not null AND\n                p.owneruserid != -1 AND\n                p.owneruserid is not null\n            GROUP BY\n                t.timestamp,\n                c.UserId\n            "
+manifest_version: 1

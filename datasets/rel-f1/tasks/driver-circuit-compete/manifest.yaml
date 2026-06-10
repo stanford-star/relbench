@@ -1,7 +1,7 @@
 name: driver-circuit-compete
 kind: forecast
 task_type: link_prediction
-description: Predict which circuits a driver will compete on in the next year.
+description: Predict on which circuits a driver will compete in the next 1 year.
 target_col: circuitId
 time_col: date
 src_entity_table: drivers

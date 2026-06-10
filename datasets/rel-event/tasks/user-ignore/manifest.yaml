@@ -1,0 +1,11 @@
+name: user-ignore
+kind: forecast
+task_type: binary_classification
+description: Predict whether a user will ignore more than 2 event invitations in the next 7 days.
+entity_table: users
+entity_col: user
+target_col: target
+time_col: timestamp
+timedelta: 7 days
+sql: "SELECT\n                    t.timestamp AS timestamp,\n                    CAST(event_attendees.user_id AS BIGINT) AS user,\n                    CASE\n                        WHEN SUM(CASE WHEN event_attendees.status = 'invited' THEN 1 ELSE 0 END) > 2 THEN 1\n                        ELSE 0\n                    END AS target\n                FROM\n                    timestamps t\n                LEFT JOIN\n                    event_attendees\n                ON\n                    event_attendees.start_time > t.timestamp AND\n                    event_attendees.start_time <= t.timestamp + INTERVAL '{timedelta}'\n                WHERE\n                    event_attendees.user_id IS NOT NULL\n                GROUP BY\n                    t.timestamp,\n                    event_attendees.user_id\n            "
+manifest_version: 1

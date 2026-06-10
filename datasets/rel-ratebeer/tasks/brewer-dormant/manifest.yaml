@@ -1,0 +1,11 @@
+name: brewer-dormant
+kind: external
+task_type: binary_classification
+description: Predict whether a brewer will release zero beers in the next 365 days.
+entity_table: brewers
+entity_col: brewer_id
+target_col: dormant
+time_col: timestamp
+timedelta: 365 days
+sql: "\n            SELECT\n                t.timestamp,\n                brew.brewer_id AS brewer_id,\n                CAST(\n                    NOT EXISTS (\n                        SELECT 1\n                        FROM beers\n                        WHERE\n                            beers.brewer_id = brew.brewer_id\n                            AND beers.created_at > t.timestamp\n                            AND beers.created_at <= t.timestamp + INTERVAL '{timedelta}'\n                    ) AS INTEGER\n                ) AS dormant\n            FROM\n                timestamps t,\n                brewers brew\n            WHERE\n                EXISTS (\n                    SELECT 1\n                    FROM beers AS b2\n                    WHERE\n                        b2.brewer_id = brew.brewer_id\n                        AND b2.created_at > t.timestamp - INTERVAL '{timedelta}'\n                        AND b2.created_at <= t.timestamp\n                )\n            GROUP BY\n                t.timestamp,\n                brew.brewer_id\n            "
+manifest_version: 1

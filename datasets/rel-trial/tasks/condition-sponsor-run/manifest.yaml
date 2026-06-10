@@ -1,0 +1,24 @@
+name: condition-sponsor-run
+kind: forecast
+task_type: link_prediction
+description: Predict whether this condition will have which sponsors.
+target_col: sponsor_id
+time_col: timestamp
+src_entity_table: conditions
+src_entity_col: condition_id
+dst_entity_table: sponsors
+dst_entity_col: sponsor_id
+eval_k: 10
+timedelta: 365 days
+sql: |-
+  SELECT
+      t.timestamp,
+      cs.condition_id,
+      LIST(DISTINCT ss.sponsor_id) AS sponsor_id
+  FROM timestamps t
+  LEFT JOIN conditions_studies cs
+  LEFT JOIN sponsors_studies ss ON ss.nct_id = cs.nct_id
+  ON cs.date > t.timestamp
+      and cs.date <= t.timestamp + INTERVAL '{timedelta}'
+  GROUP BY t.timestamp, cs.condition_id;
+manifest_version: 1

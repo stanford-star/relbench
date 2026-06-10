@@ -1,0 +1,10 @@
+name: event_interest-interested
+kind: autocomplete
+task_type: binary_classification
+description: Predict the `interested` column of the `event_interest` table.
+entity_table: event_interest
+target_col: interested
+remove_columns:
+- - event_interest
+  - not_interested
+manifest_version: 1

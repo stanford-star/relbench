@@ -1,0 +1,7 @@
+name: users-birthyear
+kind: autocomplete
+task_type: regression
+description: Predict the `birthyear` column of the `users` table.
+entity_table: users
+target_col: birthyear
+manifest_version: 1

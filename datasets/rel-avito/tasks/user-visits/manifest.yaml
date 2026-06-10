@@ -1,0 +1,11 @@
+name: user-visits
+kind: forecast
+task_type: binary_classification
+description: Predict whether each customer will visit more than one ad in the next 4 days.
+entity_table: UserInfo
+entity_col: UserID
+target_col: num_click
+time_col: timestamp
+timedelta: 4 days
+sql: "\n            SELECT\n                visit_ads.UserID,\n                t.timestamp,\n                COALESCE(COUNT(DISTINCT visit_ads.AdID), 0) > 1 AS num_click\n            FROM\n                timestamps t\n            LEFT JOIN\n            (\n                    UserInfo\n                LEFT JOIN\n                    VisitStream\n                ON\n                    UserInfo.UserID == VisitStream.UserID\n            ) visit_ads\n            ON\n                visit_ads.ViewDate > t.timestamp AND\n                visit_ads.ViewDate <= t.timestamp + INTERVAL '{timedelta}'\n            GROUP BY\n                t.timestamp,\n                visit_ads.UserID\n            "
+manifest_version: 1

@@ -36,7 +36,17 @@ def dataset_card(
     manifest: DatasetManifest, tasks: Optional[Iterable[TaskManifest]] = None
 ) -> str:
     r"""Return README.md content (dataset card) with the schema diagram and task table."""
-    parts = [f"# {manifest.name}", ""]
+    parts = [
+        "---",
+        "tags:",
+        "- relbench",
+        "- relational-deep-learning",
+        f"pretty_name: {manifest.name}",
+        "---",
+        "",
+        f"# {manifest.name}",
+        "",
+    ]
     if manifest.description:
         parts += [manifest.description.strip(), ""]
     parts += [

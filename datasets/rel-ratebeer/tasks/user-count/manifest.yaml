@@ -1,0 +1,11 @@
+name: user-count
+kind: external
+task_type: regression
+description: Predict the number of beer ratings that a user will give in the next 90 days.
+entity_table: users
+entity_col: user_id
+target_col: num_ratings
+time_col: timestamp
+timedelta: 90 days
+sql: "\n            SELECT\n                t.timestamp,\n                u.user_id,\n                (\n                    SELECT COUNT(*)\n                    FROM beer_ratings br\n                    WHERE br.user_id = u.user_id\n                    AND br.created_at >  t.timestamp\n                    AND br.created_at <= t.timestamp + INTERVAL '{timedelta}'\n                ) AS num_ratings\n            FROM timestamps t\n            CROSS JOIN users u\n            WHERE\n                EXISTS (\n                    SELECT 1\n                    FROM beer_ratings AS br2\n                    WHERE br2.user_id = u.user_id\n                    AND br2.created_at > t.timestamp - INTERVAL '{timedelta}'\n                    AND br2.created_at <= t.timestamp\n                )\n            "
+manifest_version: 1

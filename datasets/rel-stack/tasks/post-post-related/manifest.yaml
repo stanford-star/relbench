@@ -1,0 +1,14 @@
+name: post-post-related
+kind: forecast
+task_type: link_prediction
+description: Predict a list of existing posts that users will link a given post to in the next two years.
+target_col: postLinksIdList
+time_col: timestamp
+src_entity_table: posts
+src_entity_col: PostId
+dst_entity_table: posts
+dst_entity_col: postLinksIdList
+eval_k: 100
+timedelta: 91 days
+sql: "\n                SELECT\n                    t.timestamp,\n                    pl.PostId as PostId,\n                    LIST(DISTINCT pl.RelatedPostId) AS postLinksIdList\n                FROM\n                    timestamps t\n                LEFT JOIN\n                    postLinks pl\n                ON\n                    pl.CreationDate > t.timestamp AND\n                    pl.CreationDate <= t.timestamp + INTERVAL '{timedelta}'\n                LEFT JOIN\n                    posts p1\n                ON\n                    pl.PostId = p1.Id\n                LEFT JOIN\n                    posts p2\n                ON\n                    pl.RelatedPostId = p2.Id\n                WHERE\n                    pl.PostId IS NOT NULL AND\n                    pl.RelatedPostId IS NOT NULL AND\n                    p1.CreationDate <= t.timestamp AND\n                    p2.CreationDate <= t.timestamp\n                GROUP BY\n                    t.timestamp,\n                    pl.PostId;\n            "
+manifest_version: 1

@@ -1,0 +1,28 @@
+name: rel-salt
+manifest_version: 1
+description: 'SAP SALT sales documents: sales orders, line items, customers, and addresses.'
+val_timestamp: '2020-02-01'
+test_timestamp: '2020-07-01'
+tables:
+  salesdocumentitem:
+    pkey: ID
+    time_col: CREATIONTIMESTAMP
+    fkeys:
+      SALESDOCUMENT: salesdocument
+      SOLDTOPARTY: customer
+      SHIPTOPARTY: customer
+      BILLTOPARTY: customer
+      PAYERPARTY: customer
+  salesdocument:
+    pkey: SALESDOCUMENT
+    time_col: CREATIONTIMESTAMP
+    fkeys: {}
+  address:
+    pkey: ADDRESSID
+    time_col: null
+    fkeys: {}
+  customer:
+    pkey: CUSTOMER
+    time_col: null
+    fkeys:
+      ADDRESSID: address

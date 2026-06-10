@@ -1,7 +1,7 @@
 name: results-position
 kind: autocomplete
 task_type: regression
-description: Predict the finishing position recorded in each result row.
+description: Predict the `position` column of the `results` table.
 entity_table: results
 target_col: position
 remove_columns:

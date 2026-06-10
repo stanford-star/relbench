@@ -1,0 +1,81 @@
+name: rel-trial
+manifest_version: 1
+description: 'ClinicalTrials.gov clinical trials: studies, outcomes, adverse events, eligibilities, sponsors, conditions, and facilities.'
+val_timestamp: '2020-01-01'
+test_timestamp: '2021-01-01'
+tables:
+  conditions_studies:
+    pkey: id
+    time_col: date
+    fkeys:
+      nct_id: studies
+      condition_id: conditions
+  interventions:
+    pkey: intervention_id
+    time_col: null
+    fkeys: {}
+  drop_withdrawals:
+    pkey: id
+    time_col: date
+    fkeys:
+      nct_id: studies
+  outcome_analyses:
+    pkey: id
+    time_col: date
+    fkeys:
+      nct_id: studies
+      outcome_id: outcomes
+  sponsors_studies:
+    pkey: id
+    time_col: date
+    fkeys:
+      nct_id: studies
+      sponsor_id: sponsors
+  facilities_studies:
+    pkey: id
+    time_col: date
+    fkeys:
+      nct_id: studies
+      facility_id: facilities
+  eligibilities:
+    pkey: id
+    time_col: date
+    fkeys:
+      nct_id: studies
+  interventions_studies:
+    pkey: id
+    time_col: date
+    fkeys:
+      nct_id: studies
+      intervention_id: interventions
+  outcomes:
+    pkey: id
+    time_col: date
+    fkeys:
+      nct_id: studies
+  facilities:
+    pkey: facility_id
+    time_col: null
+    fkeys: {}
+  reported_event_totals:
+    pkey: id
+    time_col: date
+    fkeys:
+      nct_id: studies
+  sponsors:
+    pkey: sponsor_id
+    time_col: null
+    fkeys: {}
+  studies:
+    pkey: nct_id
+    time_col: start_date
+    fkeys: {}
+  conditions:
+    pkey: condition_id
+    time_col: null
+    fkeys: {}
+  designs:
+    pkey: id
+    time_col: date
+    fkeys:
+      nct_id: studies

@@ -1,0 +1,36 @@
+name: study-adverse
+kind: forecast
+task_type: regression
+description: Predict the number of affected patients with severe advsere events/death for the trial in the next 1 year.
+entity_table: studies
+entity_col: nct_id
+target_col: num_of_adverse_events
+time_col: timestamp
+timedelta: 365 days
+sql: |-
+  WITH TRIAL_INFO AS (
+      SELECT
+          r.nct_id,
+          r.event_type,
+          r.subjects_affected,
+          r.date,
+          s.start_date
+      FROM reported_event_totals r
+      LEFT JOIN studies s
+      ON r.nct_id = s.nct_id
+      WHERE r.event_type = 'serious' or r.event_type = 'deaths'
+      and r.subjects_affected is not null
+  )
+
+  SELECT
+      t.timestamp,
+      tr.nct_id,
+      sum(tr.subjects_affected) AS num_of_adverse_events
+  FROM timestamps t
+  LEFT JOIN TRIAL_INFO tr
+  ON tr.start_date <= t.timestamp
+      and tr.date > t.timestamp
+      and tr.date <= t.timestamp + INTERVAL '{timedelta}'
+  WHERE tr.nct_id is not null and tr.subjects_affected is not null
+  GROUP BY t.timestamp, tr.nct_id;
+manifest_version: 1

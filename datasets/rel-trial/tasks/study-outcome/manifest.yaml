@@ -1,0 +1,42 @@
+name: study-outcome
+kind: forecast
+task_type: binary_classification
+description: Predict if the trials in the next 1 year will achieve its primary outcome.
+entity_table: studies
+entity_col: nct_id
+target_col: outcome
+time_col: timestamp
+timedelta: 365 days
+sql: |-
+  WITH TRIAL_INFO AS (
+      SELECT
+          oa.nct_id,
+          oa.p_value,
+          s.start_date,
+          oa.date
+      FROM outcome_analyses oa
+      LEFT JOIN outcomes o
+      ON oa.outcome_id = o.id
+      LEFT JOIN studies s
+      ON s.nct_id = o.nct_id
+      where (oa.p_value_modifier is null or oa.p_value_modifier != '>')
+      and oa.p_value >=0
+      and oa.p_value <=1
+      and o.outcome_type = 'Primary'
+  )
+
+  SELECT
+      t.timestamp,
+      tr.nct_id,
+      CASE
+          WHEN MIN(tr.p_value) <= 0.05 THEN 1
+          ELSE 0
+      END AS outcome
+  FROM timestamps t
+  LEFT JOIN TRIAL_INFO tr
+  ON tr.start_date <= t.timestamp
+      and tr.date > t.timestamp
+      and tr.date <= t.timestamp + INTERVAL '{timedelta}'
+  WHERE tr.nct_id is not null
+  GROUP BY t.timestamp, tr.nct_id;
+manifest_version: 1

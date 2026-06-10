@@ -1,7 +1,7 @@
 name: driver-top3
 kind: forecast
 task_type: binary_classification
-description: Predict whether each driver will qualify in the top 3 for a race in the next month.
+description: Predict if each driver will qualify in the top-3 for a race within the next 1 month.
 entity_table: drivers
 entity_col: driverId
 target_col: qualifying
