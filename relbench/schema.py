@@ -148,7 +148,7 @@ def dataset_card(
         f'task = relbench.load_task("{manifest.name}", "<task>")',
         "```",
         "",
-        "Manifest layout (`manifest.yaml` + plain parquet); see the RelBench "
-        "[CONTRIBUTING guide](https://github.com/snap-stanford/relbench/blob/main/CONTRIBUTING.md).",
+        "Manifest layout (`manifest.yaml` + plain parquet); see "
+        "[Contributing](https://github.com/snap-stanford/relbench#contributing) in the RelBench README.",
     ]
     return "\n".join(parts) + "\n"
