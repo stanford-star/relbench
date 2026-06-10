@@ -11,40 +11,9 @@ arXiv scholarly papers: papers, authors, citations, and subject categories.
 
 ## Schema
 
-```mermaid
-erDiagram
-    paperCategories {
-        key Paper_ID FK
-        key Category_ID FK
-        datetime Submission_Date
-    }
-    authors {
-        key Author_ID PK
-    }
-    categories {
-        key Category_ID PK
-    }
-    citations {
-        key Paper_ID FK
-        key References_Paper_ID FK
-        datetime Submission_Date
-    }
-    papers {
-        key Paper_ID PK
-        datetime Submission_Date
-    }
-    paperAuthors {
-        key Paper_ID FK
-        key Author_ID FK
-        datetime Submission_Date
-    }
-    paperCategories }o--|| papers : Paper_ID
-    paperCategories }o--|| categories : Category_ID
-    citations }o--|| papers : Paper_ID
-    citations }o--|| papers : References_Paper_ID
-    paperAuthors }o--|| papers : Paper_ID
-    paperAuthors }o--|| authors : Author_ID
-```
+![schema diagram](schema.svg)
+
+Open [`schema.svg`](schema.svg) for a zoomable view of the foreign-key graph (PK = primary key, FK = foreign key).
 
 Splits: validation `2022-01-01`, test `2023-01-01` (rows up to a split's timestamp are the inputs for that split).
 

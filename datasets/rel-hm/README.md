@@ -11,22 +11,9 @@ H&M e-commerce: customers, articles, and time-stamped purchase transactions.
 
 ## Schema
 
-```mermaid
-erDiagram
-    transactions {
-        key customer_id FK
-        key article_id FK
-        datetime t_dat
-    }
-    article {
-        key article_id PK
-    }
-    customer {
-        key customer_id PK
-    }
-    transactions }o--|| customer : customer_id
-    transactions }o--|| article : article_id
-```
+![schema diagram](schema.svg)
+
+Open [`schema.svg`](schema.svg) for a zoomable view of the foreign-key graph (PK = primary key, FK = foreign key).
 
 Splits: validation `2020-09-07`, test `2020-09-14` (rows up to a split's timestamp are the inputs for that split).
 

@@ -11,39 +11,9 @@ Event recommendation: users, events, attendance records, and social and interest
 
 ## Schema
 
-```mermaid
-erDiagram
-    user_friends {
-        key user FK
-        key friend FK
-    }
-    event_interest {
-        key event FK
-        key user FK
-        datetime timestamp
-    }
-    event_attendees {
-        key event FK
-        key user_id FK
-        datetime start_time
-    }
-    users {
-        key user_id PK
-        datetime joinedAt
-    }
-    events {
-        key event_id PK
-        key user_id FK
-        datetime start_time
-    }
-    user_friends }o--|| users : user
-    user_friends }o--|| users : friend
-    event_interest }o--|| events : event
-    event_interest }o--|| users : user
-    event_attendees }o--|| events : event
-    event_attendees }o--|| users : user_id
-    events }o--|| users : user_id
-```
+![schema diagram](schema.svg)
+
+Open [`schema.svg`](schema.svg) for a zoomable view of the foreign-key graph (PK = primary key, FK = foreign key).
 
 Splits: validation `2012-11-21`, test `2012-11-29` (rows up to a split's timestamp are the inputs for that split).
 

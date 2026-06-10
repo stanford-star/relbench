@@ -11,59 +11,9 @@ Stack Exchange Q&A: users, posts, comments, votes, badges, and post links.
 
 ## Schema
 
-```mermaid
-erDiagram
-    badges {
-        key Id PK
-        key UserId FK
-        datetime Date
-    }
-    votes {
-        key Id PK
-        key PostId FK
-        key UserId FK
-        datetime CreationDate
-    }
-    users {
-        key Id PK
-        datetime CreationDate
-    }
-    comments {
-        key Id PK
-        key UserId FK
-        key PostId FK
-        datetime CreationDate
-    }
-    posts {
-        key Id PK
-        key OwnerUserId FK
-        key ParentId FK
-        datetime CreationDate
-    }
-    postLinks {
-        key Id PK
-        key PostId FK
-        key RelatedPostId FK
-        datetime CreationDate
-    }
-    postHistory {
-        key Id PK
-        key PostId FK
-        key UserId FK
-        datetime CreationDate
-    }
-    badges }o--|| users : UserId
-    votes }o--|| posts : PostId
-    votes }o--|| users : UserId
-    comments }o--|| users : UserId
-    comments }o--|| posts : PostId
-    posts }o--|| users : OwnerUserId
-    posts }o--|| posts : ParentId
-    postLinks }o--|| posts : PostId
-    postLinks }o--|| posts : RelatedPostId
-    postHistory }o--|| posts : PostId
-    postHistory }o--|| users : UserId
-```
+![schema diagram](schema.svg)
+
+Open [`schema.svg`](schema.svg) for a zoomable view of the foreign-key graph (PK = primary key, FK = foreign key).
 
 Splits: validation `2020-10-01`, test `2021-01-01` (rows up to a split's timestamp are the inputs for that split).
 

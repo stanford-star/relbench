@@ -17,7 +17,7 @@ from descriptions import (  # noqa: E402
 )
 
 from relbench.manifest import DatasetManifest, TaskManifest  # noqa: E402
-from relbench.schema import dataset_card  # noqa: E402
+from relbench.schema import dataset_card, render_schema_svg  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DATASETS = REPO_ROOT / "datasets"
@@ -50,6 +50,7 @@ def refresh(name: str, do_push: bool) -> None:
 
     m.save(d / "manifest.yaml")
     (d / "manifest.json").unlink(missing_ok=True)
+    render_schema_svg(m, d / "schema.svg")
     (d / "README.md").write_text(dataset_card(m, tasks))
     n_desc = sum(1 for t in tasks if t.description)
     print(f"[{name}] yaml + card ready ({len(tasks)} tasks, {n_desc} described, "

@@ -11,56 +11,9 @@ Avito online classifieds: users, ads, search queries, and impression / click / v
 
 ## Schema
 
-```mermaid
-erDiagram
-    VisitStream {
-        key UserID FK
-        key AdID FK
-        datetime ViewDate
-    }
-    AdsInfo {
-        key AdID PK
-        key LocationID FK
-        key CategoryID FK
-    }
-    SearchStream {
-        key SearchID FK
-        key AdID FK
-        datetime SearchDate
-    }
-    SearchInfo {
-        key SearchID PK
-        key UserID FK
-        key LocationID FK
-        key CategoryID FK
-        datetime SearchDate
-    }
-    Category {
-        key CategoryID PK
-    }
-    PhoneRequestsStream {
-        key UserID FK
-        key AdID FK
-        datetime PhoneRequestDate
-    }
-    UserInfo {
-        key UserID PK
-    }
-    Location {
-        key LocationID PK
-    }
-    VisitStream }o--|| UserInfo : UserID
-    VisitStream }o--|| AdsInfo : AdID
-    AdsInfo }o--|| Location : LocationID
-    AdsInfo }o--|| Category : CategoryID
-    SearchStream }o--|| SearchInfo : SearchID
-    SearchStream }o--|| AdsInfo : AdID
-    SearchInfo }o--|| UserInfo : UserID
-    SearchInfo }o--|| Location : LocationID
-    SearchInfo }o--|| Category : CategoryID
-    PhoneRequestsStream }o--|| UserInfo : UserID
-    PhoneRequestsStream }o--|| AdsInfo : AdID
-```
+![schema diagram](schema.svg)
+
+Open [`schema.svg`](schema.svg) for a zoomable view of the foreign-key graph (PK = primary key, FK = foreign key).
 
 Splits: validation `2015-05-08`, test `2015-05-14` (rows up to a split's timestamp are the inputs for that split).
 

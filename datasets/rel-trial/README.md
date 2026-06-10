@@ -11,95 +11,9 @@ ClinicalTrials.gov clinical trials: studies, outcomes, adverse events, eligibili
 
 ## Schema
 
-```mermaid
-erDiagram
-    conditions_studies {
-        key id PK
-        key nct_id FK
-        key condition_id FK
-        datetime date
-    }
-    interventions {
-        key intervention_id PK
-    }
-    drop_withdrawals {
-        key id PK
-        key nct_id FK
-        datetime date
-    }
-    outcome_analyses {
-        key id PK
-        key nct_id FK
-        key outcome_id FK
-        datetime date
-    }
-    sponsors_studies {
-        key id PK
-        key nct_id FK
-        key sponsor_id FK
-        datetime date
-    }
-    facilities_studies {
-        key id PK
-        key nct_id FK
-        key facility_id FK
-        datetime date
-    }
-    eligibilities {
-        key id PK
-        key nct_id FK
-        datetime date
-    }
-    interventions_studies {
-        key id PK
-        key nct_id FK
-        key intervention_id FK
-        datetime date
-    }
-    outcomes {
-        key id PK
-        key nct_id FK
-        datetime date
-    }
-    facilities {
-        key facility_id PK
-    }
-    reported_event_totals {
-        key id PK
-        key nct_id FK
-        datetime date
-    }
-    sponsors {
-        key sponsor_id PK
-    }
-    studies {
-        key nct_id PK
-        datetime start_date
-    }
-    conditions {
-        key condition_id PK
-    }
-    designs {
-        key id PK
-        key nct_id FK
-        datetime date
-    }
-    conditions_studies }o--|| studies : nct_id
-    conditions_studies }o--|| conditions : condition_id
-    drop_withdrawals }o--|| studies : nct_id
-    outcome_analyses }o--|| studies : nct_id
-    outcome_analyses }o--|| outcomes : outcome_id
-    sponsors_studies }o--|| studies : nct_id
-    sponsors_studies }o--|| sponsors : sponsor_id
-    facilities_studies }o--|| studies : nct_id
-    facilities_studies }o--|| facilities : facility_id
-    eligibilities }o--|| studies : nct_id
-    interventions_studies }o--|| studies : nct_id
-    interventions_studies }o--|| interventions : intervention_id
-    outcomes }o--|| studies : nct_id
-    reported_event_totals }o--|| studies : nct_id
-    designs }o--|| studies : nct_id
-```
+![schema diagram](schema.svg)
+
+Open [`schema.svg`](schema.svg) for a zoomable view of the foreign-key graph (PK = primary key, FK = foreign key).
 
 Splits: validation `2020-01-01`, test `2021-01-01` (rows up to a split's timestamp are the inputs for that split).
 

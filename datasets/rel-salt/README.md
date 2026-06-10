@@ -11,35 +11,9 @@ SAP SALT sales documents: sales orders, line items, customers, and addresses.
 
 ## Schema
 
-```mermaid
-erDiagram
-    salesdocumentitem {
-        key ID PK
-        key SALESDOCUMENT FK
-        key SOLDTOPARTY FK
-        key SHIPTOPARTY FK
-        key BILLTOPARTY FK
-        key PAYERPARTY FK
-        datetime CREATIONTIMESTAMP
-    }
-    salesdocument {
-        key SALESDOCUMENT PK
-        datetime CREATIONTIMESTAMP
-    }
-    address {
-        key ADDRESSID PK
-    }
-    customer {
-        key CUSTOMER PK
-        key ADDRESSID FK
-    }
-    salesdocumentitem }o--|| salesdocument : SALESDOCUMENT
-    salesdocumentitem }o--|| customer : SOLDTOPARTY
-    salesdocumentitem }o--|| customer : SHIPTOPARTY
-    salesdocumentitem }o--|| customer : BILLTOPARTY
-    salesdocumentitem }o--|| customer : PAYERPARTY
-    customer }o--|| address : ADDRESSID
-```
+![schema diagram](schema.svg)
+
+Open [`schema.svg`](schema.svg) for a zoomable view of the foreign-key graph (PK = primary key, FK = foreign key).
 
 Splits: validation `2020-02-01`, test `2020-07-01` (rows up to a split's timestamp are the inputs for that split).
 
