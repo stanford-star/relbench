@@ -1,6 +1,7 @@
 {
   "rel-f1": {
-    "repo_id": "relbench/rel-f1",
-    "revision": "8491fcf21ccd1e5ebc60e766a813e5afb02a6fd7"
+    "repo_id": "relbench/v1",
+    "revision": "40c26f87fff3b44496d0f354d763167923a5e549",
+    "path": "rel-f1"
   }
 }

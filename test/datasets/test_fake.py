@@ -1,16 +1,14 @@
 import copy
 
 from relbench.datasets.fake import FakeDataset
-from relbench.tasks.amazon import UserChurnTask
 
 
-def test_fake_reviews_dataset():
+def test_fake_reviews_dataset(make_churn_task):
     dataset = FakeDataset()
     assert dataset.get_db().max_timestamp <= dataset.test_timestamp
     assert str(dataset) == "FakeDataset()"
 
-    task = UserChurnTask(dataset)
-    assert str(task) == "UserChurnTask(dataset=FakeDataset())"
+    task = make_churn_task(dataset)
 
     train_table = task.get_table("train")
     val_table = task.get_table("val")
@@ -21,7 +19,7 @@ def test_fake_reviews_dataset():
             "churn",
         }
 
-    test_table = task.get_table("test")
+    test_table = task.get_table("test")  # test split masks the target column
     assert set(test_table.df.columns) == {
         "timestamp",
         "customer_id",

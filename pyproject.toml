@@ -16,7 +16,7 @@ requires-python=">=3.10"
 keywords=[]
 dependencies=[
 	"pandas",
-	"pooch",
+	"huggingface_hub",
 	"pyarrow",
 	"numpy",
 	"duckdb",

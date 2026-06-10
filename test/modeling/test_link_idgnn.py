@@ -15,10 +15,9 @@ from relbench.modeling.graph import get_link_train_table_input, make_pkey_fkey_g
 from relbench.modeling.loader import SparseTensor
 from relbench.modeling.nn import HeteroEncoder, HeteroGraphSAGE
 from relbench.modeling.utils import get_stype_proposal
-from relbench.tasks.amazon import UserItemPurchaseTask
 
 
-def test_link_train_fake_product_dataset(tmp_path):
+def test_link_train_fake_product_dataset(tmp_path, make_purchase_task):
     dataset = FakeDataset()
 
     data, col_stats_dict = make_pkey_fkey_graph(
@@ -39,7 +38,7 @@ def test_link_train_fake_product_dataset(tmp_path):
     id_awareness = torch.nn.Embedding(1, channels)
 
     # Ensure that neighbor loading works on train/val/test splits ############
-    task = UserItemPurchaseTask(dataset)
+    task = make_purchase_task(dataset)
     assert task.task_type == TaskType.LINK_PREDICTION
 
     train_table = task.get_table("train")

@@ -37,14 +37,21 @@ def is_registered(name: str) -> bool:
     return name in _registry()
 
 
-def resolve_repo(name: str) -> tuple[str, Optional[str]]:
-    r"""Return ``(repo_id, revision)`` for a registered name, or treat ``name`` as a
-    Hub repo id (``"org/dataset"``) with no pinned revision."""
+def resolve_repo(name: str) -> tuple[str, Optional[str], str]:
+    r"""Return ``(repo_id, revision, subdir)`` for ``name``.
+
+    Official datasets are grouped into family repos (e.g. ``relbench/v1`` holds
+    ``rel-f1/``, ``rel-amazon/`` ...; likewise ``relbench/dbinfer``, ``relbench/tgb``),
+    so a registry entry carries the family ``repo_id`` plus the in-repo ``path`` (the
+    dataset subdir, defaulting to the name). A bare ``"org/dataset"`` Hub repo id is
+    treated as a single-dataset repo with the manifest at its root (``subdir=""``).
+    """
     reg = _registry()
     if name in reg:
-        return reg[name]["repo_id"], reg[name].get("revision")
-    if "/" in name:  # looks like a Hub repo id
-        return name, None
+        entry = reg[name]
+        return entry["repo_id"], entry.get("revision"), entry.get("path", name)
+    if "/" in name:  # a Hub repo id whose root is the dataset
+        return name, None, ""
     raise KeyError(
         f"'{name}' is not a registered RelBench dataset (known: {sorted(reg)}) "
         f"and is not a 'org/name' Hub repo id. Pass a local path instead."
@@ -52,13 +59,18 @@ def resolve_repo(name: str) -> tuple[str, Optional[str]]:
 
 
 def download_dataset_dir(name: str, revision: Optional[str] = None) -> Path:
-    r"""Download a dataset repo from the Hub and return the local snapshot dir."""
+    r"""Download a dataset from its (possibly shared) Hub repo and return its local dir.
+
+    Only the dataset's subdir is fetched from a family repo, so loading ``rel-f1`` does
+    not pull every dataset in ``relbench/v1``.
+    """
     from huggingface_hub import snapshot_download
 
-    repo_id, pinned = resolve_repo(name)
+    repo_id, pinned, subdir = resolve_repo(name)
     local = snapshot_download(
         repo_id=repo_id,
         revision=revision or pinned,
         repo_type="dataset",
+        allow_patterns=[f"{subdir}/*"] if subdir else None,
     )
-    return Path(local)
+    return Path(local) / subdir if subdir else Path(local)
