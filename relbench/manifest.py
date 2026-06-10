@@ -4,7 +4,8 @@ A RelBench dataset on disk / on the Hugging Face Hub is a self-describing folder
 
     <dataset>/
         manifest.yaml                 # DatasetManifest: description + tables + fkey graph + splits
-        README.md                     # dataset card with a Mermaid schema diagram (HF renders it)
+        README.md                     # dataset card (links the schema.svg ER diagram)
+        schema.svg                    # entity-relationship diagram (see relbench.schema)
         db/<table>.parquet            # plain data, native column dtypes only
         tasks/<task>/
             manifest.yaml             # TaskManifest: description + spec (+ SQL for kind="forecast")

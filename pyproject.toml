@@ -54,9 +54,7 @@ tutorial=[
 	"marimo",
 ]
 schema=[
-	"sqlalchemy",
-	"sqlalchemy-schemadisplay",
-	"pydot",
+	"graphviz",
 ]
 
 [project.urls]

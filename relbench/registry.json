@@ -2,412 +2,412 @@
   "ctu-accidents": {
     "path": "ctu-accidents",
     "repo_id": "relbench/redelex",
-    "revision": "924167972ab0ea1361bca6c3afddf6e18561922a"
+    "revision": "5945cdcb3a7fe82cfacc8d41f00cbe539ea06828"
   },
   "ctu-adventureworks": {
     "path": "ctu-adventureworks",
     "repo_id": "relbench/redelex",
-    "revision": "ee24411d2b4f9cde2d5c7a2ee6a7a9093db69003"
+    "revision": "22e010b1cc7e17c124b47fe89daa43bcfd95507c"
   },
   "ctu-airline": {
     "path": "ctu-airline",
     "repo_id": "relbench/redelex",
-    "revision": "3caa243790d18f9072fbdae385b4120f0848cbcf"
+    "revision": "736230ea83ce4b54a4a5fb074c8431e418c8051c"
   },
   "ctu-atherosclerosis": {
     "path": "ctu-atherosclerosis",
     "repo_id": "relbench/redelex",
-    "revision": "f25f141b5e99eb919096b52364490009def92709"
+    "revision": "f39282e072127d1cf5ebe23b4fcc7a1181799124"
   },
   "ctu-basketballmen": {
     "path": "ctu-basketballmen",
     "repo_id": "relbench/redelex",
-    "revision": "5cd7c27c87d1a970ef2fdd1691a9725749ed8e3c"
+    "revision": "d28cdd632c2d611c7373c0519784f07c85a8907a"
   },
   "ctu-basketballwomen": {
     "path": "ctu-basketballwomen",
     "repo_id": "relbench/redelex",
-    "revision": "6380a2c494562bd9b167a100f5f96033b6088fa1"
+    "revision": "658c9ca4fcfe4aa7910a86302e93cce0715e6a6d"
   },
   "ctu-biodegradability": {
     "path": "ctu-biodegradability",
     "repo_id": "relbench/redelex",
-    "revision": "c4be460c482a78dcc9a11c06b6530e687232c44a"
+    "revision": "1d3ad8b55743f97a19c76d913d9305049a44e6a4"
   },
   "ctu-bupa": {
     "path": "ctu-bupa",
     "repo_id": "relbench/redelex",
-    "revision": "ed60f2cba7c8bac482b1e6f94f3fe4ec1983b08e"
+    "revision": "cf1cd82a152a33d1e30091c5091ffc01933fb8f4"
   },
   "ctu-carcinogenesis": {
     "path": "ctu-carcinogenesis",
     "repo_id": "relbench/redelex",
-    "revision": "f66569dd1be0fe0a7e6d7ddb5033d4a13915d3db"
+    "revision": "2c99431d126f7ecbeca7fedfd1edfb2c61537846"
   },
   "ctu-cde": {
     "path": "ctu-cde",
     "repo_id": "relbench/redelex",
-    "revision": "64929e98e7d9eeebcabdc806baa6a8d04daacad2"
+    "revision": "82159f4eb69673b2d32a434a883f244e9cbe7b10"
   },
   "ctu-chess": {
     "path": "ctu-chess",
     "repo_id": "relbench/redelex",
-    "revision": "f5ad40ed0dec4eabe189ced7902dfaa92014edce"
+    "revision": "c6545dd7f0aa33372aed19af5027d324334e2c24"
   },
   "ctu-classicmodels": {
     "path": "ctu-classicmodels",
     "repo_id": "relbench/redelex",
-    "revision": "2cfa801671bd0225924f661f07b08b054d60f404"
+    "revision": "0abefc7ed209a48c6703cb6372f77b71c4e16c03"
   },
   "ctu-cora": {
     "path": "ctu-cora",
     "repo_id": "relbench/redelex",
-    "revision": "0201c577825db966b024f8c8d8b1d5808b6793b2"
+    "revision": "f64d207adb573e3e57e17e8f60782719b0273f9a"
   },
   "ctu-countries": {
     "path": "ctu-countries",
     "repo_id": "relbench/redelex",
-    "revision": "6ab10af52a75200a3db72935caaab52db5161f00"
+    "revision": "29ad3a9cc9f340091ce12daa0b9b85bce6e15cb1"
   },
   "ctu-craftbeer": {
     "path": "ctu-craftbeer",
     "repo_id": "relbench/redelex",
-    "revision": "f1161d4e07d61849102552c989c104a535f1fd66"
+    "revision": "2bc92ba148faebe4c90dffbb5bfd4808a060ae2f"
   },
   "ctu-credit": {
     "path": "ctu-credit",
     "repo_id": "relbench/redelex",
-    "revision": "55eac291186133806ec6832de5be58c4cc871d95"
+    "revision": "239e9800a7aa8791738b894da7968520fc3e1b0a"
   },
   "ctu-dallas": {
     "path": "ctu-dallas",
     "repo_id": "relbench/redelex",
-    "revision": "9263e853d622a1c440727645697199a0b60832f1"
+    "revision": "d81b5f5b4eeb277f89c7f51ec7b0df5a12dc4fac"
   },
   "ctu-dcg": {
     "path": "ctu-dcg",
     "repo_id": "relbench/redelex",
-    "revision": "e8ccce72117e09cd8a0a3be7318ade164d7e5b01"
+    "revision": "e8c8f97e8f2b348e248bcd2a6be5f084ec478729"
   },
   "ctu-diabetes": {
     "path": "ctu-diabetes",
     "repo_id": "relbench/redelex",
-    "revision": "28625de9702bc2652827518deb1f8fefd1f8b3ae"
+    "revision": "fa80b6380d5c93ef02393aadb12512071fe6e8a9"
   },
   "ctu-dunur": {
     "path": "ctu-dunur",
     "repo_id": "relbench/redelex",
-    "revision": "140852d7ae5c50c6f24c1368686f5b8e612b8ef6"
+    "revision": "73c4c3a2c56bbd8dfe143757389055b8ebfeb1fc"
   },
   "ctu-elti": {
     "path": "ctu-elti",
     "repo_id": "relbench/redelex",
-    "revision": "a1f5d8608f701e7ba61aca26d5c7e11b9ceaf251"
+    "revision": "0993a70891054db30cbe1658bed359676dc56dff"
   },
   "ctu-employee": {
     "path": "ctu-employee",
     "repo_id": "relbench/redelex",
-    "revision": "d2fc866cd5a9c39d20a7a21c496f1d8143e41ac2"
+    "revision": "30e8dbc58f8e82f54029a92991ce0e2128aefe21"
   },
   "ctu-ergastf1": {
     "path": "ctu-ergastf1",
     "repo_id": "relbench/redelex",
-    "revision": "076b7366c8c7b0c16ece75d1f7c57a87b22d87d5"
+    "revision": "94f31801b59013645c744749d0c6740fc899dc0f"
   },
   "ctu-expenditures": {
     "path": "ctu-expenditures",
     "repo_id": "relbench/redelex",
-    "revision": "a111ca52c51cb8dc1371383422199903318c9643"
+    "revision": "6dcbae73456f17c630a9aa5b397a35a90bee7405"
   },
   "ctu-financial": {
     "path": "ctu-financial",
     "repo_id": "relbench/redelex",
-    "revision": "80f4ba3e3c769ad7e912a0bdaf8d83fd554c0b1e"
+    "revision": "e64a54e43859830837a21531ba9caff384d6b2b5"
   },
   "ctu-fnhk": {
     "path": "ctu-fnhk",
     "repo_id": "relbench/redelex",
-    "revision": "ec337c2afba42b8e65db2fba754dcd35a5e09829"
+    "revision": "50354500b1b693707d2a502e146d835c2e6b9ca0"
   },
   "ctu-ftp": {
     "path": "ctu-ftp",
     "repo_id": "relbench/redelex",
-    "revision": "603dc66ab83178c3b62cceb849d77286f847a69a"
+    "revision": "ab60035b145d49422cf99d04607b0a609fd5dbd0"
   },
   "ctu-geneea": {
     "path": "ctu-geneea",
     "repo_id": "relbench/redelex",
-    "revision": "7cde3b3a82fb3ad37831733df16caaa42c260c3f"
+    "revision": "55a7d0677becce10c201b87778ad42b4258197c9"
   },
   "ctu-genes": {
     "path": "ctu-genes",
     "repo_id": "relbench/redelex",
-    "revision": "c65357495c08db1901f40750bf79d717220ff65f"
+    "revision": "a8f61e896866eff2c78552b0e3194a7555fd246b"
   },
   "ctu-gosales": {
     "path": "ctu-gosales",
     "repo_id": "relbench/redelex",
-    "revision": "f7140a663273da0521d6c54f709e30e80cb027ca"
+    "revision": "f80114ecdd7e21c80164282500e3ce2b6ba1021b"
   },
   "ctu-grants": {
     "path": "ctu-grants",
     "repo_id": "relbench/redelex",
-    "revision": "743fb12f3a13d3d32061e201ed7afe5dd5f2d524"
+    "revision": "71cfaf81f4d69a63da70e6bb94b5a1c57363311b"
   },
   "ctu-hepatitis": {
     "path": "ctu-hepatitis",
     "repo_id": "relbench/redelex",
-    "revision": "ced66f1ad8ecbe91ea9d383933d07381d3b4b818"
+    "revision": "8690d9a3537dba3187b7b1597b3d40d068fcbe36"
   },
   "ctu-hockey": {
     "path": "ctu-hockey",
     "repo_id": "relbench/redelex",
-    "revision": "cdaaa47e2129ff8d2b6ee280b7fc408c194cc78a"
+    "revision": "24f7eabbdf8bcb82bd91da0a4f0df8661f7c9f1e"
   },
   "ctu-imdb": {
     "path": "ctu-imdb",
     "repo_id": "relbench/redelex",
-    "revision": "7809b9bf22ddfa8673ce3f131d58dc86541fb8e0"
+    "revision": "89d2f63298ec5f5408cbf4a007bfcbd359d66f8c"
   },
   "ctu-lahman": {
     "path": "ctu-lahman",
     "repo_id": "relbench/redelex",
-    "revision": "deb558e2699fae0300b3014c4268995a4514d963"
+    "revision": "d09a347892851313e0b58ac32576da6574859478"
   },
   "ctu-legalacts": {
     "path": "ctu-legalacts",
     "repo_id": "relbench/redelex",
-    "revision": "134935f87bd0a078a56bcc22e652ac30e05c0f95"
+    "revision": "62210fb2f92532ce203ec4a300af26141cb5a676"
   },
   "ctu-mesh": {
     "path": "ctu-mesh",
     "repo_id": "relbench/redelex",
-    "revision": "9348710fc99675e0cdbc72d01ad39de79c44f6b3"
+    "revision": "241ae2de83e9ca1671dc9f9d6bef92e724b1a246"
   },
   "ctu-mondial": {
     "path": "ctu-mondial",
     "repo_id": "relbench/redelex",
-    "revision": "40723c81614f38232e67e3eeea3104934f650e6b"
+    "revision": "8dada12ad1ae58f5d9449774c2e954ada1fcfcbf"
   },
   "ctu-mooney": {
     "path": "ctu-mooney",
     "repo_id": "relbench/redelex",
-    "revision": "357b4ed1783a491dc29d2b29b806945519a74aef"
+    "revision": "27095b95091be5b955091ef15ed44b1afce27493"
   },
   "ctu-movielens": {
     "path": "ctu-movielens",
     "repo_id": "relbench/redelex",
-    "revision": "7e4cc967daa1fcff34de04f28e491d5cae5f6c73"
+    "revision": "076553027e5812456615a81409d3b20491ddde65"
   },
   "ctu-musklarge": {
     "path": "ctu-musklarge",
     "repo_id": "relbench/redelex",
-    "revision": "90c7ec424315c1bf5ed72010c5f4862b223fc942"
+    "revision": "2c5cf002e30e1609c9d9c31d5f73e8fefe9b92dc"
   },
   "ctu-musksmall": {
     "path": "ctu-musksmall",
     "repo_id": "relbench/redelex",
-    "revision": "c373ebe5c64d1ee56e4bfbecd9e751312d840909"
+    "revision": "810e35e8cc9288a502d5628a58412989eadaa8c7"
   },
   "ctu-mutagenesis": {
     "path": "ctu-mutagenesis",
     "repo_id": "relbench/redelex",
-    "revision": "6b8cbb2e809a8b2f344bb21579ed893799cae90e"
+    "revision": "3469ed4bb3f3deb527d5ce1195fb57ea0127f8bd"
   },
   "ctu-ncaa": {
     "path": "ctu-ncaa",
     "repo_id": "relbench/redelex",
-    "revision": "739cdbfda3033f215e2ed66104ac649e038e10b5"
+    "revision": "8335ef4e00467c60a04cf66c77e75a4f681559d8"
   },
   "ctu-northwind": {
     "path": "ctu-northwind",
     "repo_id": "relbench/redelex",
-    "revision": "5a49d98665a2b8f9115bdb0c68312a6ee65e0e08"
+    "revision": "8f5f463588319bcf36f7a0a5008c330579d9b8cf"
   },
   "ctu-pima": {
     "path": "ctu-pima",
     "repo_id": "relbench/redelex",
-    "revision": "670c82d947f70103422ac28b0d46063474bc0077"
+    "revision": "28c2b8b3ffac9440d275a4297261fbf11c56fd15"
   },
   "ctu-premiereleague": {
     "path": "ctu-premiereleague",
     "repo_id": "relbench/redelex",
-    "revision": "4be6a79d22694346bde14ad45a486c48fc350955"
+    "revision": "fb79d27952190c5797d39c689b5c2675d587bab1"
   },
   "ctu-restbase": {
     "path": "ctu-restbase",
     "repo_id": "relbench/redelex",
-    "revision": "c496d5429b8b3d5ebcbfd4bfe67a074f5a9db77e"
+    "revision": "de517e1b9caaf4c63622a3d18698b688a2c81e2a"
   },
   "ctu-sakila": {
     "path": "ctu-sakila",
     "repo_id": "relbench/redelex",
-    "revision": "bb8a5cecdc9171e2695459d90905bf7fd8d6f998"
+    "revision": "bfbd56f75ef487ac7cc56f3be68e4f526c146eb1"
   },
   "ctu-sales": {
     "path": "ctu-sales",
     "repo_id": "relbench/redelex",
-    "revision": "c673b18f03ca31f517c99503fd47da5428693e92"
+    "revision": "8459445740b14b9214832f072a3877bf1e3aeed5"
   },
   "ctu-samegen": {
     "path": "ctu-samegen",
     "repo_id": "relbench/redelex",
-    "revision": "3d615ca435669569556ed3a5efb5e05e94688fda"
+    "revision": "c0166a9a55b74866050b8bce2ee1d9d5dce7cf0f"
   },
   "ctu-sap": {
     "path": "ctu-sap",
     "repo_id": "relbench/redelex",
-    "revision": "863ecf3a3179f6e11137da9768f105e70a58a0b9"
+    "revision": "1ca7f8c64f36a5cf99824b1c273365fa882893a3"
   },
   "ctu-satellite": {
     "path": "ctu-satellite",
     "repo_id": "relbench/redelex",
-    "revision": "e697dad8dc30962e46bbdf6a941487711e3b3c03"
+    "revision": "b251e2d58422a5f4fa8e199296747b1c197b5038"
   },
   "ctu-seznam": {
     "path": "ctu-seznam",
     "repo_id": "relbench/redelex",
-    "revision": "0ce7f3b51e570daf56bdc16a46f6246f5274ad76"
+    "revision": "036685f7e2be328a8e206cd26e3458e412b710a3"
   },
   "ctu-sfscores": {
     "path": "ctu-sfscores",
     "repo_id": "relbench/redelex",
-    "revision": "4b5b574c6015378f4c60414b7849733dfd6f17cf"
+    "revision": "a991cf221b435cc2a4ba17461c2c67bbfaa2a865"
   },
   "ctu-shakespeare": {
     "path": "ctu-shakespeare",
     "repo_id": "relbench/redelex",
-    "revision": "edd4464b2bbc733363279ee8897564353ed8ba08"
+    "revision": "2e60df636218344eed07bcf232d513313455459c"
   },
   "ctu-stats": {
     "path": "ctu-stats",
     "repo_id": "relbench/redelex",
-    "revision": "a56e5bb30d73fa3b42927c396abc479cc8d646fd"
+    "revision": "5b73f90ae03067dc2e49960f207560df5c83fad6"
   },
   "ctu-studentloan": {
     "path": "ctu-studentloan",
     "repo_id": "relbench/redelex",
-    "revision": "bccdf54e4d90305db4eb4bd69e96428074a54c7e"
+    "revision": "05fa345ded4b265703491cba6896e352dfff5966"
   },
   "ctu-thrombosis": {
     "path": "ctu-thrombosis",
     "repo_id": "relbench/redelex",
-    "revision": "81a56641937e3df37ba1ffdbc29f6a73e33c2ec9"
+    "revision": "338b61d8dac4336a822a6eac280069e43df3ba96"
   },
   "ctu-toxicology": {
     "path": "ctu-toxicology",
     "repo_id": "relbench/redelex",
-    "revision": "f87fcc2e2441065e16b567e7833d74359797e37f"
+    "revision": "a0d52a941c48b384da3f7e5830023601ba1aaa4d"
   },
   "ctu-tpcc": {
     "path": "ctu-tpcc",
     "repo_id": "relbench/redelex",
-    "revision": "2b8ca4f7c1f4795eb3ebbf9f138441188b1f4ef0"
+    "revision": "0722f37939e938bb918b8f5273a776a8698a0a5c"
   },
   "ctu-tpcd": {
     "path": "ctu-tpcd",
     "repo_id": "relbench/redelex",
-    "revision": "6626ce1e9d7f1a9a40cbd91755927ce319ed829f"
+    "revision": "b905a955783b31e41b0ab6e776ca94aec6ab0555"
   },
   "ctu-tpcds": {
     "path": "ctu-tpcds",
     "repo_id": "relbench/redelex",
-    "revision": "bddd5087edf7f545d3a3bbb3c705d608927b4ba1"
+    "revision": "361ecde4f633f88cbef356b7e8062312182a855a"
   },
   "ctu-tpch": {
     "path": "ctu-tpch",
     "repo_id": "relbench/redelex",
-    "revision": "1dc020d2cf0315ca452d12c948e12ada494b4f88"
+    "revision": "f5ebeedf3ebc596653e0e8647ea828e056fba4e1"
   },
   "ctu-triazine": {
     "path": "ctu-triazine",
     "repo_id": "relbench/redelex",
-    "revision": "c2c490293e72cfcc80ce9592a41bac68dd897d87"
+    "revision": "f57199e906eb538322a3906aabfa1f254facd02d"
   },
   "ctu-uwcse": {
     "path": "ctu-uwcse",
     "repo_id": "relbench/redelex",
-    "revision": "629b98d3521ad305a555841fa6a7ee1b7b97a8bc"
+    "revision": "73ac48a952e8ccef122aae0ebe85320d5f3caf7b"
   },
   "ctu-visualgenome": {
     "path": "ctu-visualgenome",
     "repo_id": "relbench/redelex",
-    "revision": "eb4b9f947edcdcd85204d8f603c877f0815ff29e"
+    "revision": "93ceda01ff1a848056d46750ca1cf8fc5eef6ad6"
   },
   "ctu-voc": {
     "path": "ctu-voc",
     "repo_id": "relbench/redelex",
-    "revision": "79f23cc6cb0c90ba8d7b236445bf36de2e6706e1"
+    "revision": "da50c88c24557da00e9bfa9482eed61c891fce13"
   },
   "ctu-walmart": {
     "path": "ctu-walmart",
     "repo_id": "relbench/redelex",
-    "revision": "e990bc895e909d0e2b7055ebe565162e61ae5106"
+    "revision": "21329169fc251cb3abdbc933a5178f5b264e2b3b"
   },
   "ctu-webkp": {
     "path": "ctu-webkp",
     "repo_id": "relbench/redelex",
-    "revision": "076cfbd6b7414cd08ea5ea776e7b7e61a4b255a3"
+    "revision": "6ea3d5205d0550502ed183b1ebb081d8e53d5623"
   },
   "ctu-world": {
     "path": "ctu-world",
     "repo_id": "relbench/redelex",
-    "revision": "6fd9c7c2b2486a8e4643aaa5e64841ab39f27638"
+    "revision": "239e9800a7aa8791738b894da7968520fc3e1b0a"
   },
   "dbinfer-amazon": {
     "path": "dbinfer-amazon",
     "repo_id": "relbench/dbinfer",
-    "revision": "506743f9d7aa4444d9cafb3850dd9d0c6d52b376"
+    "revision": "ff91b0317b7223cd27ff69f021259aebb1646373"
   },
   "dbinfer-avs": {
     "path": "dbinfer-avs",
     "repo_id": "relbench/dbinfer",
-    "revision": "19d9cab4d44f20592c6ff65fffb992b0e4520c5b"
+    "revision": "fda90f2ad9c5db5949ab524b028305d9fc2e30bd"
   },
   "dbinfer-diginetica": {
     "path": "dbinfer-diginetica",
     "repo_id": "relbench/dbinfer",
-    "revision": "65658928b0d0cba2d12505abbfff362ca27d2fc6"
+    "revision": "754f672facb2db343e394c8d9fd0fcfc7c3e33fd"
   },
   "dbinfer-outbrain-small": {
     "path": "dbinfer-outbrain-small",
     "repo_id": "relbench/dbinfer",
-    "revision": "df25c295c70f0449f90df58237ce6e6ab1e2db9b"
+    "revision": "f7442ee6e742d6a7cd17014bb27acf48c7decf25"
   },
   "dbinfer-retailrocket": {
     "path": "dbinfer-retailrocket",
     "repo_id": "relbench/dbinfer",
-    "revision": "f004c412fd296dadc0acd989d806b21b257dc2c4"
+    "revision": "b5ad91b291b3c016e42e6208d6304efb158770f2"
   },
   "dbinfer-seznam": {
     "path": "dbinfer-seznam",
     "repo_id": "relbench/dbinfer",
-    "revision": "2732e988a9a943ae446f76fc9304c5d13208c43e"
+    "revision": "a8b5c7f1bb753acc7a03631b8f1bf5954f7d623a"
   },
   "dbinfer-stackexchange": {
     "path": "dbinfer-stackexchange",
     "repo_id": "relbench/dbinfer",
-    "revision": "49642feb424e9b86ec4ee316b5caffd7f573cbc5"
+    "revision": "1f7ce1403d276f7fa803ce1ee1e46c0463dec682"
   },
   "rel-amazon": {
     "path": "rel-amazon",
     "repo_id": "relbench/v1",
-    "revision": "8ec79370277b97430382d7736ee1d52f26792a18"
+    "revision": "ef8a11b72f3ef13050602e44bcb54556922de626"
   },
   "rel-arxiv": {
     "path": "rel-arxiv",
     "repo_id": "relbench/v2",
-    "revision": "e657664e4597f99b7538f36a135a291ab8114553"
+    "revision": "fc2d4abd2c9e92fd47114a5cbfac2b9716b1adcf"
   },
   "rel-avito": {
     "path": "rel-avito",
     "repo_id": "relbench/v1",
-    "revision": "e367f4a439b2359323c7bc6cb1f7c2583df0084e"
+    "revision": "5c3e2e306c8754529793838c08f12bfcc0ba9b6c"
   },
   "rel-event": {
     "path": "rel-event",
     "repo_id": "relbench/v1",
-    "revision": "25247753cedca85ab1cd4a64da7ad50e40c699db"
+    "revision": "e58f66dd9d3c998adf7a432d464971e945794b79"
   },
   "rel-f1": {
     "path": "rel-f1",
@@ -417,86 +417,86 @@
   "rel-hm": {
     "path": "rel-hm",
     "repo_id": "relbench/v1",
-    "revision": "c0ba2be1ec121037611e98db99a6e1a0682af25c"
+    "revision": "4dced9b06e754f8613c6f2ea41d55171ad8131a4"
   },
   "rel-ratebeer": {
     "path": "rel-ratebeer",
     "repo_id": "relbench/v2",
-    "revision": "a200e5a1ab7c85c6a6f31efdce778158a18dbe8b"
+    "revision": "9d745569ac4d2e829276f2f8b0a38d37c19728be"
   },
   "rel-salt": {
     "path": "rel-salt",
     "repo_id": "relbench/v2",
-    "revision": "a0d602e41f5f95758ccd3f8d5330937416539739"
+    "revision": "c3bad90bc024dedcb721691367ac006d88c12800"
   },
   "rel-stack": {
     "path": "rel-stack",
     "repo_id": "relbench/v1",
-    "revision": "f5974791a6d18b12efa0f643c8ee4b6db2314198"
+    "revision": "4dced9b06e754f8613c6f2ea41d55171ad8131a4"
   },
   "rel-trial": {
     "path": "rel-trial",
     "repo_id": "relbench/v1",
-    "revision": "ee39dd546e90a7ae454db5fd8f652e30b8ed12d3"
+    "revision": "88c356b4b6ea4b045a83c924a5980be367a958da"
   },
   "tgbl-coin": {
     "path": "tgbl-coin",
     "repo_id": "relbench/tgb",
-    "revision": "87767c29981283b9f0597d4a96e142be4e5b9bf5"
+    "revision": "44f60c78c200070f5fd5c4e2e87eb57bacc01937"
   },
   "tgbl-comment": {
     "path": "tgbl-comment",
     "repo_id": "relbench/tgb",
-    "revision": "ee88f1b64ad5c3f4df11f893540e95a08265f424"
+    "revision": "e877687e7fc5e53eb976b47ac76b624628186812"
   },
   "tgbl-flight": {
     "path": "tgbl-flight",
     "repo_id": "relbench/tgb",
-    "revision": "cc5ea4910ec565b8fe04c48012027f71ef56bbfd"
+    "revision": "ee11c1a801dd8bc6b7789d96b08f03beef3597a7"
   },
   "tgbl-review": {
     "path": "tgbl-review",
     "repo_id": "relbench/tgb",
-    "revision": "e49a4dc7ddcfab192b8f4d29c45f743d45f64136"
+    "revision": "619b94cf46c481ad87449f71fe1a121cbed9e2c5"
   },
   "tgbl-review-v2": {
     "path": "tgbl-review-v2",
     "repo_id": "relbench/tgb",
-    "revision": "6278cf097d57e0dcb2c50bdbbc937155cf60ec8d"
+    "revision": "efe58feeebd321d3d077ed4529fdb48d7851e356"
   },
   "tgbl-wiki": {
     "path": "tgbl-wiki",
     "repo_id": "relbench/tgb",
-    "revision": "63eb471550604f9e061a720f16d1ee818c8d78de"
+    "revision": "36d8f09e8d6f138bb8faed94da0a2990e5f29ba4"
   },
   "tgbl-wiki-v2": {
     "path": "tgbl-wiki-v2",
     "repo_id": "relbench/tgb",
-    "revision": "3ee3b358ad0043b2562796e6e520fc23680c2187"
+    "revision": "33f2e2a98b48ddec74127903829c4c44685137ff"
   },
   "tgbn-trade": {
     "path": "tgbn-trade",
     "repo_id": "relbench/tgb",
-    "revision": "e99cedbaaf5c7ea8a97cbd6dd03775912369f4ec"
+    "revision": "f171ce84fa0bf94cc8529aad55f72742182be365"
   },
   "thgl-forum": {
     "path": "thgl-forum",
     "repo_id": "relbench/tgb",
-    "revision": "f468c30c2d427dc279cf5aceceb1926b0530c146"
+    "revision": "1c47e6b678a4e9372a82891132ac7e7b9230f38a"
   },
   "thgl-github": {
     "path": "thgl-github",
     "repo_id": "relbench/tgb",
-    "revision": "5c1c2c4d6b62666f5b2d01461cb8dcb0f13b8672"
+    "revision": "b0f038e8fca06210e71efe5657bee3bc0c6f78e4"
   },
   "thgl-myket": {
     "path": "thgl-myket",
     "repo_id": "relbench/tgb",
-    "revision": "e3e25e0c5155f530507881c4d21ec4bb2154b687"
+    "revision": "0a195fd406f671cf77ababb00b3ad085cb894106"
   },
   "thgl-software": {
     "path": "thgl-software",
     "repo_id": "relbench/tgb",
-    "revision": "74042c78aadcdfd815978b029cf34790b52191ea"
+    "revision": "9959b71348076afcb904ca6d8dc89696516c6536"
   }
 }

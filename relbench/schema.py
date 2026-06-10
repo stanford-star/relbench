@@ -1,104 +1,258 @@
 r"""Generate a schema diagram + dataset card for a RelBench dataset.
 
-The diagram is rendered with `sqlalchemy_schemadisplay
-<https://pypi.org/project/sqlalchemy-schemadisplay/>`_: we reconstruct a SQLAlchemy
-``MetaData`` from the parquet column schemas (every column, with its type) plus the
-manifest's primary-/foreign-key graph, and let the library draw a standard ER diagram via
-graphviz. The result is a standalone ``schema.svg`` that the Hugging Face file viewer
-renders as a zoomable image.
+The diagram is a hand-styled entity-relationship diagram rendered with `graphviz
+<https://pypi.org/project/graphviz/>`_ (the ``dot`` engine lays out the tables; the
+foreign-key connectors are drawn in a small SVG post-process). Each table is a card with a
+header (table name + row count), its columns ordered ``pk, fk, time, float, int, str`` and
+colour-coded, and the foreign keys are drawn in standard ER crow's-foot notation (crow's
+foot = "many" at the FK, single bar = "one" at the referenced primary key). The result is a
+transparent ``schema.svg`` (works on light and dark Hub themes) that the Hugging Face file
+viewer renders as a zoomable image.
 """
 
 from __future__ import annotations
 
+import html
 from pathlib import Path
-from typing import Iterable, Optional, Union
+from typing import Callable, Iterable, Optional, Tuple, Union
 
 from relbench.manifest import DatasetManifest, TaskManifest
 
+# Palette (chosen to read on both light and dark Hub themes).
+_HEADER = "#4F6BED"
+_PKBG = "#FDF3D7"
+_TIMEBG = "#E4F2E4"
+_FKBG = "#FFFFFF"
+_FEATBG = "#E6E8EB"
+_BORDER = "#9AA3B2"
+_EDGE = "#8A93A2"
+_PKTAG = "#C9971B"
+_FKTAG = "#4F6BED"
+_TTAG = "#3B9B5B"
+_TYPECOL = "#8A93A2"
+_COUNTCOL = "#DDE3FB"
 
-def _arrow_to_sa(arrow_type):
-    r"""Map a pyarrow column type to a generic SQLAlchemy type (for display only)."""
+_DTYPE_RANK = {"float": 3, "int": 4, "str": 5}
+
+# A reader returns ``(columns, num_rows)`` for a table, or ``(None, None)`` if unavailable.
+# ``columns`` is a list of ``(name, short_dtype)``.
+Reader = Callable[[str], Tuple[Optional[list], Optional[int]]]
+
+
+def _short_type(arrow_type) -> str:
+    r"""Map a pyarrow column type to a short display string."""
     import pyarrow as pa
-    import sqlalchemy as sa
 
     if pa.types.is_boolean(arrow_type):
-        return sa.Boolean()
+        return "bool"
     if pa.types.is_integer(arrow_type):
-        return sa.BigInteger() if pa.types.is_int64(arrow_type) else sa.Integer()
+        return "int"
     if pa.types.is_floating(arrow_type) or pa.types.is_decimal(arrow_type):
-        return sa.Float()
+        return "float"
     if pa.types.is_date(arrow_type):
-        return sa.Date()
+        return "date"
     if pa.types.is_timestamp(arrow_type):
-        return sa.DateTime()
-    return sa.Text()
+        return "datetime"
+    if pa.types.is_string(arrow_type) or pa.types.is_large_string(arrow_type):
+        return "str"
+    return str(arrow_type)
 
 
-def _metadata_from_db(manifest: DatasetManifest, db_dir: Union[str, Path]):
-    r"""Build a SQLAlchemy ``MetaData`` (all columns + types + PK/FK graph) for the dataset.
+def _fmt_count(n: Optional[int]) -> str:
+    r"""Row count in K/M/B shorthand, rounded to no decimal places."""
+    if n is None:
+        return ""
+    if n < 1_000:
+        return str(n)
+    if n < 1_000_000:
+        return f"{round(n / 1e3)}K"
+    if n < 1_000_000_000:
+        return f"{round(n / 1e6)}M"
+    return f"{round(n / 1e9)}B"
 
-    Columns and types come from the parquet schemas in ``db_dir``; primary keys, foreign
-    keys, and time columns come from the manifest. Tables whose parquet is missing fall back
-    to the columns named in the manifest (pkey / fkeys / time_col) so rendering never fails.
-    """
+
+def _esc(s) -> str:
+    return html.escape(str(s))
+
+
+def _badge(text: str, color: str) -> str:
+    return f'<FONT COLOR="{color}" POINT-SIZE="8"><B> {text} </B></FONT>'
+
+
+def _parquet_reader(db_dir: Path) -> Reader:
     import pyarrow.parquet as pq
-    import sqlalchemy as sa
 
-    db_dir = Path(db_dir)
-    md = sa.MetaData()
-    parent_pkey = {t: s.pkey for t, s in manifest.tables.items()}
+    def reader(tname: str):
+        p = db_dir / f"{tname}.parquet"
+        if not p.exists():
+            return None, None
+        cols = [(f.name, _short_type(f.type)) for f in pq.read_schema(p)]
+        return cols, pq.read_metadata(p).num_rows
 
-    for tname, spec in manifest.tables.items():
-        path = db_dir / f"{tname}.parquet"
-        if path.exists():
-            schema = pq.read_schema(path)
-            cols = [(f.name, _arrow_to_sa(f.type)) for f in schema]
-        else:  # fall back to the manifest-named columns
-            named = [c for c in [spec.pkey, spec.time_col, *spec.fkeys] if c]
-            cols = [(c, sa.Text()) for c in dict.fromkeys(named)]
-
-        columns = []
-        for cname, ctype in cols:
-            args = []
-            parent = spec.fkeys.get(cname)
-            if parent and parent_pkey.get(parent):
-                args.append(sa.ForeignKey(f"{parent}.{parent_pkey[parent]}"))
-            columns.append(
-                sa.Column(cname, ctype, *args, primary_key=(cname == spec.pkey))
-            )
-        sa.Table(tname, md, *columns)
-
-    return md
+    return reader
 
 
 def render_schema_svg(
-    manifest: DatasetManifest, path, db_dir: Optional[Union[str, Path]] = None
+    manifest: DatasetManifest,
+    path,
+    db_dir: Optional[Union[str, Path]] = None,
+    reader: Optional[Reader] = None,
 ) -> None:
-    r"""Render the ER diagram to a standalone SVG at ``path`` (zoomable on the HF Hub).
+    r"""Render the ER diagram to a standalone transparent SVG at ``path``.
 
-    ``db_dir`` is the dataset's ``db/`` folder; when given, every column and its type is
-    shown. It defaults to ``<path>/../db`` (the standard dataset layout).
+    Column names/types and row counts come from the parquet files: by default they are read
+    from ``db_dir`` (the dataset's ``db/`` folder, defaulting to ``<path>/../db``). Pass a
+    custom ``reader`` to source them elsewhere (e.g. parquet footers read straight from the
+    Hub, avoiding a full download). Tables whose data is unavailable fall back to the
+    manifest-named columns so rendering never fails.
     """
-    import sqlalchemy as sa
-    from sqlalchemy_schemadisplay import create_schema_graph
+    import graphviz
 
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    if db_dir is None:
-        db_dir = path.parent / "db"
+    if reader is None:
+        reader = _parquet_reader(Path(db_dir) if db_dir is not None else path.parent / "db")
 
-    md = _metadata_from_db(manifest, db_dir)
-    graph = create_schema_graph(
-        engine=sa.create_engine("sqlite://"),
-        metadata=md,
-        show_datatypes=True,
-        show_indexes=False,
-        show_column_keys=True,
-        rankdir="LR",
-        concentrate=False,
-        font="Helvetica",
-    )
-    graph.write_svg(str(path), prog="dot")
+    tables = manifest.tables
+    pkey_of = {t: s.pkey for t, s in tables.items()}
+
+    # pass 1: collect ordered columns + row counts, and estimate a uniform table width.
+    collected = {}
+    max_chars = 0
+    for tname, spec in tables.items():
+        pkey, tcol, fkeys = spec.pkey, spec.time_col, spec.fkeys
+        cols, nrows = reader(tname)
+        if cols is None:
+            named = [c for c in [pkey, tcol, *fkeys] if c]
+            cols = [(c, "") for c in dict.fromkeys(named)]
+
+        def _rank(item, pkey=pkey, tcol=tcol, fkeys=fkeys):
+            cname, ctype = item
+            if cname == pkey:
+                return 0
+            if cname in fkeys:
+                return 1
+            if cname == tcol:
+                return 2
+            return _DTYPE_RANK.get(ctype, 6)
+
+        cols = sorted(cols, key=_rank)
+        count = _fmt_count(nrows)
+        collected[tname] = (cols, count)
+        max_chars = max(max_chars, len(tname) + len(count) + 3)
+        for cname, ctype in cols:
+            right = (
+                "PK" if cname == pkey
+                else "FK" if cname in fkeys
+                else "TIME" if cname == tcol
+                else ctype
+            )
+            max_chars = max(max_chars, len(cname) + len(right) + 3)
+
+    width = int(max_chars * 7.2) + 24  # px; ~7.2px per char at 10pt + padding
+
+    # pass 2: emit nodes (one HTML-table card per table) + base edges (FK -> PK).
+    g = graphviz.Digraph("schema", engine="dot")
+    g.attr(rankdir="LR", bgcolor="transparent", splines="line", nodesep="0.45",
+           ranksep="1.1", pad="0.3", fontname="Helvetica")
+    g.attr("node", shape="plaintext", fontname="Helvetica")
+    g.attr("edge", color=_EDGE, penwidth="1.3", dir="none")  # ER symbols added in post
+
+    for tname, spec in tables.items():
+        cols, count = collected[tname]
+        pkey, tcol, fkeys = spec.pkey, spec.time_col, spec.fkeys
+        rows = [
+            f'<TR>'
+            f'<TD WIDTH="{width}" BGCOLOR="{_HEADER}" PORT="__t" ALIGN="LEFT">'
+            f'<FONT COLOR="white"><B>  {_esc(tname)}  </B></FONT></TD>'
+            f'<TD BGCOLOR="{_HEADER}" ALIGN="RIGHT">'
+            f'<FONT COLOR="{_COUNTCOL}" POINT-SIZE="9">{_esc(count)}  </FONT></TD>'
+            f'</TR>'
+        ]
+        for cname, ctype in cols:
+            is_pk = cname == pkey
+            is_fk = cname in fkeys
+            is_t = cname == tcol
+            bg = _PKBG if is_pk else (_TIMEBG if is_t else (_FKBG if is_fk else _FEATBG))
+            name = (
+                f"<B>{_esc(cname)}</B>" if is_pk
+                else (f"<I>{_esc(cname)}</I>" if is_fk else _esc(cname))
+            )
+            if is_pk:
+                right = _badge("PK", _PKTAG)
+            elif is_fk:
+                right = _badge("FK", _FKTAG)
+            elif is_t:
+                right = _badge("TIME", _TTAG)
+            elif ctype:
+                right = f'<FONT COLOR="{_TYPECOL}" POINT-SIZE="9">{_esc(ctype)}</FONT>'
+            else:
+                right = ""
+            # left cell port = entry (PK, west edge); right cell port = exit (FK, east edge)
+            rows.append(
+                f'<TR><TD BGCOLOR="{bg}" PORT="{_esc(cname)}" ALIGN="LEFT">'
+                f'<FONT POINT-SIZE="10">{name}</FONT></TD>'
+                f'<TD BGCOLOR="{bg}" PORT="{_esc(cname)}_r" ALIGN="RIGHT">{right}</TD></TR>'
+            )
+        g.node(tname, color=_BORDER, label=(
+            f'<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" '
+            f'STYLE="rounded">{"".join(rows)}</TABLE>>'))
+
+    for tname, spec in tables.items():
+        for fcol, parent in spec.fkeys.items():
+            if parent in tables and pkey_of.get(parent):
+                g.edge(f"{tname}:{fcol}_r:e", f"{parent}:{pkey_of[parent]}:w")
+
+    g.render(str(path.with_suffix("")), format="svg", cleanup=True)
+    _add_er_connectors(path)
+
+
+def _add_er_connectors(svgpath: Path) -> None:
+    r"""Rewrite each straight graphviz edge into ER crow's-foot notation.
+
+    Every edge becomes: a short horizontal stub at the FK end carrying a crow's foot
+    ("many"), a straight middle, and a short horizontal stub at the referenced-PK end
+    carrying a single bar ("one"). Ports are fixed (``:e`` tail, ``:w`` head) so the stub
+    directions are constant -- the FK end exits east, the PK end exits west.
+    """
+    import re
+    import xml.etree.ElementTree as ET
+
+    NS = "http://www.w3.org/2000/svg"
+    ET.register_namespace("", NS)
+    tree = ET.parse(svgpath)
+    graph = tree.getroot().find(f"{{{NS}}}g")
+    if graph is None:
+        return
+    L, FH, TICK, TGAP = 16.0, 5.0, 5.0, 7.0
+    for e in [c for c in graph if c.get("class") == "edge"]:
+        path = e.find(f"{{{NS}}}path")
+        if path is None:
+            continue
+        pts = re.findall(r"(-?\d+\.?\d*),(-?\d+\.?\d*)", path.get("d", ""))
+        if len(pts) < 2:
+            continue
+        (x0, y0) = float(pts[0][0]), float(pts[0][1])
+        (x1, y1) = float(pts[-1][0]), float(pts[-1][1])
+        color = path.get("stroke") or _EDGE
+        for p in list(e.findall(f"{{{NS}}}path")):
+            e.remove(p)
+
+        def seg(xa, ya, xb, yb):
+            el = ET.SubElement(e, f"{{{NS}}}path")
+            el.set("d", f"M{xa},{ya} L{xb},{yb}")
+            el.set("stroke", color)
+            el.set("stroke-width", "1.3")
+            el.set("fill", "none")
+
+        ax, bx = x0 + L, x1 - L
+        seg(x0, y0, ax, y0)              # FK horizontal stub
+        seg(ax, y0, bx, y1)             # straight middle
+        seg(bx, y1, x1, y1)             # PK horizontal stub
+        seg(ax, y0, x0, y0 - FH)        # crow's foot (many) at FK
+        seg(ax, y0, x0, y0 + FH)
+        seg(x1 - TGAP, y1 - TICK, x1 - TGAP, y1 + TICK)  # single bar (one) at PK
+    tree.write(svgpath)
 
 
 def dataset_card(
@@ -123,9 +277,9 @@ def dataset_card(
         "",
         "![schema diagram](schema.svg)",
         "",
-        "Open [`schema.svg`](schema.svg) for a zoomable view: each table lists all of its "
-        "columns and types, with primary keys, foreign keys, and the foreign-key edges "
-        "between tables.",
+        "Open [`schema.svg`](schema.svg) for a zoomable view: each table shows its columns "
+        "and types and its row count, with primary keys, foreign keys, time columns, and the "
+        "foreign-key relationships (crow's-foot notation) between tables.",
         "",
         f"Splits: validation `{manifest.val_timestamp}`, test `{manifest.test_timestamp}` "
         "(rows up to a split's timestamp are the inputs for that split).",
@@ -148,7 +302,7 @@ def dataset_card(
         f'task = relbench.load_task("{manifest.name}", "<task>")',
         "```",
         "",
-        "Manifest layout (`manifest.yaml` + plain parquet); see "
-        "[Contributing](https://github.com/snap-stanford/relbench#contributing) in the RelBench README.",
+        "Manifest layout (`manifest.yaml` + plain parquet); see the RelBench [CONTRIBUTING "
+        "guide](https://github.com/snap-stanford/relbench/blob/main/CONTRIBUTING.md).",
     ]
     return "\n".join(parts) + "\n"
