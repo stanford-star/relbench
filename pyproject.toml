@@ -17,6 +17,7 @@ keywords=[]
 dependencies=[
 	"pandas",
 	"huggingface_hub",
+	"pyyaml",
 	"pyarrow",
 	"numpy",
 	"duckdb",

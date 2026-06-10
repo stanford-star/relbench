@@ -3,26 +3,27 @@ r"""Manifest schema for RelBench datasets and tasks.
 A RelBench dataset on disk / on the Hugging Face Hub is a self-describing folder::
 
     <dataset>/
-        manifest.json                 # DatasetManifest: tables + fkey graph + cutoffs
+        manifest.yaml                 # DatasetManifest: description + tables + fkey graph + splits
+        README.md                     # dataset card with a Mermaid schema diagram (HF renders it)
         db/<table>.parquet            # plain data, native column dtypes only
         tasks/<task>/
-            manifest.json             # TaskManifest: spec + (for kind="forecast") the SQL
-            {train,val,test}.parquet  # cached labels (regenerable for kind="sql")
+            manifest.yaml             # TaskManifest: description + spec (+ SQL for kind="forecast")
+            {train,val,test}.parquet  # labels (regenerable for kind="forecast")
 
-The manifest is the *sole source of truth* for relational semantics (primary keys,
-the foreign-key graph, time columns). Parquet files carry only their native column
-schema -- no RelBench-specific metadata -- so they load directly with pandas/duckdb.
-
-Everything here is stdlib-only (``json`` + ``dataclasses``); manifests are plain JSON.
+The manifest is the *sole source of truth* for relational semantics (primary keys, the
+foreign-key graph, time columns). Parquet files carry only their native column schema, so
+they load directly with pandas/duckdb. Manifests are YAML for readability (the SQL of a
+``forecast`` task is a block scalar).
 """
 
 from __future__ import annotations
 
 import dataclasses
-import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, Union
+
+import yaml
 
 MANIFEST_VERSION = 1
 
@@ -31,6 +32,31 @@ KIND_FORECAST = "forecast"  # temporal-aggregation labels regenerated via a duck
 KIND_AUTOCOMPLETE = "autocomplete"  # generic column-prediction generator
 KIND_EXTERNAL = "external"  # labels sourced/built externally, served as-is (TGB / dbinfer)
 KINDS = (KIND_FORECAST, KIND_AUTOCOMPLETE, KIND_EXTERNAL)
+
+
+class _Dumper(yaml.SafeDumper):
+    pass
+
+
+def _represent_str(dumper, data):
+    # Render multi-line strings (e.g. SQL) as readable block scalars (`|`).
+    style = "|" if "\n" in data else None
+    return dumper.represent_scalar("tag:yaml.org,2002:str", data, style=style)
+
+
+_Dumper.add_representer(str, _represent_str)
+
+
+def _dump_yaml(d: dict, path: Union[str, Path]) -> None:
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w") as f:
+        yaml.dump(d, f, Dumper=_Dumper, sort_keys=False, default_flow_style=False,
+                  allow_unicode=True, width=4096)
+
+
+def _load_yaml(path: Union[str, Path]) -> dict:
+    with open(path) as f:
+        return yaml.safe_load(f)
 
 
 @dataclass
@@ -43,11 +69,8 @@ class TableSpec:
 
     @classmethod
     def from_dict(cls, d: dict) -> "TableSpec":
-        return cls(
-            pkey=d.get("pkey"),
-            time_col=d.get("time_col"),
-            fkeys=dict(d.get("fkeys", {})),
-        )
+        return cls(pkey=d.get("pkey"), time_col=d.get("time_col"),
+                   fkeys=dict(d.get("fkeys", {})))
 
     def to_dict(self) -> dict:
         return {"pkey": self.pkey, "time_col": self.time_col, "fkeys": self.fkeys}
@@ -55,11 +78,12 @@ class TableSpec:
 
 @dataclass
 class DatasetManifest:
-    r"""Dataset-level manifest: the table set, the fkey graph, and the splits."""
+    r"""Dataset-level manifest: a description, the table set, the fkey graph, and splits."""
 
     name: str
     val_timestamp: str  # ISO date/datetime, e.g. "2005-01-01"
     test_timestamp: str
+    description: Optional[str] = None
     tables: dict[str, TableSpec] = field(default_factory=dict)
     manifest_version: int = MANIFEST_VERSION
 
@@ -69,29 +93,26 @@ class DatasetManifest:
             name=d["name"],
             val_timestamp=d["val_timestamp"],
             test_timestamp=d["test_timestamp"],
+            description=d.get("description"),
             tables={k: TableSpec.from_dict(v) for k, v in d.get("tables", {}).items()},
             manifest_version=d.get("manifest_version", MANIFEST_VERSION),
         )
 
     def to_dict(self) -> dict:
-        return {
-            "name": self.name,
-            "manifest_version": self.manifest_version,
-            "val_timestamp": self.val_timestamp,
-            "test_timestamp": self.test_timestamp,
-            "tables": {k: v.to_dict() for k, v in self.tables.items()},
-        }
+        out = {"name": self.name, "manifest_version": self.manifest_version}
+        if self.description:
+            out["description"] = self.description
+        out["val_timestamp"] = self.val_timestamp
+        out["test_timestamp"] = self.test_timestamp
+        out["tables"] = {k: v.to_dict() for k, v in self.tables.items()}
+        return out
 
     @classmethod
     def load(cls, path: Union[str, Path]) -> "DatasetManifest":
-        with open(path) as f:
-            return cls.from_dict(json.load(f))
+        return cls.from_dict(_load_yaml(path))
 
     def save(self, path: Union[str, Path]) -> None:
-        Path(path).parent.mkdir(parents=True, exist_ok=True)
-        with open(path, "w") as f:
-            json.dump(self.to_dict(), f, indent=2)
-            f.write("\n")
+        _dump_yaml(self.to_dict(), path)
 
 
 @dataclass
@@ -102,11 +123,14 @@ class TaskManifest:
     database; the SQL sees a ``timestamps(timestamp)`` relation (the per-split seed
     timestamps), every db table as a view by name, and ``{timedelta}`` substituted as a
     duckdb INTERVAL string. Its SELECT must output the declared entity/target/time cols.
+
+    Metrics are not stored here -- they default from ``task_type`` (see relbench.load).
     """
 
     name: str
     kind: str
     task_type: str  # one of relbench.base.TaskType values
+    description: Optional[str] = None
 
     # Entity (node) tasks.
     entity_table: Optional[str] = None
@@ -128,36 +152,28 @@ class TaskManifest:
     # Autocomplete tasks: feature columns to drop from the graph.
     remove_columns: list = field(default_factory=list)  # list of [table, col]
 
-    # Label generation.
-    sql: Optional[str] = None  # required for kind="sql"
+    # Label generation (kind="forecast").
+    sql: Optional[str] = None
 
-    # Prebuilt tasks (labels shipped as-is).
+    # External tasks (labels shipped as-is).
     evaluator: Optional[str] = None  # named evaluator for custom eval (e.g. tgb)
     extra_files: list = field(default_factory=list)
-
-    # Metrics (by name into relbench.metrics); None -> defaults for task_type.
-    metrics: Optional[list] = None
 
     manifest_version: int = MANIFEST_VERSION
 
     @classmethod
     def from_dict(cls, d: dict) -> "TaskManifest":
+        # Tolerant: ignore unknown/legacy keys (e.g. a removed "metrics" field).
         known = {f.name for f in dataclasses.fields(cls)}
-        unknown = set(d) - known
-        if unknown:
-            raise ValueError(f"Unknown task manifest keys: {sorted(unknown)}")
         return cls(**{k: v for k, v in d.items() if k in known})
 
     def to_dict(self) -> dict:
-        # Drop None/empty optionals so manifests stay readable.
         out = {"name": self.name, "kind": self.kind, "task_type": self.task_type}
-        optional = [
-            "entity_table", "entity_col", "target_col", "time_col",
-            "src_entity_table", "src_entity_col", "dst_entity_table",
-            "dst_entity_col", "eval_k", "timedelta", "metrics", "sql",
-            "evaluator",
-        ]
-        for k in optional:
+        if self.description:
+            out["description"] = self.description
+        for k in ["entity_table", "entity_col", "target_col", "time_col",
+                  "src_entity_table", "src_entity_col", "dst_entity_table",
+                  "dst_entity_col", "eval_k", "timedelta", "evaluator"]:
             v = getattr(self, k)
             if v is not None:
                 out[k] = v
@@ -167,43 +183,33 @@ class TaskManifest:
             out["remove_columns"] = self.remove_columns
         if self.extra_files:
             out["extra_files"] = self.extra_files
+        if self.sql is not None:
+            out["sql"] = self.sql
         out["manifest_version"] = self.manifest_version
         return out
 
     @classmethod
     def load(cls, path: Union[str, Path]) -> "TaskManifest":
-        with open(path) as f:
-            return cls.from_dict(json.load(f))
+        return cls.from_dict(_load_yaml(path))
 
     def save(self, path: Union[str, Path]) -> None:
-        Path(path).parent.mkdir(parents=True, exist_ok=True)
-        with open(path, "w") as f:
-            json.dump(self.to_dict(), f, indent=2)
-            f.write("\n")
+        _dump_yaml(self.to_dict(), path)
 
     def validate(self) -> None:
         if self.kind not in KINDS:
             raise ValueError(f"task '{self.name}': kind must be one of {KINDS}")
         if self.kind == KIND_FORECAST and not self.sql:
             raise ValueError(f"task '{self.name}': kind='forecast' requires a 'sql' field")
-        is_link = self.task_type == "link_prediction"
-        if is_link and self.kind == KIND_FORECAST:
-            missing = [
-                k for k in ("src_entity_table", "src_entity_col",
-                            "dst_entity_table", "dst_entity_col", "eval_k")
-                if getattr(self, k) is None
-            ]
+        if self.task_type == "link_prediction" and self.kind == KIND_FORECAST:
+            missing = [k for k in ("src_entity_table", "src_entity_col",
+                                   "dst_entity_table", "dst_entity_col", "eval_k")
+                       if getattr(self, k) is None]
             if missing:
                 raise ValueError(f"task '{self.name}': link task missing {missing}")
 
 
 def validate_dataset_manifest(manifest: DatasetManifest, db_dir: Union[str, Path]) -> None:
-    r"""Check the manifest is consistent with the parquet files in ``db_dir``.
-
-    Verifies every table parquet exists and every column the manifest names
-    (pkey, time_col, fkey cols) actually exists in the corresponding parquet, and
-    that fkey target tables are present. Reads only parquet schemas, not data.
-    """
+    r"""Check the manifest is consistent with the parquet files in ``db_dir`` (schema only)."""
     import pyarrow.parquet as pq
 
     db_dir = Path(db_dir)

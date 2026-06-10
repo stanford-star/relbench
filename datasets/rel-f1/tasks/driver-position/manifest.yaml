@@ -1,0 +1,30 @@
+name: driver-position
+kind: forecast
+task_type: regression
+description: Predict each driver's average finishing position across races in the next 2 months.
+entity_table: drivers
+entity_col: driverId
+target_col: position
+time_col: date
+timedelta: 60 days
+num_eval_timestamps: 40
+sql: |-
+  SELECT
+      t.timestamp as date,
+      re.driverId as driverId,
+      mean(re.positionOrder) as position,
+  FROM
+      timestamps t
+  LEFT JOIN
+      results re
+  ON
+      re.date <= t.timestamp + INTERVAL '{timedelta}'
+      and re.date  > t.timestamp
+  WHERE
+      re.driverId IN (
+          SELECT DISTINCT driverId
+          FROM results
+          WHERE date > t.timestamp - INTERVAL '1 year'
+      )
+  GROUP BY t.timestamp, re.driverId
+manifest_version: 1

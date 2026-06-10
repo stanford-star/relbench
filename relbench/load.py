@@ -1,8 +1,8 @@
 r"""Manifest-driven, Hugging Face-backed loader for RelBench datasets and tasks.
 
 This is the whole consumption path: no per-dataset or per-task classes. A dataset is a
-folder of plain parquet + a ``manifest.json``; a task is a subdirectory with its own
-``manifest.json`` (and, for ``kind="sql"`` tasks, the duckdb query that regenerates its
+folder of plain parquet + a ``manifest.yaml``; a task is a subdirectory with its own
+``manifest.yaml`` (and, for ``kind="sql"`` tasks, the duckdb query that regenerates its
 labels). Adding a task later is just adding a directory.
 
 Public API::
@@ -21,6 +21,7 @@ are exactly the shipped behavior; only ``make_table`` changes to run the manifes
 
 from __future__ import annotations
 
+import os
 from functools import lru_cache
 from pathlib import Path
 from typing import Optional, Union
@@ -67,8 +68,8 @@ DEFAULT_METRICS: dict[TaskType, list[str]] = {
 
 
 def _resolve_metrics(tm: TaskManifest) -> list:
-    names = tm.metrics or DEFAULT_METRICS[TaskType(tm.task_type)]
-    return [getattr(metrics, name) for name in names]
+    # Metrics are not stored in the manifest; they default from the task type.
+    return [getattr(metrics, name) for name in DEFAULT_METRICS[TaskType(tm.task_type)]]
 
 
 def _coerce_string_dtype(df: pd.DataFrame) -> pd.DataFrame:
@@ -151,6 +152,11 @@ def _run_task_sql(
     """
     con = duckdb.connect()
     try:
+        # A memory limit makes duckdb raise a catchable OOM (and spill to disk) rather
+        # than letting the OS kill the process on a runaway query. Opt-in via env.
+        limit = os.getenv("RELBENCH_DUCKDB_MEMORY_LIMIT")
+        if limit:
+            con.execute(f"SET memory_limit='{limit}'")
         con.register("timestamps", pd.DataFrame({"timestamp": timestamps}))
         for name, table in db.table_dict.items():
             con.register(name, table.df)
@@ -272,8 +278,6 @@ class _AutoCompleteTask(_HostedLabelsMixin, AutoCompleteTask):
             cache_dir=None,
             remove_columns=[tuple(pair) for pair in tm.remove_columns],
         )
-        if tm.metrics:
-            self.metrics = _resolve_metrics(tm)
 
     def _get_table(self, split: str) -> Table:
         # Efficient autocomplete window. The legacy AutoCompleteTask materializes
@@ -372,7 +376,7 @@ def build_task(
 
 def _resolve_dataset_dir(name_or_path: Union[str, Path], revision: Optional[str]) -> Path:
     p = Path(name_or_path)
-    if p.exists() and (p / "manifest.json").exists():
+    if p.exists() and (p / "manifest.yaml").exists():
         return p
     return hf.download_dataset_dir(str(name_or_path), revision=revision)
 
@@ -382,17 +386,17 @@ def load_dataset(
 ) -> RelBenchDataset:
     r"""Load a RelBench dataset from a registered name, a Hub ``org/name``, or a path."""
     dataset_dir = _resolve_dataset_dir(name_or_path, revision)
-    manifest = DatasetManifest.load(dataset_dir / "manifest.json")
+    manifest = DatasetManifest.load(dataset_dir / "manifest.yaml")
     return RelBenchDataset(dataset_dir, manifest)
 
 
 def get_task_names(name_or_path: Union[str, Path], *, revision: Optional[str] = None) -> list[str]:
-    r"""List tasks available for a dataset by enumerating ``tasks/*/manifest.json``."""
+    r"""List tasks available for a dataset by enumerating ``tasks/*/manifest.yaml``."""
     dataset_dir = _resolve_dataset_dir(name_or_path, revision)
     tasks_dir = dataset_dir / "tasks"
     if not tasks_dir.exists():
         return []
-    return sorted(d.name for d in tasks_dir.iterdir() if (d / "manifest.json").exists())
+    return sorted(d.name for d in tasks_dir.iterdir() if (d / "manifest.yaml").exists())
 
 
 def load_task(
@@ -412,8 +416,8 @@ def load_task(
         dataset_dir = ds.dataset_dir
     else:
         dataset_dir = _resolve_dataset_dir(dataset, revision)
-        ds = RelBenchDataset(dataset_dir, DatasetManifest.load(dataset_dir / "manifest.json"))
+        ds = RelBenchDataset(dataset_dir, DatasetManifest.load(dataset_dir / "manifest.yaml"))
 
     task_dir = dataset_dir / "tasks" / task_name
-    tm = TaskManifest.load(task_dir / "manifest.json")
+    tm = TaskManifest.load(task_dir / "manifest.yaml")
     return build_task(ds, tm, task_dir=task_dir, regenerate=regenerate)

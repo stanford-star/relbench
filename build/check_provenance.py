@@ -50,7 +50,7 @@ def main() -> None:
     names = get_task_names(dataset)
     ok_all, checked = True, 0
     for name in names:
-        tm = TaskManifest.load(Path(dataset) / "tasks" / name / "manifest.json") \
+        tm = TaskManifest.load(Path(dataset) / "tasks" / name / "manifest.yaml") \
             if Path(dataset).exists() else None
         # When loading by registered name, kind is read off the loaded task instead.
         regen = load_task(dataset, name, regenerate=True)

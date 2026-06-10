@@ -1,0 +1,22 @@
+name: results-position
+kind: autocomplete
+task_type: regression
+description: Predict the finishing position recorded in each result row.
+entity_table: results
+target_col: position
+remove_columns:
+- - results
+  - statusId
+- - results
+  - positionOrder
+- - results
+  - points
+- - results
+  - laps
+- - results
+  - milliseconds
+- - results
+  - fastestLap
+- - results
+  - rank
+manifest_version: 1

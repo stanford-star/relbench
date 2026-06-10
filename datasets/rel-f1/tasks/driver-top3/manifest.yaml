@@ -1,0 +1,32 @@
+name: driver-top3
+kind: forecast
+task_type: binary_classification
+description: Predict whether each driver will qualify in the top 3 for a race in the next month.
+entity_table: drivers
+entity_col: driverId
+target_col: qualifying
+time_col: date
+timedelta: 30 days
+num_eval_timestamps: 40
+sql: |-
+  SELECT
+      t.timestamp as date,
+      qu.driverId as driverId,
+      CAST(
+          CASE WHEN MIN(qu.position) <= 3 THEN 1 ELSE 0 END AS BIGINT
+      ) AS qualifying
+  FROM
+      timestamps t
+  LEFT JOIN
+      qualifying qu
+  ON
+      qu.date <= t.timestamp + INTERVAL '{timedelta}'
+      and qu.date > t.timestamp
+  WHERE
+      qu.driverId IN (
+          SELECT DISTINCT driverId
+          FROM qualifying
+          WHERE date > t.timestamp - INTERVAL '1 year'
+      )
+  GROUP BY t.timestamp, qu.driverId
+manifest_version: 1

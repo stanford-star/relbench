@@ -180,27 +180,20 @@ If you use the TGB datasets in your work, please cite [TGB](https://tgb.complexd
 
 This section provides a brief overview of using the RelBench package. For a more in-depth coverage see the [Tutorials](#tutorials) section. For detailed documentations, please see the code directly.
 
-Imports:
 ```python
-from relbench.base import Table, Database, Dataset, EntityTask
-from relbench.datasets import get_dataset
-from relbench.tasks import get_task
+import relbench
+from relbench.base import Database, Table
 ```
 
-Get a dataset, e.g., `rel-amazon`:
+Get a dataset, e.g., `rel-f1`:
 ```python
-dataset: Dataset = get_dataset("rel-amazon", download=True)
+dataset = relbench.load_dataset("rel-f1")
 ```
 
-<details markdown="1"><summary>Details on downloading and caching behavior.</summary>
-
-RelBench datasets (and tasks) are cached to disk (usually at `~/.cache/relbench`, the location can be set using the `RELBENCH_CACHE_DIR` environment variable). If not present in cache, `download=True` downloads the data, verifies it against the known hash, and caches it. If present, `download=True` performs the verification and avoids downloading if verification succeeds. This is the recommended way.
-
-`download=False` uses the cached data without verification, if present, or processes and caches the data from scratch / raw sources otherwise.
-
-</details>
-
-For faster download, please see [this](https://github.com/snap-stanford/relbench/issues/265).
+Datasets live on the [Hugging Face Hub](https://huggingface.co/relbench) as self-describing
+manifest folders (a `manifest.yaml` plus plain parquet), fetched and cached on first load at
+a pinned revision. You can also load any Hub repo by id (`relbench.load_dataset("org/name")`)
+or a local folder by path.
 
 `dataset` consists of a `Database` object and temporal splitting times `dataset.val_timestamp` and `dataset.test_timestamp`.
 
@@ -219,9 +212,9 @@ full_db: Database = dataset.get_db(upto_test_timestamp=False)
 
 </details>
 
-Various tasks can be defined on a dataset. For example, to get the `user-churn` task for `rel-amazon`:
+Various tasks can be defined on a dataset. For example, the `driver-position` task for `rel-f1`:
 ```python
-task: EntityTask = get_task("rel-amazon", "user-churn", download=True)
+task = relbench.load_task("rel-f1", "driver-position")
 ```
 
 A task provides train/val/test tables:
@@ -255,12 +248,14 @@ task.evaluate(val_pred, val_table)
 
 # Tutorials
 
-| Notebook | Try on Colab | Description                                             |
-----------|--------------|---------------------------------------------------------|
-| [load_data.ipynb](tutorials/load_data.ipynb) | [<img align="center" src="https://colab.research.google.com/assets/colab-badge.svg" />](https://colab.research.google.com/github/snap-stanford/relbench/blob/main/tutorials/load_data.ipynb)   | Load and explore RelBench data
-| [train_model.ipynb](tutorials/train_model.ipynb) | [<img align="center" src="https://colab.research.google.com/assets/colab-badge.svg" />](https://colab.research.google.com/github/snap-stanford/relbench/blob/main/tutorials/train_model.ipynb)| Train your first GNN-based model on RelBench
-| [custom_dataset.ipynb](tutorials/custom_dataset.ipynb) | [<img align="center" src="https://colab.research.google.com/assets/colab-badge.svg" />](https://colab.research.google.com/github/snap-stanford/relbench/blob/main/tutorials/custom_dataset.ipynb)   | Use your own data in RelBench
-| [custom_task.ipynb](tutorials/custom_task.ipynb) | [<img align="center" src="https://colab.research.google.com/assets/colab-badge.svg" />](https://colab.research.google.com/github/snap-stanford/relbench/blob/main/tutorials/custom_task.ipynb)| Define your own ML tasks in RelBench
+Tutorials are [marimo](https://marimo.io) notebooks (plain `.py` files) under [`tutorials/`](tutorials):
+
+| Notebook | Description |
+|---|---|
+| [`quickstart.py`](tutorials/quickstart.py) | Load a dataset/task, explore the schema, run a baseline — runs in your browser via WebAssembly |
+| [`gnn.py`](tutorials/gnn.py) | Train a GNN on an entity task (download and run locally) |
+
+Run with `marimo edit tutorials/quickstart.py`. To contribute your own dataset or task, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 
 # Contributing

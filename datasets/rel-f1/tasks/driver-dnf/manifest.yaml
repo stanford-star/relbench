@@ -1,0 +1,30 @@
+name: driver-dnf
+kind: forecast
+task_type: binary_classification
+description: Predict whether each driver will fail to finish (DNF) a race in the next month.
+entity_table: drivers
+entity_col: driverId
+target_col: did_not_finish
+time_col: date
+timedelta: 30 days
+num_eval_timestamps: 40
+sql: |-
+  SELECT
+      t.timestamp as date,
+      re.driverId as driverId,
+      MAX(CASE WHEN re.statusId != 1 THEN 1 ELSE 0 END) AS did_not_finish
+  FROM
+      timestamps t
+  LEFT JOIN
+      results re
+  ON
+      re.date <= t.timestamp + INTERVAL '{timedelta}'
+      and re.date  > t.timestamp
+  WHERE
+      re.driverId IN (
+          SELECT DISTINCT driverId
+          FROM results
+          WHERE date > t.timestamp - INTERVAL '1 year'
+      )
+  GROUP BY t.timestamp, re.driverId
+manifest_version: 1
