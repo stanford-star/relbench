@@ -88,6 +88,12 @@ regenerable, and CI-checked against the shipped labels), **`autocomplete`** (pre
 existing column), and **`external`** (labels shipped as-is). Adding a task is just adding a
 `tasks/<name>/` directory.
 
+**Naming conventions.** A dataset is named `rel-<name>`, where `<name>` is a single,
+lowercase, singular word (e.g. `rel-amazon`); use `rel-<name>-<qualifier>` for a variant
+(e.g. `rel-amazon-fashion`). Tasks are named `<entity>-<word>` for entity tasks and
+`<src-entity>-<dst-entity>-<word>` for recommendation (link) tasks — e.g. `user-churn`,
+`user-item-review`.
+
 The published [`rel-f1`](https://huggingface.co/datasets/relbench/v1) repo is a complete
 worked example. Generate the card + diagram with `relbench.schema.dataset_card` /
 `render_schema_svg`, and verify a `forecast` task reproduces its labels with:
