@@ -55,16 +55,15 @@ implementation on [PyTorch Geometric](https://github.com/pyg-team/pytorch_geomet
 
 ### Tutorials
 
-[marimo](https://marimo.io) notebooks — read the rendered version on the website, then
-download and run it yourself:
+Jupyter notebooks you can open directly in Google Colab — no setup required:
 
 | Tutorial | What it covers | |
 |---|---|---|
-| [**Quickstart**](https://relbench.stanford.edu/tutorials/quickstart/) | Load a dataset/task, explore the schema, run a baseline | rendered + download |
-| [**Training a GNN**](https://relbench.stanford.edu/tutorials/gnn/) | A GNN baseline for an entity task (PyG + PyTorch Frame) | rendered + download (needs a GPU) |
+| [**Quickstart**](https://colab.research.google.com/github/snap-stanford/relbench/blob/relbench-hf/tutorials/quickstart.ipynb) | Load a dataset/task, explore the schema, run a baseline | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/snap-stanford/relbench/blob/relbench-hf/tutorials/quickstart.ipynb) |
+| [**Training a GNN**](https://colab.research.google.com/github/snap-stanford/relbench/blob/relbench-hf/tutorials/gnn.ipynb) | A GNN baseline for an entity task (PyG + PyTorch Frame) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/snap-stanford/relbench/blob/relbench-hf/tutorials/gnn.ipynb) (needs a GPU) |
 
-Run locally with `pip install relbench[tutorial]` (add `[full]` for the GNN), then
-`marimo edit tutorials/quickstart.py` — the sources live in [`tutorials/`](tutorials).
+The sources live in [`tutorials/`](tutorials); to run locally, `pip install relbench`
+(add `[full]` for the GNN) and open them with `jupyter notebook`.
 
 ## Contributing
 
