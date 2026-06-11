@@ -1,29 +1,14 @@
 from typing import Optional
 
-import numpy as np
 import pandas as pd
-from sklearn.preprocessing import OrdinalEncoder
 
-from relbench.metrics import (
-    accuracy,
-    average_precision,
-    f1,
-    macro_f1,
-    mae,
-    micro_f1,
-    mrr,
-    r2,
-    rmse,
-    roc_auc,
-)
+from relbench.metrics import make_nmae, roc_auc
 
 from .database import Database
 from .dataset import Dataset
 from .table import Table
 from .task_base import TaskType
 from .task_entity import EntityTask
-
-UNKNOWN_CLASS_LABEL = -1
 
 
 class AutoCompleteTask(EntityTask):
@@ -73,29 +58,22 @@ class AutoCompleteTask(EntityTask):
         self.time_col = db.table_dict[self.entity_table].time_col
 
         if self.task_type == TaskType.REGRESSION:
-            self.metrics = [r2, mae, rmse]
+            # NMAE = MAE / std(train target, ddof=1); resolved lazily on first eval.
+            self.metrics = [
+                make_nmae(
+                    lambda: float(
+                        self.get_table("train").df[self.target_col].std(ddof=1)
+                    )
+                )
+            ]
         elif self.task_type == TaskType.BINARY_CLASSIFICATION:
-            self.metrics = [average_precision, accuracy, f1, roc_auc]
+            self.metrics = [roc_auc]
             self.num_classes = 2
-        elif self.task_type == TaskType.MULTICLASS_CLASSIFICATION:
-            self.metrics = [accuracy, macro_f1, micro_f1, mrr]
-            removed_cols = db.table_dict[self.entity_table].removed_cols
-            db = db.upto(self.dataset.val_timestamp)
-            train_ids = db.table_dict[self.entity_table].df[self.entity_col].values
-            train_targets = removed_cols.loc[
-                removed_cols[self.entity_col].isin(train_ids), self.target_col
-            ].values
-            # Encode the categories found in the training set to consecutive
-            # integers. Unseen categories are filtered out during evaluation.
-            self.target_encoder = OrdinalEncoder(
-                unknown_value=UNKNOWN_CLASS_LABEL,
-                handle_unknown="use_encoded_value",
-                dtype="int64",
-            )
-            self.target_encoder.fit(train_targets.reshape(-1, 1))
-            self.num_classes = self.target_encoder.categories_[0].shape[0]
         else:
-            raise NotImplementedError(f"Task type {self.task_type} not implemented")
+            raise NotImplementedError(
+                f"Task type {self.task_type} is not supported. RelBench supports only "
+                f"regression, binary classification, and link prediction."
+            )
 
     def filter_dangling_entities(self, table: Table) -> Table:
         db = self.dataset.get_db(upto_test_timestamp=False)
@@ -190,9 +168,6 @@ class AutoCompleteTask(EntityTask):
                 entity_table.{self.time_col} <= '{max_timestamp}'
             """).df()
 
-        if self.task_type == TaskType.MULTICLASS_CLASSIFICATION:
-            df[self.target_col] = self.transform_target(df[self.target_col])
-
         # remove rows where self.target_col is nan
         df = df.dropna(subset=[self.target_col])
 
@@ -204,12 +179,3 @@ class AutoCompleteTask(EntityTask):
             pkey_col=None,
             time_col=self.time_col,
         )
-
-    def transform_target(self, target_col: pd.Series) -> pd.Series:
-        transformed = self.target_encoder.transform(
-            target_col.values.reshape(-1, 1)
-        ).flatten()
-        transformed_target = pd.Series(transformed, index=target_col.index)
-        # set unknown labels to NaN to filter them out during evaluation
-        transformed_target[transformed == UNKNOWN_CLASS_LABEL] = np.nan
-        return transformed_target

@@ -14,8 +14,35 @@ unless you pass ``revision=`` explicitly.
 
 from __future__ import annotations
 
+import json
+from functools import lru_cache
 from pathlib import Path
 from typing import Optional
+
+# Where the per-task regression-target stds for the RelBench v1 datasets live. One JSON
+# file at the root of the ``relbench/v1`` Hub dataset repo, keyed by "<dataset>/<task>".
+# These normalize MAE into NMAE (nmae = mae / std); see relbench.metrics.make_nmae.
+V1_REPO = "relbench/v1"
+REGRESSION_STDS_FILE = "regression_stds.json"
+
+
+@lru_cache(maxsize=None)
+def load_v1_regression_stds(revision: Optional[str] = None) -> dict[str, float]:
+    r"""Fetch the hosted ``relbench/v1`` regression-std table as ``{"<dataset>/<task>": std}``.
+
+    Uses ``hf_hub_download``, so if the file is already in the local HF cache (e.g. the user
+    has it from a prior call) it is read from disk without a network round-trip.
+    """
+    from huggingface_hub import hf_hub_download
+
+    path = hf_hub_download(
+        repo_id=V1_REPO,
+        filename=REGRESSION_STDS_FILE,
+        repo_type="dataset",
+        revision=revision,
+    )
+    with open(path) as f:
+        return dict(json.load(f).get("stds", {}))
 
 
 def resolve_repo(spec: str) -> tuple[str, str]:

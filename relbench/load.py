@@ -47,28 +47,64 @@ from relbench.manifest import (
     validate_dataset_manifest,
 )
 
-# Default metric set per task type (used when a task manifest omits `metrics`).
+# The single metric per supported task type. Only the three RelBench v1 task types are
+# supported; the user does not choose the metric. Regression's NMAE is built per-task (it
+# needs the train-split target std), so it is handled specially in `_resolve_metrics`.
 DEFAULT_METRICS: dict[TaskType, list[str]] = {
-    TaskType.REGRESSION: ["r2", "mae", "rmse"],
-    TaskType.BINARY_CLASSIFICATION: ["average_precision", "accuracy", "f1", "roc_auc"],
-    TaskType.MULTICLASS_CLASSIFICATION: ["accuracy", "macro_f1", "micro_f1", "mrr"],
-    TaskType.MULTILABEL_CLASSIFICATION: [
-        "multilabel_auprc_micro",
-        "multilabel_auprc_macro",
-        "multilabel_auroc_micro",
-        "multilabel_auroc_macro",
-    ],
-    TaskType.LINK_PREDICTION: [
-        "link_prediction_precision",
-        "link_prediction_recall",
-        "link_prediction_map",
-    ],
+    TaskType.BINARY_CLASSIFICATION: ["roc_auc"],
+    TaskType.REGRESSION: ["nmae"],
+    TaskType.LINK_PREDICTION: ["link_prediction_map"],
 }
 
 
-def _resolve_metrics(tm: TaskManifest) -> list:
+def train_std(task) -> float:
+    r"""Standard deviation (ddof=1) of a regression task's target on its train split.
+
+    This is the normalizer that turns MAE into NMAE. For the hosted RelBench v1 tasks the
+    same values are precomputed and stored at ``relbench/v1`` (see
+    :func:`relbench.hf.load_v1_regression_stds`); this utility recomputes one from scratch.
+    """
+    df = task.get_table("train").df
+    return float(df[task.target_col].std(ddof=1))
+
+
+def _make_std_getter(task, dataset_name: Optional[str], task_name: Optional[str]):
+    r"""Lazily resolve the NMAE normalizer for ``task``: hosted v1 std if available, else
+    compute it from the train split. Lazy so merely loading a task triggers no I/O."""
+    from functools import lru_cache as _lru_cache
+
+    @_lru_cache(maxsize=1)
+    def get_std() -> float:
+        if dataset_name is not None and task_name is not None:
+            try:
+                stds = hf.load_v1_regression_stds()
+            except Exception:
+                stds = {}
+            std = stds.get(f"{dataset_name}/{task_name}")
+            if std is not None:
+                return float(std)
+        return train_std(task)
+
+    return get_std
+
+
+def _resolve_metrics(
+    tm: TaskManifest, task=None, dataset_name: Optional[str] = None
+) -> list:
     # Metrics are not stored in the manifest; they default from the task type.
-    return [getattr(metrics, name) for name in DEFAULT_METRICS[TaskType(tm.task_type)]]
+    task_type = TaskType(tm.task_type)
+    if task_type not in DEFAULT_METRICS:
+        raise ValueError(
+            f"task '{tm.name}': task type {task_type.value!r} is not supported. "
+            f"RelBench supports only {[t.value for t in DEFAULT_METRICS]}."
+        )
+    out = []
+    for name in DEFAULT_METRICS[task_type]:
+        if name == "nmae":
+            out.append(metrics.make_nmae(_make_std_getter(task, dataset_name, tm.name)))
+        else:
+            out.append(getattr(metrics, name))
+    return out
 
 
 def _coerce_string_dtype(df: pd.DataFrame) -> pd.DataFrame:
@@ -220,7 +256,7 @@ class _ForecastEntityTask(_HostedLabelsMixin, EntityTask):
         self.time_col = tm.time_col
         self.timedelta = _parse_timedelta(tm.timedelta)
         self.num_eval_timestamps = tm.num_eval_timestamps
-        self.metrics = _resolve_metrics(tm)
+        self.metrics = _resolve_metrics(tm, task=self, dataset_name=dataset.manifest.name)
         self._sql = tm.sql
         self._task_dir = Path(task_dir) if task_dir is not None else None
         self._regenerate = regenerate
@@ -248,7 +284,7 @@ class _ForecastRecommendationTask(_HostedLabelsMixin, RecommendationTask):
         self.timedelta = _parse_timedelta(tm.timedelta)
         self.num_eval_timestamps = tm.num_eval_timestamps
         self.eval_k = tm.eval_k
-        self.metrics = _resolve_metrics(tm)
+        self.metrics = _resolve_metrics(tm, task=self, dataset_name=dataset.manifest.name)
         self._sql = tm.sql
         self._task_dir = Path(task_dir) if task_dir is not None else None
         self._regenerate = regenerate
@@ -317,7 +353,7 @@ class _ExternalEntityTask(_HostedLabelsMixin, EntityTask):
         self.time_col = tm.time_col
         self.timedelta = _parse_timedelta(tm.timedelta) if tm.timedelta else pd.Timedelta(days=1)
         self.num_eval_timestamps = tm.num_eval_timestamps
-        self.metrics = _resolve_metrics(tm)
+        self.metrics = _resolve_metrics(tm, task=self, dataset_name=dataset.manifest.name)
         self._task_dir = Path(task_dir) if task_dir is not None else None
         self._regenerate = False  # external labels are not regenerable
         super().__init__(dataset, cache_dir=None)
@@ -340,7 +376,7 @@ class _ExternalRecommendationTask(_HostedLabelsMixin, RecommendationTask):
         self.timedelta = _parse_timedelta(tm.timedelta) if tm.timedelta else pd.Timedelta(days=1)
         self.num_eval_timestamps = tm.num_eval_timestamps
         self.eval_k = tm.eval_k
-        self.metrics = _resolve_metrics(tm)
+        self.metrics = _resolve_metrics(tm, task=self, dataset_name=dataset.manifest.name)
         self._task_dir = Path(task_dir) if task_dir is not None else None
         self._regenerate = False
         super().__init__(dataset, cache_dir=None)

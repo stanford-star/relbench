@@ -1,7 +1,14 @@
 from relbench import base
-from relbench.load import get_task_names, load_dataset, load_task
+from relbench.load import get_task_names, load_dataset, load_task, train_std
 
-__all__ = ["base", "modeling", "load_dataset", "load_task", "get_task_names"]
+__all__ = [
+    "base",
+    "modeling",
+    "load_dataset",
+    "load_task",
+    "get_task_names",
+    "train_std",
+]
 
 
 def __getattr__(name):
