@@ -86,7 +86,7 @@ def _esc(s) -> str:
 
 
 def _badge(text: str, color: str) -> str:
-    return f'<FONT COLOR="{color}" POINT-SIZE="14"><B>{text}</B></FONT>'
+    return f'<FONT COLOR="{color}" POINT-SIZE="14"><B><I>{text}</I></B></FONT>'
 
 
 def _parquet_reader(db_dir: Path) -> Reader:
@@ -179,7 +179,7 @@ def render_schema_svg(
             f'<TD WIDTH="{wl}" HEIGHT="{_HH}" BGCOLOR="{_HEADER}" PORT="__t" ALIGN="LEFT">'
             f'<FONT COLOR="{_HTXT}" POINT-SIZE="{_FS}"><B>{_esc(tname)}</B></FONT></TD>'
             f'<TD WIDTH="{wr}" HEIGHT="{_HH}" BGCOLOR="{_HEADER}" ALIGN="RIGHT">'
-            f'<FONT COLOR="{_COUNT}" POINT-SIZE="{_FS}">{_esc(_rows_word(count))}</FONT></TD>'
+            f'<FONT COLOR="{_COUNT}" POINT-SIZE="{_FS}"><I>{_esc(_rows_word(count))}</I></FONT></TD>'
             f'</TR>'
         ]
         for cname, ctype in cols:
@@ -195,7 +195,7 @@ def render_schema_svg(
             elif is_t:
                 right = _badge("TIME", _TTAG)
             elif ctype:
-                right = f'<FONT COLOR="{_TYPE}" POINT-SIZE="{_FS}">{_esc(ctype)}</FONT>'
+                right = f'<FONT COLOR="{_TYPE}" POINT-SIZE="{_FS}"><I>{_esc(ctype)}</I></FONT>'
             else:
                 right = ""
             # left cell port = entry (PK, west edge); right cell port = exit (FK, east edge)
@@ -279,6 +279,17 @@ def _postprocess_svg(svgpath: Path) -> None:
         ys = [float(b) for _, b in pts]
         x0p, x1p, y0p, y1p = min(xs), max(xs), min(ys), max(ys)
         poly.set("points", f"{x0p - ex},{y0p} {x1p + ex},{y0p} {x1p + ex},{y1p} {x0p - ex},{y1p}")
+
+    # paint edges behind the table boxes: SVG paints in document order, so move edge groups
+    # ahead of node groups (after the background) -> connectors pass behind the cards.
+    children = list(graph)
+    edges = [c for c in children if c.get("class") == "edge"]
+    nodes = [c for c in children if c.get("class") == "node"]
+    others = [c for c in children if c.get("class") not in ("edge", "node")]
+    for c in children:
+        graph.remove(c)
+    for c in others + edges + nodes:
+        graph.append(c)
 
     tree.write(svgpath)
 
