@@ -20,11 +20,10 @@ from torch_geometric.loader import NeighborLoader
 from torch_geometric.seed import seed_everything
 from tqdm import tqdm
 
+from relbench import get_task_names, load_dataset, load_task
 from relbench.base import Dataset, EntityTask, Table, TaskType
-from relbench.datasets import get_dataset
 from relbench.modeling.graph import get_node_train_table_input, make_pkey_fkey_graph
 from relbench.modeling.utils import get_stype_proposal
-from relbench.tasks import get_task, get_task_names
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-event")
@@ -66,8 +65,8 @@ if torch.cuda.is_available():
 seed_everything(args.seed)
 
 try:
-    dataset: Dataset = get_dataset(args.dataset, download=bool(args.download))
-    task: EntityTask = get_task(args.dataset, args.task, download=bool(args.download))
+    dataset: Dataset = load_dataset(args.dataset)
+    task: EntityTask = load_task(args.dataset, args.task)
 except Exception:
     if bool(args.download):
         print(
@@ -100,7 +99,7 @@ else:
 db = dataset.get_db()
 # add (time-censored) labels tables to the db
 for task_name in tasks_to_add:
-    t = get_task(args.dataset, task_name, download=bool(args.download))
+    t = load_task(args.dataset, task_name)
     if not isinstance(t, EntityTask):
         continue
     labels_table_name = f"{task_name}_labels"

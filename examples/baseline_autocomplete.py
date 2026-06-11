@@ -7,26 +7,20 @@ import torch
 from scipy.stats import mode
 from torch_geometric.seed import seed_everything
 
+from relbench import load_task
 from relbench.base import Dataset, EntityTask, Table, TaskType
-from relbench.tasks import get_task
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-f1")
 parser.add_argument("--task", type=str, default="predict-column")
 parser.add_argument("--seed", type=int, default=42)
-parser.add_argument(
-    "--download",
-    action="store_true",
-    default=False,
-    help="Download the dataset if not already present.",
-)
 
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 seed_everything(args.seed)
 
-task: EntityTask = get_task(args.dataset, args.task, download=args.download)
+task: EntityTask = load_task(args.dataset, args.task)
 dataset: Dataset = task.dataset
 
 

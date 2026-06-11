@@ -9,8 +9,7 @@ from sklearn.preprocessing import LabelEncoder
 from torch_geometric.seed import seed_everything
 
 from relbench.base import Dataset, EntityTask, Table, TaskType
-from relbench.datasets import get_dataset
-from relbench.tasks import get_task
+from relbench import load_dataset, load_task
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stack")
@@ -21,8 +20,8 @@ args = parser.parse_args()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 seed_everything(args.seed)
 
-dataset: Dataset = get_dataset(args.dataset, download=True)
-task: EntityTask = get_task(args.dataset, args.task, download=True)
+dataset: Dataset = load_dataset(args.dataset)
+task: EntityTask = load_task(args.dataset, args.task)
 
 train_table = task.get_table("train")
 val_table = task.get_table("val")

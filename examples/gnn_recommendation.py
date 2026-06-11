@@ -19,12 +19,11 @@ from torch_geometric.loader import NeighborLoader
 from torch_geometric.seed import seed_everything
 from tqdm import tqdm
 
+from relbench import load_dataset, load_task
 from relbench.base import Dataset, RecommendationTask, TaskType
-from relbench.datasets import get_dataset
 from relbench.modeling.graph import get_link_train_table_input, make_pkey_fkey_graph
 from relbench.modeling.loader import LinkNeighborLoader
 from relbench.modeling.utils import get_stype_proposal
-from relbench.tasks import get_task
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-hm")
@@ -66,10 +65,8 @@ if torch.cuda.is_available():
 seed_everything(args.seed)
 
 try:
-    dataset: Dataset = get_dataset(args.dataset, download=bool(args.download))
-    task: RecommendationTask = get_task(
-        args.dataset, args.task, download=bool(args.download)
-    )
+    dataset: Dataset = load_dataset(args.dataset)
+    task: RecommendationTask = load_task(args.dataset, args.task)
 except Exception:
     if bool(args.download):
         print(

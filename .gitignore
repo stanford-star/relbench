@@ -6,8 +6,6 @@ __pycache__
 venv/
 results/
 cache
-
-# pixi environments
 .pixi
 *.egg-info
 .claude/

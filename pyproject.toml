@@ -16,7 +16,8 @@ requires-python=">=3.10"
 keywords=[]
 dependencies=[
 	"pandas",
-	"pooch",
+	"huggingface_hub",
+	"pyyaml",
 	"pyarrow",
 	"numpy",
 	"duckdb",
@@ -48,6 +49,9 @@ dbinfer=[
 ]
 ctu=[
 	"redelex",
+]
+schema=[
+	"graphviz",
 ]
 
 [project.urls]

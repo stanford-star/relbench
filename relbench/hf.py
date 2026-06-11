@@ -1,0 +1,50 @@
+r"""Hugging Face Hub download layer.
+
+A RelBench dataset is any local directory or Hugging Face Hub location that follows the
+manifest layout (a ``manifest.yaml`` next to ``db/<table>.parquet`` and ``tasks/``).
+Address it as:
+
+* a local path, e.g. ``/data/rel-f1``;
+* a Hub repo, e.g. ``relbench/rel-f1`` (manifest at the repo root); or
+* a Hub sub-path, e.g. ``relbench/v1/rel-f1`` (manifest under ``rel-f1/`` in ``relbench/v1``).
+
+There is no central registry of names and no pinned revisions: the latest ``main`` is used
+unless you pass ``revision=`` explicitly.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Optional
+
+
+def resolve_repo(spec: str) -> tuple[str, str]:
+    r"""Split a Hub spec into ``(repo_id, subdir)``.
+
+    ``"org/name"`` -> ``("org/name", "")``; ``"org/name/a/b"`` -> ``("org/name", "a/b")``.
+    """
+    parts = spec.strip("/").split("/")
+    if len(parts) < 2:
+        raise ValueError(
+            f"'{spec}' is not a Hub 'org/name' repo id (optionally with a '/subdir'). "
+            f"Pass a Hub 'org/name[/subdir]' or a local path."
+        )
+    return f"{parts[0]}/{parts[1]}", "/".join(parts[2:])
+
+
+def download_dataset_dir(spec: str, revision: Optional[str] = None) -> Path:
+    r"""Download a dataset from the Hub and return its local directory.
+
+    Only the addressed sub-path is fetched, so loading ``relbench/v1/rel-f1`` does not pull
+    every dataset in ``relbench/v1``.
+    """
+    from huggingface_hub import snapshot_download
+
+    repo_id, subdir = resolve_repo(spec)
+    local = snapshot_download(
+        repo_id=repo_id,
+        revision=revision,
+        repo_type="dataset",
+        allow_patterns=[f"{subdir}/*"] if subdir else None,
+    )
+    return Path(local) / subdir if subdir else Path(local)
