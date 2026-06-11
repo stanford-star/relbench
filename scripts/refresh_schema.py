@@ -98,6 +98,44 @@ def load_manifest(repo_id, subdir, rel):
     return _retry(lambda: yaml.safe_load(fs.open(path, "rb").read()))
 
 
+# Original-dataset citations by repo (datasets not listed here are RelBench-native: the card
+# cites RelBench only). TGB carries both the TGB and TGB 2.0 papers.
+_CTU = """@article{motl2015ctu,
+  title   = {The {CTU} Prague Relational Learning Repository},
+  author  = {Motl, Jan and Schulte, Oliver},
+  journal = {arXiv preprint arXiv:1511.03086},
+  year    = {2015}
+}"""
+_DBINFER = """@inproceedings{wang2024fourdbinfer,
+  title     = {{4DBInfer}: A {4D} Benchmarking Toolbox for Graph-Centric Predictive Modeling on Relational Databases},
+  author    = {Wang, Minjie and Gan, Quan and Wipf, David and Cai, Zhenkun and Li, Ning and Tang, Jianheng and Zhang, Yanlin and Zhang, Zizhao and Mao, Zunyao and Song, Yakun and Wang, Yanbo and Li, Jiahang and Zhang, Han and Yang, Guang and Qin, Xiao and Lei, Chuan and Zhang, Muhan and Zhang, Weinan and Faloutsos, Christos and Zhang, Zheng},
+  booktitle = {Advances in Neural Information Processing Systems 37 (NeurIPS 2024) Datasets and Benchmarks Track},
+  year      = {2024}
+}"""
+_TGB = """@inproceedings{huang2023temporal,
+  title     = {Temporal Graph Benchmark for Machine Learning on Temporal Graphs},
+  author    = {Huang, Shenyang and Poursafaei, Farimah and Danovitch, Jacob and Fey, Matthias and Hu, Weihua and Rossi, Emanuele and Leskovec, Jure and Bronstein, Michael and Rabusseau, Guillaume and Rabbany, Reihaneh},
+  booktitle = {Advances in Neural Information Processing Systems 36 (NeurIPS 2023) Datasets and Benchmarks Track},
+  year      = {2023}
+}
+
+@inproceedings{gastinger2024tgb2,
+  title     = {{TGB 2.0}: A Benchmark for Learning on Temporal Knowledge Graphs and Heterogeneous Graphs},
+  author    = {Gastinger, Julia and Huang, Shenyang and Galkin, Mikhail and Loghmani, Erfan and Parviz, Ali and Poursafaei, Farimah and Danovitch, Jacob and Rossi, Emanuele and Koutis, Ioannis and Stuckenschmidt, Heiner and Rabbany, Reihaneh and Rabusseau, Guillaume},
+  booktitle = {Advances in Neural Information Processing Systems 37 (NeurIPS 2024) Datasets and Benchmarks Track},
+  year      = {2024}
+}"""
+SOURCES = {
+    "relbench/redelex": {"label": "CTU Prague Relational Learning Repository",
+                         "url": "https://relational.fel.cvut.cz/", "bibtex": _CTU},
+    "relbench/dbinfer": {"label": "4DBInfer (NeurIPS 2024)",
+                         "url": "https://proceedings.neurips.cc/paper_files/paper/2024/hash/2fd67447702c8eff5683dda507a1b0a2-Abstract-Datasets_and_Benchmarks_Track.html",
+                         "bibtex": _DBINFER},
+    "relbench/tgb": {"label": "Temporal Graph Benchmark (TGB / TGB 2.0)",
+                     "url": "https://tgb.complexdatalab.com/", "bibtex": _TGB},
+}
+
+
 def render_one(repo_id, subdir, task_rels, out):
     odir = out / subdir if subdir else out
     if (odir / "schema.svg").exists() and (no_readme or (odir / "README.md").exists()):
@@ -113,7 +151,8 @@ def render_one(repo_id, subdir, task_rels, out):
                 if d:
                     tasks.append(TaskManifest.from_dict(d))
             addr = f"{repo_id}/{subdir}" if subdir else repo_id
-            (odir / "README.md").write_text(dataset_card(manifest, tasks, repo=addr))
+            (odir / "README.md").write_text(
+                dataset_card(manifest, tasks, repo=addr, source=SOURCES.get(repo_id)))
         return (subdir, None)
     except Exception as exc:
         return (subdir, repr(exc)[:140])

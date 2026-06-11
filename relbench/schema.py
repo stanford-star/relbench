@@ -297,15 +297,31 @@ def _postprocess_svg(svgpath: Path) -> None:
     tree.write(svgpath)
 
 
+# RelBench (NeurIPS 2024 Datasets & Benchmarks) -- always cited for datasets hosted here.
+RELBENCH_PAPER_URL = (
+    "https://proceedings.neurips.cc/paper_files/paper/2024/hash/"
+    "25cd345233c65fac1fec0ce61d0f7836-Abstract-Datasets_and_Benchmarks_Track.html"
+)
+RELBENCH_BIBTEX = """@inproceedings{robinson2024relbench,
+  title     = {{RelBench}: A Benchmark for Deep Learning on Relational Databases},
+  author    = {Robinson, Joshua and Ranjan, Rishabh and Hu, Weihua and Huang, Kexin and Han, Jiaqi and Dobles, Alejandro and Fey, Matthias and Lenssen, Jan E. and Yuan, Yiwen and Zhang, Zecheng and He, Xinwei and Leskovec, Jure},
+  booktitle = {Advances in Neural Information Processing Systems 37 (NeurIPS 2024) Datasets and Benchmarks Track},
+  year      = {2024}
+}"""
+
+
 def dataset_card(
     manifest: DatasetManifest,
     tasks: Optional[Iterable[TaskManifest]] = None,
     repo: Optional[str] = None,
+    source: Optional[dict] = None,
 ) -> str:
     r"""Return README.md content (dataset card) with the schema diagram and task table.
 
     ``repo`` is the dataset's address for the loading example (a Hub ``org/repo`` or
-    ``org/repo/subdir``, or a local path); defaults to the dataset name.
+    ``org/repo/subdir``, or a local path); defaults to the dataset name. ``source``, if
+    given, describes the original dataset paper with keys ``label``, ``url``, ``bibtex``;
+    the card cites it and adds a "please also cite RelBench" note.
     """
     addr = repo or manifest.name
     parts = [f"# {manifest.name}", ""]
@@ -328,5 +344,23 @@ def dataset_card(
         f'ds = relbench.load_dataset("{addr}")',
         f'task = relbench.load_task("{addr}", "<task>")',
         "```",
+        "",
+        "## Citation",
+        "",
     ]
+    if source:
+        parts += [
+            f"Original dataset: [{source['label']}]({source['url']}).",
+            "",
+            "```bibtex",
+            source["bibtex"].strip(),
+            "```",
+            "",
+            "If you use this dataset as hosted by RelBench, please also cite "
+            f"[RelBench]({RELBENCH_PAPER_URL}):",
+            "",
+        ]
+    else:
+        parts += [f"Please cite [RelBench]({RELBENCH_PAPER_URL}):", ""]
+    parts += ["```bibtex", RELBENCH_BIBTEX, "```"]
     return "\n".join(parts) + "\n"
