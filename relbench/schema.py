@@ -34,8 +34,9 @@ _FKTAG = "#5273A6"
 _TTAG = "#3B9B5B"
 _TYPE = "#6B7686"     # dtype text
 
-_FS = 16              # base font size
-_RH = 32             # uniform non-header row height
+_FS = 11              # base font size
+_BADGE = 10           # PK/FK/TIME badge size
+_RH = 22             # uniform non-header row height
 _HH = int(1.2 * _RH)  # header height = 1.2x a normal row
 _NAME_CAP = 20        # cap longest name used for the (uniform) table width
 _DTYPE_RANK = {"float": 3, "int": 4, "str": 5}
@@ -86,7 +87,7 @@ def _esc(s) -> str:
 
 
 def _badge(text: str, color: str) -> str:
-    return f'<FONT COLOR="{color}" POINT-SIZE="14"><B><I>{text}</I></B></FONT>'
+    return f'<FONT COLOR="{color}" POINT-SIZE="{_BADGE}"><B><I>{text}</I></B></FONT>'
 
 
 def _parquet_reader(db_dir: Path) -> Reader:
@@ -161,8 +162,8 @@ def render_schema_svg(
             lmax = max(lmax, len(cname))
             rmax = max(rmax, len(right))
 
-    wl = int(min(lmax, _NAME_CAP) * 9.6) + 16  # left column (names), capped
-    wr = int(min(rmax, 11) * 9.4) + 18         # right column (badges/dtypes/count)
+    wl = int(min(lmax, _NAME_CAP) * 6.6) + 12  # left column (names), capped
+    wr = int(min(rmax, 11) * 6.5) + 12         # right column (badges/dtypes/count)
 
     # pass 2: emit nodes (one HTML-table card per table) + base edges (FK -> PK).
     g = graphviz.Digraph("schema", engine="dot")
@@ -174,12 +175,14 @@ def render_schema_svg(
     for tname, spec in tables.items():
         cols, count = collected[tname]
         pkey, tcol, fkeys = spec.pkey, spec.time_col, spec.fkeys
+        cnt_txt = _esc(_rows_word(count))
+        cnt_html = (f'<FONT COLOR="{_COUNT}" POINT-SIZE="{_FS}"><I>{cnt_txt}</I></FONT>'
+                    if cnt_txt else "")
         rows = [
             f'<TR>'
             f'<TD WIDTH="{wl}" HEIGHT="{_HH}" BGCOLOR="{_HEADER}" PORT="__t" ALIGN="LEFT">'
             f'<FONT COLOR="{_HTXT}" POINT-SIZE="{_FS}"><B>{_esc(tname)}</B></FONT></TD>'
-            f'<TD WIDTH="{wr}" HEIGHT="{_HH}" BGCOLOR="{_HEADER}" ALIGN="RIGHT">'
-            f'<FONT COLOR="{_COUNT}" POINT-SIZE="{_FS}"><I>{_esc(_rows_word(count))}</I></FONT></TD>'
+            f'<TD WIDTH="{wr}" HEIGHT="{_HH}" BGCOLOR="{_HEADER}" ALIGN="RIGHT">{cnt_html}</TD>'
             f'</TR>'
         ]
         for cname, ctype in cols:
@@ -295,35 +298,20 @@ def _postprocess_svg(svgpath: Path) -> None:
 
 
 def dataset_card(
-    manifest: DatasetManifest, tasks: Optional[Iterable[TaskManifest]] = None
+    manifest: DatasetManifest,
+    tasks: Optional[Iterable[TaskManifest]] = None,
+    repo: Optional[str] = None,
 ) -> str:
-    r"""Return README.md content (dataset card) with the schema diagram and task table."""
-    parts = [
-        "---",
-        "tags:",
-        "- relbench",
-        "- relational-deep-learning",
-        f"pretty_name: {manifest.name}",
-        "---",
-        "",
-        f"# {manifest.name}",
-        "",
-    ]
+    r"""Return README.md content (dataset card) with the schema diagram and task table.
+
+    ``repo`` is the dataset's address for the loading example (a Hub ``org/repo`` or
+    ``org/repo/subdir``, or a local path); defaults to the dataset name.
+    """
+    addr = repo or manifest.name
+    parts = [f"# {manifest.name}", ""]
     if manifest.description:
         parts += [manifest.description.strip(), ""]
-    parts += [
-        "## Schema",
-        "",
-        "![schema diagram](schema.svg)",
-        "",
-        "Open [`schema.svg`](schema.svg) for a zoomable view: each table shows its columns "
-        "and types and its row count, with primary keys, foreign keys, time columns, and the "
-        "foreign-key relationships (crow's-foot notation) between tables.",
-        "",
-        f"Splits: validation `{manifest.val_timestamp}`, test `{manifest.test_timestamp}` "
-        "(rows up to a split's timestamp are the inputs for that split).",
-        "",
-    ]
+    parts += ["## Schema", "", "![schema diagram](schema.svg)", ""]
     tasks = list(tasks or [])
     if tasks:
         parts += ["## Tasks", "", "| task | kind | type | description |", "|---|---|---|---|"]
@@ -337,11 +325,8 @@ def dataset_card(
         "",
         "```python",
         "import relbench",
-        f'ds = relbench.load_dataset("{manifest.name}")',
-        f'task = relbench.load_task("{manifest.name}", "<task>")',
+        f'ds = relbench.load_dataset("{addr}")',
+        f'task = relbench.load_task("{addr}", "<task>")',
         "```",
-        "",
-        "Manifest layout (`manifest.yaml` + plain parquet); see the RelBench [CONTRIBUTING "
-        "guide](https://github.com/snap-stanford/relbench/blob/main/CONTRIBUTING.md).",
     ]
     return "\n".join(parts) + "\n"

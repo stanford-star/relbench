@@ -1,75 +1,49 @@
-r"""Hugging Face Hub download layer (replaces pooch).
+r"""Hugging Face Hub download layer.
 
-Official datasets are listed in ``registry.json`` mapping a RelBench name to a
-Hub ``repo_id`` and a pinned ``revision``. Pinning the revision is what makes task
-labels reproducible: a task's provenance is its manifest SQL run against the database
-at a *fixed* dataset revision. Integrity comes from the pinned commit, not a hash file.
+A RelBench dataset is any local directory or Hugging Face Hub location that follows the
+manifest layout (a ``manifest.yaml`` next to ``db/<table>.parquet`` and ``tasks/``).
+Address it as:
 
-Third-party datasets need no registry entry -- ``relbench.load_dataset("org/name")``
-downloads any Hub dataset repo that follows the manifest layout, and a local path works
-with no Hub access at all.
+* a local path, e.g. ``/data/rel-f1``;
+* a Hub repo, e.g. ``relbench/rel-f1`` (manifest at the repo root); or
+* a Hub sub-path, e.g. ``relbench/v1/rel-f1`` (manifest under ``rel-f1/`` in ``relbench/v1``).
+
+There is no central registry of names and no pinned revisions: the latest ``main`` is used
+unless you pass ``revision=`` explicitly.
 """
 
 from __future__ import annotations
 
-import json
-from functools import lru_cache
 from pathlib import Path
 from typing import Optional
 
-_REGISTRY_PATH = Path(__file__).parent / "registry.json"
 
+def resolve_repo(spec: str) -> tuple[str, str]:
+    r"""Split a Hub spec into ``(repo_id, subdir)``.
 
-@lru_cache(maxsize=None)
-def _registry() -> dict:
-    if _REGISTRY_PATH.exists():
-        with open(_REGISTRY_PATH) as f:
-            return json.load(f)
-    return {}
-
-
-def registered_names() -> list[str]:
-    r"""Names of the official, curated RelBench datasets."""
-    return list(_registry())
-
-
-def is_registered(name: str) -> bool:
-    return name in _registry()
-
-
-def resolve_repo(name: str) -> tuple[str, Optional[str], str]:
-    r"""Return ``(repo_id, revision, subdir)`` for ``name``.
-
-    Official datasets are grouped into family repos (e.g. ``relbench/v1`` holds
-    ``rel-f1/``, ``rel-amazon/`` ...; likewise ``relbench/dbinfer``, ``relbench/tgb``),
-    so a registry entry carries the family ``repo_id`` plus the in-repo ``path`` (the
-    dataset subdir, defaulting to the name). A bare ``"org/dataset"`` Hub repo id is
-    treated as a single-dataset repo with the manifest at its root (``subdir=""``).
+    ``"org/name"`` -> ``("org/name", "")``; ``"org/name/a/b"`` -> ``("org/name", "a/b")``.
     """
-    reg = _registry()
-    if name in reg:
-        entry = reg[name]
-        return entry["repo_id"], entry.get("revision"), entry.get("path", name)
-    if "/" in name:  # a Hub repo id whose root is the dataset
-        return name, None, ""
-    raise KeyError(
-        f"'{name}' is not a registered RelBench dataset (known: {sorted(reg)}) "
-        f"and is not a 'org/name' Hub repo id. Pass a local path instead."
-    )
+    parts = spec.strip("/").split("/")
+    if len(parts) < 2:
+        raise ValueError(
+            f"'{spec}' is not a Hub 'org/name' repo id (optionally with a '/subdir'). "
+            f"Pass a Hub 'org/name[/subdir]' or a local path."
+        )
+    return f"{parts[0]}/{parts[1]}", "/".join(parts[2:])
 
 
-def download_dataset_dir(name: str, revision: Optional[str] = None) -> Path:
-    r"""Download a dataset from its (possibly shared) Hub repo and return its local dir.
+def download_dataset_dir(spec: str, revision: Optional[str] = None) -> Path:
+    r"""Download a dataset from the Hub and return its local directory.
 
-    Only the dataset's subdir is fetched from a family repo, so loading ``rel-f1`` does
-    not pull every dataset in ``relbench/v1``.
+    Only the addressed sub-path is fetched, so loading ``relbench/v1/rel-f1`` does not pull
+    every dataset in ``relbench/v1``.
     """
     from huggingface_hub import snapshot_download
 
-    repo_id, pinned, subdir = resolve_repo(name)
+    repo_id, subdir = resolve_repo(spec)
     local = snapshot_download(
         repo_id=repo_id,
-        revision=revision or pinned,
+        revision=revision,
         repo_type="dataset",
         allow_patterns=[f"{subdir}/*"] if subdir else None,
     )

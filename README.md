@@ -36,10 +36,10 @@ Load a dataset and a task — both come straight from the Hub, with **no per-dat
 ```python
 import relbench
 
-dataset = relbench.load_dataset("rel-f1")        # a Hub repo, or a local path
+dataset = relbench.load_dataset("relbench/v1/rel-f1")   # Hub 'org/repo[/subdir]', or a local path
 db = dataset.get_db()                            # a Database: tables linked by a foreign-key graph
 
-task = relbench.load_task("rel-f1", "driver-position")
+task = relbench.load_task("relbench/v1/rel-f1", "driver-position")
 train_table = task.get_table("train")            # train / val / test label tables
 test_table  = task.get_table("test")             # target column is hidden on test
 
@@ -87,12 +87,6 @@ regenerable, and CI-checked against the shipped labels), **`autocomplete`** (pre
 existing column), and **`external`** (labels shipped as-is). Adding a task is just adding a
 `tasks/<name>/` directory.
 
-**Naming conventions.** A dataset is named `rel-<name>`, where `<name>` is a single,
-lowercase, singular word (e.g. `rel-amazon`); use `rel-<name>-<qualifier>` for a variant
-(e.g. `rel-amazon-fashion`). Tasks are named `<entity>-<word>` for entity tasks and
-`<src-entity>-<dst-entity>-<word>` for recommendation (link) tasks — e.g. `user-churn`,
-`user-item-review`.
-
 The published [`rel-f1`](https://huggingface.co/datasets/relbench/v1) repo is a complete
 worked example. Generate the card + diagram with `relbench.schema.dataset_card` /
 `render_schema_svg`, and verify a `forecast` task reproduces its labels with:
@@ -101,9 +95,9 @@ worked example. Generate the card + diagram with `relbench.schema.dataset_card` 
 python -m relbench.check_provenance <dataset-path-or-name>
 ```
 
-To include your dataset in official RelBench, open a PR adding it to
-[`relbench/registry.json`](relbench/registry.json) (name → Hub repo + a pinned commit
-revision). For bug reports and feature requests, please open a GitHub issue or pull request.
+Datasets are loaded straight from the Hub by their `org/repo[/subdir]` address (or a local
+path) — there is no central registry to register into. For bug reports and feature requests,
+please open a GitHub issue or pull request.
 
 ## Cite RelBench
 

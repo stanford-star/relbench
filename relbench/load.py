@@ -7,8 +7,8 @@ labels). Adding a task later is just adding a directory.
 
 Public API::
 
-    ds   = relbench.load_dataset("rel-f1")           # or a local path / "org/name"
-    task = relbench.load_task("rel-f1", "driver-position")
+    ds   = relbench.load_dataset("relbench/v1/rel-f1")   # Hub 'org/repo[/subdir]' or a local path
+    task = relbench.load_task("relbench/v1/rel-f1", "driver-position")
     db   = ds.get_db()
     train = task.get_table("train")
     task.evaluate(pred)
@@ -385,7 +385,7 @@ def _resolve_dataset_dir(name_or_path: Union[str, Path], revision: Optional[str]
 def load_dataset(
     name_or_path: Union[str, Path], *, revision: Optional[str] = None
 ) -> RelBenchDataset:
-    r"""Load a RelBench dataset from a registered name, a Hub ``org/name``, or a path."""
+    r"""Load a RelBench dataset from a Hub ``org/repo[/subdir]`` or a local path."""
     dataset_dir = _resolve_dataset_dir(name_or_path, revision)
     manifest = DatasetManifest.load(dataset_dir / "manifest.yaml")
     return RelBenchDataset(dataset_dir, manifest)

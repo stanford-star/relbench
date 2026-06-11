@@ -1,12 +1,12 @@
-r"""Provenance check for a RelBench dataset (registered name, ``org/name``, or local path).
+r"""Provenance check for a RelBench dataset (Hub ``org/repo[/subdir]`` or a local path).
 
 For every ``forecast`` task, regenerate labels from the database via the manifest SQL and
 assert they match the shipped labels. This is the guarantee that a task's hosted labels are
-exactly what its SQL produces against the pinned database revision; it fails on drift (SQL
-edited without refreshing labels, or vice versa). Autocomplete and external tasks have no
-regenerating SQL and are skipped.
+exactly what its SQL produces against the database; it fails on drift (SQL edited without
+refreshing labels, or vice versa). Autocomplete and external tasks have no regenerating SQL
+and are skipped.
 
-    python -m relbench.check_provenance rel-f1
+    python -m relbench.check_provenance relbench/v1/rel-f1
     python -m relbench.check_provenance your-org/your-dataset
     python -m relbench.check_provenance ./path/to/local/dataset
 """
