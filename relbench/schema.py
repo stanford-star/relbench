@@ -2,12 +2,13 @@ r"""Generate a schema diagram + dataset card for a RelBench dataset.
 
 The diagram is a hand-styled entity-relationship diagram rendered with `graphviz
 <https://pypi.org/project/graphviz/>`_ (the ``dot`` engine lays out the tables; the
-foreign-key connectors are drawn in a small SVG post-process). Each table is a card with a
-header (table name + row count), its columns ordered ``pk, fk, time, float, int, str`` and
-colour-coded, and the foreign keys are drawn in standard ER crow's-foot notation (crow's
-foot = "many" at the FK, single bar = "one" at the referenced primary key). The result is a
-transparent ``schema.svg`` (works on light and dark Hub themes) that the Hugging Face file
-viewer renders as a zoomable image.
+foreign-key connectors and a couple of cosmetic touch-ups are applied in a small SVG
+post-process). Each table is a card with a header (table name + row count) and its columns
+ordered ``pk, fk, time, float, int, str`` and colour-coded; the second column (badges,
+dtypes, row count) is right-justified. Foreign keys are drawn in standard ER crow's-foot
+notation (crow's foot = "many" at the FK, single bar = "one" at the referenced primary
+key). The result is a transparent ``schema.svg`` (works on light and dark Hub themes) that
+the Hugging Face file viewer renders as a zoomable image.
 """
 
 from __future__ import annotations
@@ -19,19 +20,24 @@ from typing import Callable, Iterable, Optional, Tuple, Union
 from relbench.manifest import DatasetManifest, TaskManifest
 
 # Palette (chosen to read on both light and dark Hub themes).
-_HEADER = "#4F6BED"
-_PKBG = "#FDF3D7"
-_TIMEBG = "#E4F2E4"
-_FKBG = "#FFFFFF"
-_FEATBG = "#E6E8EB"
-_BORDER = "#9AA3B2"
-_EDGE = "#8A93A2"
-_PKTAG = "#C9971B"
-_FKTAG = "#4F6BED"
+_HEADER = "#5273A6"   # medium blue header, white text
+_HTXT = "white"
+_COUNT = "#FFFFFF"
+_PKBG = "#FCEFC7"     # primary key row (warm yellow)
+_TIMEBG = "#DFF1E1"   # time column row (green)
+_FKBG = "#DEE8F6"     # foreign key row (light blue)
+_FEATBG = "#EDEFF2"   # feature column row (light gray)
+_BORDER = "#D3D9E2"
+_EDGE = "#9AA7B8"
+_PKTAG = "#B0791A"
+_FKTAG = "#5273A6"
 _TTAG = "#3B9B5B"
-_TYPECOL = "#8A93A2"
-_COUNTCOL = "#DDE3FB"
+_TYPE = "#6B7686"     # dtype text
 
+_FS = 16              # base font size
+_RH = 32             # uniform non-header row height
+_HH = int(1.2 * _RH)  # header height = 1.2x a normal row
+_NAME_CAP = 20        # cap longest name used for the (uniform) table width
 _DTYPE_RANK = {"float": 3, "int": 4, "str": 5}
 
 # A reader returns ``(columns, num_rows)`` for a table, or ``(None, None)`` if unavailable.
@@ -71,12 +77,16 @@ def _fmt_count(n: Optional[int]) -> str:
     return f"{round(n / 1e9)}B"
 
 
+def _rows_word(count: str) -> str:
+    return f"{count} rows" if count else ""
+
+
 def _esc(s) -> str:
     return html.escape(str(s))
 
 
 def _badge(text: str, color: str) -> str:
-    return f'<FONT COLOR="{color}" POINT-SIZE="8"><B> {text} </B></FONT>'
+    return f'<FONT COLOR="{color}" POINT-SIZE="14"><B>{text}</B></FONT>'
 
 
 def _parquet_reader(db_dir: Path) -> Reader:
@@ -116,9 +126,9 @@ def render_schema_svg(
     tables = manifest.tables
     pkey_of = {t: s.pkey for t, s in tables.items()}
 
-    # pass 1: collect ordered columns + row counts, and estimate a uniform table width.
+    # pass 1: collect ordered columns + row counts; size left/right columns.
     collected = {}
-    max_chars = 0
+    lmax = rmax = 0
     for tname, spec in tables.items():
         pkey, tcol, fkeys = spec.pkey, spec.time_col, spec.fkeys
         cols, nrows = reader(tname)
@@ -139,7 +149,8 @@ def render_schema_svg(
         cols = sorted(cols, key=_rank)
         count = _fmt_count(nrows)
         collected[tname] = (cols, count)
-        max_chars = max(max_chars, len(tname) + len(count) + 3)
+        lmax = max(lmax, len(tname))
+        rmax = max(rmax, len(_rows_word(count)))
         for cname, ctype in cols:
             right = (
                 "PK" if cname == pkey
@@ -147,9 +158,11 @@ def render_schema_svg(
                 else "TIME" if cname == tcol
                 else ctype
             )
-            max_chars = max(max_chars, len(cname) + len(right) + 3)
+            lmax = max(lmax, len(cname))
+            rmax = max(rmax, len(right))
 
-    width = int(max_chars * 7.2) + 24  # px; ~7.2px per char at 10pt + padding
+    wl = int(min(lmax, _NAME_CAP) * 9.6) + 16  # left column (names), capped
+    wr = int(min(rmax, 11) * 9.4) + 18         # right column (badges/dtypes/count)
 
     # pass 2: emit nodes (one HTML-table card per table) + base edges (FK -> PK).
     g = graphviz.Digraph("schema", engine="dot")
@@ -163,10 +176,10 @@ def render_schema_svg(
         pkey, tcol, fkeys = spec.pkey, spec.time_col, spec.fkeys
         rows = [
             f'<TR>'
-            f'<TD WIDTH="{width}" BGCOLOR="{_HEADER}" PORT="__t" ALIGN="LEFT">'
-            f'<FONT COLOR="white"><B>  {_esc(tname)}  </B></FONT></TD>'
-            f'<TD BGCOLOR="{_HEADER}" ALIGN="RIGHT">'
-            f'<FONT COLOR="{_COUNTCOL}" POINT-SIZE="9">{_esc(count)}  </FONT></TD>'
+            f'<TD WIDTH="{wl}" HEIGHT="{_HH}" BGCOLOR="{_HEADER}" PORT="__t" ALIGN="LEFT">'
+            f'<FONT COLOR="{_HTXT}" POINT-SIZE="{_FS}"><B>{_esc(tname)}</B></FONT></TD>'
+            f'<TD WIDTH="{wr}" HEIGHT="{_HH}" BGCOLOR="{_HEADER}" ALIGN="RIGHT">'
+            f'<FONT COLOR="{_COUNT}" POINT-SIZE="{_FS}">{_esc(_rows_word(count))}</FONT></TD>'
             f'</TR>'
         ]
         for cname, ctype in cols:
@@ -174,10 +187,7 @@ def render_schema_svg(
             is_fk = cname in fkeys
             is_t = cname == tcol
             bg = _PKBG if is_pk else (_TIMEBG if is_t else (_FKBG if is_fk else _FEATBG))
-            name = (
-                f"<B>{_esc(cname)}</B>" if is_pk
-                else (f"<I>{_esc(cname)}</I>" if is_fk else _esc(cname))
-            )
+            nm = f"<I>{_esc(cname)}</I>" if (is_pk or is_fk) else _esc(cname)
             if is_pk:
                 right = _badge("PK", _PKTAG)
             elif is_fk:
@@ -185,17 +195,17 @@ def render_schema_svg(
             elif is_t:
                 right = _badge("TIME", _TTAG)
             elif ctype:
-                right = f'<FONT COLOR="{_TYPECOL}" POINT-SIZE="9">{_esc(ctype)}</FONT>'
+                right = f'<FONT COLOR="{_TYPE}" POINT-SIZE="{_FS}">{_esc(ctype)}</FONT>'
             else:
                 right = ""
             # left cell port = entry (PK, west edge); right cell port = exit (FK, east edge)
             rows.append(
-                f'<TR><TD BGCOLOR="{bg}" PORT="{_esc(cname)}" ALIGN="LEFT">'
-                f'<FONT POINT-SIZE="10">{name}</FONT></TD>'
-                f'<TD BGCOLOR="{bg}" PORT="{_esc(cname)}_r" ALIGN="RIGHT">{right}</TD></TR>'
+                f'<TR><TD WIDTH="{wl}" HEIGHT="{_RH}" BGCOLOR="{bg}" PORT="{_esc(cname)}" ALIGN="LEFT">'
+                f'<FONT POINT-SIZE="{_FS}">{nm}</FONT></TD>'
+                f'<TD WIDTH="{wr}" HEIGHT="{_RH}" BGCOLOR="{bg}" PORT="{_esc(cname)}_r" ALIGN="RIGHT">{right}</TD></TR>'
             )
         g.node(tname, color=_BORDER, label=(
-            f'<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" '
+            f'<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" '
             f'STYLE="rounded">{"".join(rows)}</TABLE>>'))
 
     for tname, spec in tables.items():
@@ -204,16 +214,18 @@ def render_schema_svg(
                 g.edge(f"{tname}:{fcol}_r:e", f"{parent}:{pkey_of[parent]}:w")
 
     g.render(str(path.with_suffix("")), format="svg", cleanup=True)
-    _add_er_connectors(path)
+    _postprocess_svg(path)
 
 
-def _add_er_connectors(svgpath: Path) -> None:
-    r"""Rewrite each straight graphviz edge into ER crow's-foot notation.
+def _postprocess_svg(svgpath: Path) -> None:
+    r"""Two SVG touch-ups graphviz can't do directly:
 
-    Every edge becomes: a short horizontal stub at the FK end carrying a crow's foot
-    ("many"), a straight middle, and a short horizontal stub at the referenced-PK end
-    carrying a single bar ("one"). Ports are fixed (``:e`` tail, ``:w`` head) so the stub
-    directions are constant -- the FK end exits east, the PK end exits west.
+    1. Rewrite each straight edge into ER crow's-foot notation -- a short horizontal stub at
+       the FK end carrying a crow's foot ("many"), a straight middle, and a stub at the PK
+       end carrying a single bar ("one"). Ports are fixed (``:e`` tail, ``:w`` head) so stub
+       directions are constant (FK exits east, PK exits west).
+    2. Widen the header-coloured background cells slightly so the two header cells overlap,
+       hiding the 1px seam between the table name and the row count.
     """
     import re
     import xml.etree.ElementTree as ET
@@ -224,6 +236,7 @@ def _add_er_connectors(svgpath: Path) -> None:
     graph = tree.getroot().find(f"{{{NS}}}g")
     if graph is None:
         return
+
     L, FH, TICK, TGAP = 16.0, 5.0, 5.0, 7.0
     for e in [c for c in graph if c.get("class") == "edge"]:
         path = e.find(f"{{{NS}}}path")
@@ -232,8 +245,8 @@ def _add_er_connectors(svgpath: Path) -> None:
         pts = re.findall(r"(-?\d+\.?\d*),(-?\d+\.?\d*)", path.get("d", ""))
         if len(pts) < 2:
             continue
-        (x0, y0) = float(pts[0][0]), float(pts[0][1])
-        (x1, y1) = float(pts[-1][0]), float(pts[-1][1])
+        x0, y0 = float(pts[0][0]), float(pts[0][1])
+        x1, y1 = float(pts[-1][0]), float(pts[-1][1])
         color = path.get("stroke") or _EDGE
         for p in list(e.findall(f"{{{NS}}}path")):
             e.remove(p)
@@ -252,6 +265,21 @@ def _add_er_connectors(svgpath: Path) -> None:
         seg(ax, y0, x0, y0 - FH)        # crow's foot (many) at FK
         seg(ax, y0, x0, y0 + FH)
         seg(x1 - TGAP, y1 - TICK, x1 - TGAP, y1 + TICK)  # single bar (one) at PK
+
+    # Hide the header seam by overlapping the header-coloured background polygons.
+    ex = 1.5
+    hdr = _HEADER.lower()
+    for poly in graph.iter(f"{{{NS}}}polygon"):
+        if (poly.get("fill") or "").lower() != hdr:
+            continue
+        pts = re.findall(r"(-?\d+\.?\d*),(-?\d+\.?\d*)", poly.get("points", ""))
+        if len(pts) < 4:
+            continue
+        xs = [float(a) for a, _ in pts]
+        ys = [float(b) for _, b in pts]
+        x0p, x1p, y0p, y1p = min(xs), max(xs), min(ys), max(ys)
+        poly.set("points", f"{x0p - ex},{y0p} {x1p + ex},{y0p} {x1p + ex},{y1p} {x0p - ex},{y1p}")
+
     tree.write(svgpath)
 
 
