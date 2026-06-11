@@ -10,3 +10,4 @@ cache
 # pixi environments
 .pixi
 *.egg-info
+.claude/
