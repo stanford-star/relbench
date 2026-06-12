@@ -11,7 +11,7 @@ required (the first cell installs RelBench).
 ## Run locally
 
 ```bash
-pip install relbench           # add [full] as well for gnn.ipynb
+pip install relbench           # add [example] as well for gnn.ipynb
 jupyter notebook tutorials/quickstart.ipynb
 ```
 

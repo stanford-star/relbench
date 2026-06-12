@@ -28,7 +28,7 @@ Install from PyPI:
 
 ```bash
 pip install relbench           # core data + task loading
-pip install relbench[full]     # + PyTorch Geometric & PyTorch Frame, for the GNN models
+pip install relbench[example]  # + PyTorch Geometric & PyTorch Frame, for the GNN models
 ```
 
 Load a dataset and a task — both come straight from the Hub, with **no per-dataset code**:
@@ -63,7 +63,7 @@ Jupyter notebooks you can open directly in Google Colab — no setup required:
 | [**Training a GNN**](https://colab.research.google.com/github/snap-stanford/relbench/blob/relbench-hf/tutorials/gnn.ipynb) | A GNN baseline for an entity task (PyG + PyTorch Frame) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/snap-stanford/relbench/blob/relbench-hf/tutorials/gnn.ipynb) (needs a GPU) |
 
 The sources live in [`tutorials/`](tutorials); to run locally, `pip install relbench`
-(add `[full]` for the GNN) and open them with `jupyter notebook`.
+(add `[example]` for the GNN) and open them with `jupyter notebook`.
 
 ## Contributing
 
