@@ -9,3 +9,4 @@ cache
 .pixi
 *.egg-info
 .claude/
+pixi.lock
