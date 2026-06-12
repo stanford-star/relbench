@@ -25,10 +25,10 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install PyTorch
+      - name: Install PyTorch (CPU)
         run: |
-          pip install torch==2.3.0 --extra-index-url https://download.pytorch.org/whl/cpu
-          pip install --no-index pyg-lib==0.4.0 -f https://data.pyg.org/whl/torch-2.3.0+cpu.html
+          pip install torch==2.9.1 --index-url https://download.pytorch.org/whl/cpu
+          pip install pyg-lib -f https://data.pyg.org/whl/torch-2.9.0+cpu.html
 
       - name: Install main package
         run: |

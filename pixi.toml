@@ -11,13 +11,17 @@ version = "0.1.0"
 uv = "*"
 python = "==3.10"
 
+# CPU torch + matching pyg-lib wheels (this dev box and CI have no GPU). For GPU work,
+# point torch at a CUDA build and switch find-links to the matching data.pyg.org index,
+# e.g. https://data.pyg.org/whl/torch-2.9.0+cu128.html.
 [pypi-options]
 index-url = "https://pypi.org/simple"
-find-links = [{ url = "https://data.pyg.org/whl/torch-2.7.0+cu126.html" }]
+find-links = [{ url = "https://data.pyg.org/whl/torch-2.9.0+cpu.html" }]
 
 [pypi-dependencies]
+torch = { version = "==2.9.1", index = "https://download.pytorch.org/whl/cpu" }
 pyg-lib = "*"
 relbench = { path = ".", editable = true, extras = ["example", "dev"] }
 
 [tasks.test]
-cmd = "pytest test/base test/test_metrics.py"
+cmd = "pytest test"

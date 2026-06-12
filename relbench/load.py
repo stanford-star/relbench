@@ -110,6 +110,17 @@ def _resolve_metrics(
     return out
 
 
+def _dataset_name(dataset) -> Optional[str]:
+    r"""The dataset's name if it carries a manifest (a hosted ``RelBenchDataset``), else
+    ``None``.
+
+    Tasks can be built on a plain in-memory :class:`~relbench.base.Dataset` (e.g. the test
+    fixtures) that has no manifest and no hosted regression std; ``None`` makes the NMAE
+    normalizer fall back to computing the std from the train split.
+    """
+    return getattr(getattr(dataset, "manifest", None), "name", None)
+
+
 def _coerce_string_dtype(df: pd.DataFrame) -> pd.DataFrame:
     # DuckDB cannot reliably ingest pandas StringDtype columns; match base.Table.load.
     for col in df.columns:
@@ -264,7 +275,7 @@ class _ForecastEntityTask(_HostedLabelsMixin, EntityTask):
         self.timedelta = _parse_timedelta(tm.timedelta)
         self.num_eval_timestamps = tm.num_eval_timestamps
         self.metrics = _resolve_metrics(
-            tm, task=self, dataset_name=dataset.manifest.name
+            tm, task=self, dataset_name=_dataset_name(dataset)
         )
         self._sql = tm.sql
         self._task_dir = Path(task_dir) if task_dir is not None else None
@@ -296,7 +307,7 @@ class _ForecastRecommendationTask(_HostedLabelsMixin, RecommendationTask):
         self.num_eval_timestamps = tm.num_eval_timestamps
         self.eval_k = tm.eval_k
         self.metrics = _resolve_metrics(
-            tm, task=self, dataset_name=dataset.manifest.name
+            tm, task=self, dataset_name=_dataset_name(dataset)
         )
         self._sql = tm.sql
         self._task_dir = Path(task_dir) if task_dir is not None else None
@@ -376,7 +387,7 @@ class _ExternalEntityTask(_HostedLabelsMixin, EntityTask):
         )
         self.num_eval_timestamps = tm.num_eval_timestamps
         self.metrics = _resolve_metrics(
-            tm, task=self, dataset_name=dataset.manifest.name
+            tm, task=self, dataset_name=_dataset_name(dataset)
         )
         self._task_dir = Path(task_dir) if task_dir is not None else None
         self._regenerate = False  # external labels are not regenerable
@@ -405,7 +416,7 @@ class _ExternalRecommendationTask(_HostedLabelsMixin, RecommendationTask):
         self.num_eval_timestamps = tm.num_eval_timestamps
         self.eval_k = tm.eval_k
         self.metrics = _resolve_metrics(
-            tm, task=self, dataset_name=dataset.manifest.name
+            tm, task=self, dataset_name=_dataset_name(dataset)
         )
         self._task_dir = Path(task_dir) if task_dir is not None else None
         self._regenerate = False
@@ -416,7 +427,7 @@ class _ExternalRecommendationTask(_HostedLabelsMixin, RecommendationTask):
 
 
 def build_task(
-    dataset: RelBenchDataset,
+    dataset: Dataset,
     tm: TaskManifest,
     *,
     task_dir: Optional[Path] = None,
