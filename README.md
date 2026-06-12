@@ -95,6 +95,51 @@ worked example. Generate the card + diagram with `relbench.schema.dataset_card` 
 python -m relbench.check_provenance <dataset-path-or-name>
 ```
 
+### Overview tables (dataset viewer)
+
+Each Hub repo that hosts datasets keeps two small tables at its root that drive the
+**databases** and **tasks** subsets of the
+[dataset viewer](https://huggingface.co/docs/hub/datasets-viewer):
+
+- `databases.parquet` — one row per database (tables, rows, columns, per-type task
+  counts, timestamps, size).
+- `tasks.parquet` — one row per task (train/val/test sizes, unique entities, train/test
+  entity overlap, destination links, metric, …): the statistics reported in the RelBench
+  [v1](https://arxiv.org/abs/2407.20060) / [v2](https://arxiv.org/abs/2602.12606) papers.
+
+Regenerate them with the scripts in [`scripts/`](scripts). Only manifests and parquet
+footers/labels are read — never the full `db/` tables — so this is cheap even for repos
+with thousands of datasets:
+
+```bash
+python scripts/build_databases_overview.py <repo-or-path>   # -> databases.parquet
+python scripts/build_tasks_overview.py     <repo-or-path>   # -> tasks.parquet
+```
+
+`<repo-or-path>` is a Hub repo (`relbench/v1`), a single dataset (`relbench/v1/rel-f1`),
+or a local dataset folder — so this is exactly how you'd produce the tables for a **new**
+dataset. Add `--push` to upload to the repo root, `--out DIR` to choose where to write,
+and (for tasks) `--check` to cross-check the computed numbers against the published paper
+tables. `build_databases_overview.py` computes the structural columns but leaves `domain`,
+`description`, `license`, and `source_url` blank — fill those in by hand (`--merge` keeps
+edits across re-runs). Contributors are encouraged to add their own columns too.
+
+To wire the two tables into the viewer, the repo's `README.md` front matter declares them
+as two configs (the viewer unifies columns per config, so the two differently-shaped
+tables must be separate configs — shown as selectable "subsets"):
+
+```yaml
+configs:
+- config_name: databases
+  data_files:
+  - split: databases
+    path: databases.parquet
+- config_name: tasks
+  data_files:
+  - split: tasks
+    path: tasks.parquet
+```
+
 Datasets are loaded straight from the Hub by their `org/repo[/subdir]` address (or a local
 path) — there is no central registry to register into. For bug reports and feature requests,
 please open a GitHub issue or pull request.
