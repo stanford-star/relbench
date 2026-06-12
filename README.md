@@ -88,11 +88,24 @@ existing column), and **`external`** (labels shipped as-is). Adding a task is ju
 `tasks/<name>/` directory.
 
 The published [`rel-f1`](https://huggingface.co/datasets/relbench/core) repo is a complete
-worked example. Generate the card + diagram with `relbench.schema.dataset_card` /
-`render_schema_svg`, and verify a `forecast` task reproduces its labels with:
+worked example. Once you have `manifest.yaml` + `db/*.parquet` + `tasks/`, generate the
+`schema.svg` diagram and the `README.md` card from the manifest:
+
+```python
+from relbench.manifest import DatasetManifest
+from relbench.schema import dataset_card, render_schema_svg
+m = DatasetManifest.load("manifest.yaml")
+render_schema_svg(m, "schema.svg", db_dir="db")     # ER diagram (reads db/*.parquet)
+open("README.md", "w").write(dataset_card(m, repo="<org>/<repo>"))  # prepend viewer config below
+```
+
+then verify, build the `STATS/` overview tables, and upload the whole folder:
 
 ```bash
-python -m relbench.check_provenance <dataset-path-or-name>
+python -m relbench.check_provenance .                    # forecast labels reproduce from SQL
+python scripts/build_databases_overview.py . --out STATS # STATS/databases.parquet
+python scripts/build_tasks_overview.py     . --out STATS # STATS/tasks.parquet  (add --check)
+hf upload <org>/<repo> . --repo-type dataset             # commit the whole dataset folder
 ```
 
 ### Overview tables (dataset viewer)
