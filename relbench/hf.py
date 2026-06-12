@@ -19,15 +19,15 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Optional
 
-# Where the per-task regression-target stds for the RelBench v1 datasets live. One JSON
+# Where the per-task regression-target stds for the RelBench core datasets live. One JSON
 # file at the root of the ``relbench/core`` Hub dataset repo, keyed by "<dataset>/<task>".
 # These normalize MAE into NMAE (nmae = mae / std); see relbench.metrics.make_nmae.
-V1_REPO = "relbench/core"
+CORE_REPO = "relbench/core"
 REGRESSION_STDS_FILE = "regression_stds.json"
 
 
 @lru_cache(maxsize=None)
-def load_v1_regression_stds(revision: Optional[str] = None) -> dict[str, float]:
+def load_core_regression_stds(revision: Optional[str] = None) -> dict[str, float]:
     r"""Fetch the hosted ``relbench/core`` regression-std table as ``{"<dataset>/<task>":
     std}``.
 
@@ -37,7 +37,7 @@ def load_v1_regression_stds(revision: Optional[str] = None) -> dict[str, float]:
     from huggingface_hub import hf_hub_download
 
     path = hf_hub_download(
-        repo_id=V1_REPO,
+        repo_id=CORE_REPO,
         filename=REGRESSION_STDS_FILE,
         repo_type="dataset",
         revision=revision,

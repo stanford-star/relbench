@@ -47,7 +47,7 @@ from relbench.manifest import (
     validate_dataset_manifest,
 )
 
-# The single metric per supported task type. Only the three RelBench v1 task types are
+# The single metric per supported task type. Only the three original RelBench task types are
 # supported; the user does not choose the metric. Regression's NMAE is built per-task (it
 # needs the train-split target std), so it is handled specially in `_resolve_metrics`.
 DEFAULT_METRICS: dict[TaskType, list[str]] = {
@@ -60,17 +60,17 @@ DEFAULT_METRICS: dict[TaskType, list[str]] = {
 def train_std(task) -> float:
     r"""Standard deviation (ddof=1) of a regression task's target on its train split.
 
-    This is the normalizer that turns MAE into NMAE. For the hosted RelBench v1 tasks the
+    This is the normalizer that turns MAE into NMAE. For the hosted relbench/core tasks the
     same values are precomputed and stored at ``relbench/core`` (see
-    :func:`relbench.hf.load_v1_regression_stds`); this utility recomputes one from scratch.
+    :func:`relbench.hf.load_core_regression_stds`); this utility recomputes one from scratch.
     """
     df = task.get_table("train").df
     return float(df[task.target_col].std(ddof=1))
 
 
 def _make_std_getter(task, dataset_name: Optional[str], task_name: Optional[str]):
-    r"""Lazily resolve the NMAE normalizer for ``task``: hosted v1 std if available, else
-    compute it from the train split.
+    r"""Lazily resolve the NMAE normalizer for ``task``: hosted core std if available,
+    else compute it from the train split.
 
     Lazy so merely loading a task triggers no I/O.
     """
@@ -80,7 +80,7 @@ def _make_std_getter(task, dataset_name: Optional[str], task_name: Optional[str]
     def get_std() -> float:
         if dataset_name is not None and task_name is not None:
             try:
-                stds = hf.load_v1_regression_stds()
+                stds = hf.load_core_regression_stds()
             except Exception:
                 stds = {}
             std = stds.get(f"{dataset_name}/{task_name}")

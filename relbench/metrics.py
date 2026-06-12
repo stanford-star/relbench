@@ -1,6 +1,6 @@
 r"""The metrics RelBench evaluates on.
 
-Only the three RelBench v1 task types are supported, with exactly one metric each
+Only the three original RelBench task types are supported, with exactly one metric each
 -- the user does not choose:
 
 * binary classification -> ``roc_auc``             (AUROC)

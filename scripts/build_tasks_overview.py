@@ -5,7 +5,7 @@ one row per task, with the per-task statistics reported in the RelBench papers
 (`v1 <https://arxiv.org/abs/2407.20060>`_, `v2 <https://arxiv.org/abs/2602.12606>`_).
 
     # write tasks.parquet locally (under --out, default '.') and print it
-    python scripts/build_tasks_overview.py relbench/core --out /tmp/v1
+    python scripts/build_tasks_overview.py relbench/core --out /tmp/core
 
     # also upload it to STATS/tasks.parquet, next to STATS/databases.parquet
     python scripts/build_tasks_overview.py relbench/core --push

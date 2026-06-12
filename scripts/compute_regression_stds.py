@@ -1,9 +1,9 @@
-r"""Compute and publish the RelBench v1 regression-target stds.
+r"""Compute and publish the RelBench core regression-target stds.
 
 For every regression task in the ``relbench/core`` datasets, compute the standard deviation
 (ddof=1) of the target on the *train* split and store them all together in one file at the
 root of the ``relbench/core`` Hub repo. These stds normalize MAE into NMAE (the regression
-metric); see ``relbench.metrics.make_nmae`` / ``relbench.hf.load_v1_regression_stds``.
+metric); see ``relbench.metrics.make_nmae`` / ``relbench.hf.load_core_regression_stds``.
 
     # write regression_stds.json locally (under OUT) and print it
     python scripts/compute_regression_stds.py
@@ -22,7 +22,7 @@ from huggingface_hub import HfApi
 
 import relbench
 from relbench.base import TaskType
-from relbench.hf import REGRESSION_STDS_FILE, V1_REPO
+from relbench.hf import CORE_REPO, REGRESSION_STDS_FILE
 
 do_push = "--push" in sys.argv
 OUT = Path(sys.argv[sys.argv.index("--out") + 1]) if "--out" in sys.argv else Path(".")
@@ -30,7 +30,7 @@ OUT = Path(sys.argv[sys.argv.index("--out") + 1]) if "--out" in sys.argv else Pa
 api = HfApi()
 
 # Enumerate the sub-datasets of relbench/core (each has a top-level <name>/manifest.yaml).
-files = api.list_repo_files(V1_REPO, repo_type="dataset")
+files = api.list_repo_files(CORE_REPO, repo_type="dataset")
 datasets = sorted(
     {
         f.split("/")[0]
@@ -38,18 +38,18 @@ datasets = sorted(
         if f.endswith("/manifest.yaml") and f.count("/") == 1
     }
 )
-print(f"{V1_REPO}: {len(datasets)} sub-datasets", flush=True)
+print(f"{CORE_REPO}: {len(datasets)} sub-datasets", flush=True)
 
 stds: dict[str, float] = {}
 for name in datasets:
-    spec = f"{V1_REPO}/{name}"
+    spec = f"{CORE_REPO}/{name}"
     ds = relbench.load_dataset(spec)
     for task_name in relbench.get_task_names(spec):
         try:
             task = relbench.load_task(ds, task_name)
         except NotImplementedError:
-            # Unsupported task type (e.g. a multiclass autocomplete task); not a v1
-            # regression metric, so it has no std to store.
+            # Unsupported task type (e.g. a multiclass autocomplete task); not a
+            # regression task, so it has no std to store.
             continue
         if task.task_type != TaskType.REGRESSION:
             continue
@@ -60,7 +60,7 @@ for name in datasets:
 payload = {
     "_comment": (
         "Per-task standard deviation (ddof=1) of the regression target on the train "
-        "split, for the RelBench v1 datasets. Used to normalize MAE into NMAE "
+        "split, for the RelBench core datasets. Used to normalize MAE into NMAE "
         "(nmae = mae / std). Keyed by '<dataset>/<task>'."
     ),
     "stds": stds,
@@ -74,8 +74,8 @@ if do_push:
     api.upload_file(
         path_or_fileobj=str(out_path),
         path_in_repo=REGRESSION_STDS_FILE,
-        repo_id=V1_REPO,
+        repo_id=CORE_REPO,
         repo_type="dataset",
         commit_message="Add regression-target stds (normalize MAE -> NMAE)",
     )
-    print(f"pushed {REGRESSION_STDS_FILE} to {V1_REPO}", flush=True)
+    print(f"pushed {REGRESSION_STDS_FILE} to {CORE_REPO}", flush=True)

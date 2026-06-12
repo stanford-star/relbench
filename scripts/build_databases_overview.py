@@ -5,7 +5,7 @@ viewer: one row per database, with the structural statistics reported in the Rel
 papers (`v1 <https://arxiv.org/abs/2407.20060>`_, `v2 <https://arxiv.org/abs/2602.12606>`_).
 
     # write databases.parquet locally (under --out, default '.') and print it
-    python scripts/build_databases_overview.py relbench/core --out /tmp/v1
+    python scripts/build_databases_overview.py relbench/core --out /tmp/core
 
     # preserve hand-curated columns from the repo's existing table, then upload
     python scripts/build_databases_overview.py relbench/core --merge --push
