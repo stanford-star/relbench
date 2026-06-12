@@ -21,6 +21,9 @@ Columns. The structural ones are computed from the data:
     tasks_multilabel_classification, tasks_link_prediction,
     start_timestamp, val_timestamp, test_timestamp, size_gb
 
+A per-type task-count column that is zero for every database is dropped (a task type the
+repo doesn't use gets no column).
+
 The descriptive ones can NOT be filled in by a generic script and are left blank for a
 human to complete (``--merge`` preserves any values already present in the repo's table):
 
@@ -361,12 +364,18 @@ def main() -> None:
     if do_merge:
         df = merge_existing(df, spec)
     df = _finalize(df)
+    # Drop per-type task-count columns that are zero for every database -- a task type the
+    # repo doesn't use shouldn't get a column (e.g. no multiclass tasks -> no
+    # tasks_multiclass_classification). Structural and (blank) manual columns are kept.
+    for col in _TASK_TYPE_COL.values():
+        if col in df.columns and (df[col].fillna(0) == 0).all():
+            df = df.drop(columns=[col])
     out.mkdir(parents=True, exist_ok=True)
     out_path = out / "databases.parquet"
     df.to_parquet(out_path, index=False)
     print(f"\nwrote {out_path} ({len(df)} databases)", flush=True)
     with pd.option_context("display.max_columns", None, "display.width", 220):
-        print(df[COMPUTED_COLS].to_string(index=False))
+        print(df[[c for c in COMPUTED_COLS if c in df.columns]].to_string(index=False))
     blank = [c for c in MANUAL_COLS if df[c].isna().all()]
     if blank:
         print(f"\nFill in by hand (left blank): {', '.join(blank)}", flush=True)
