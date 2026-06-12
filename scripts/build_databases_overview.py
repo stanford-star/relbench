@@ -125,17 +125,19 @@ def database_row(
     name: str,
     dm: DatasetManifest,
     open_pq,
-    file_size,
+    folder_bytes,
     task_dir_names,
     load_task_manifest,
 ) -> dict:
     r"""One overview row.
 
-    ``open_pq`` / ``file_size`` read a ``db/<table>.parquet`` by
-    relative path; the loaders enumerate and read the task manifests.
+    ``open_pq`` reads a ``db/<table>.parquet`` footer by relative path; the loaders
+    enumerate and read the task manifests. ``folder_bytes`` is the on-disk size of the
+    whole dataset folder (db + task labels + card/diagram) -- ``size_gb`` is the actual
+    size a user downloads, which for datasets with large recommendation-task labels is
+    well above the ``db/`` size alone.
     """
     num_rows = num_cols = 0
-    total_bytes = 0
     start = None
     for tname, spec in dm.tables.items():
         rel = f"db/{tname}.parquet"
@@ -144,7 +146,6 @@ def database_row(
             continue
         num_rows += md.num_rows
         num_cols += md.num_columns
-        total_bytes += file_size(rel) or 0
         tmin = _col_min(md, spec.time_col)
         if tmin is not None:
             start = tmin if start is None else min(start, tmin)
@@ -172,7 +173,7 @@ def database_row(
         "start_timestamp": _fmt_ts(start),
         "val_timestamp": _fmt_ts(dm.val_timestamp),
         "test_timestamp": _fmt_ts(dm.test_timestamp),
-        "size_gb": round(total_bytes / 1e9, 4) if total_bytes else None,
+        "size_gb": round(folder_bytes / 1e9, 4) if folder_bytes else None,
         "license": None,
         "source_url": None,
     }
@@ -191,9 +192,7 @@ def _rows_from_local(root: Path) -> list[dict]:
             p = dsdir / rel
             return pq.read_metadata(p) if p.exists() else None
 
-        def file_size(rel):
-            p = dsdir / rel
-            return p.stat().st_size if p.exists() else 0
+        folder_bytes = sum(f.stat().st_size for f in dsdir.rglob("*") if f.is_file())
 
         tasks_dir = dsdir / "tasks"
 
@@ -207,7 +206,7 @@ def _rows_from_local(root: Path) -> list[dict]:
         def load_tm(task):
             return TaskManifest.load(tasks_dir / task / "manifest.yaml")
 
-        return database_row(name, dm, open_pq, file_size, task_names, load_tm)
+        return database_row(name, dm, open_pq, folder_bytes, task_names, load_tm)
 
     if (root / "manifest.yaml").exists():
         return [one(DatasetManifest.load(root / "manifest.yaml").name, root)]
@@ -219,9 +218,19 @@ def _rows_from_local(root: Path) -> list[dict]:
 
 
 def _rows_from_hub(repo_id: str, subdir: str) -> list[dict]:
-    from huggingface_hub import HfFileSystem, snapshot_download
+    from huggingface_hub import HfApi, HfFileSystem, snapshot_download
 
     prefix = f"{subdir}/" if subdir else ""
+    # Whole-folder sizes from a single metadata call (db + task labels + card/diagram).
+    siblings = (
+        HfApi().repo_info(repo_id, repo_type="dataset", files_metadata=True).siblings
+    )
+
+    def folder_bytes_for(repo_folder: str) -> int:
+        return sum(
+            (s.size or 0) for s in siblings if s.rfilename.startswith(repo_folder)
+        )
+
     # Tiny: only the manifests (no db/, no task labels).
     manifest_root = Path(
         snapshot_download(
@@ -250,11 +259,7 @@ def _rows_from_hub(repo_id: str, subdir: str) -> list[dict]:
             except FileNotFoundError:
                 return None
 
-        def file_size(rel):
-            try:
-                return fs.info(f"{hub_base}{hub_prefix}{rel}").get("size", 0)
-            except FileNotFoundError:
-                return 0
+        folder_bytes = folder_bytes_for(f"{prefix}{hub_prefix}")
 
         tasks_dir = mdir / "tasks"
 
@@ -268,7 +273,7 @@ def _rows_from_hub(repo_id: str, subdir: str) -> list[dict]:
         def load_tm(task):
             return TaskManifest.load(tasks_dir / task / "manifest.yaml")
 
-        return database_row(name, dm, open_pq, file_size, task_names, load_tm)
+        return database_row(name, dm, open_pq, folder_bytes, task_names, load_tm)
 
     if (base / "manifest.yaml").exists():
         return [one(DatasetManifest.load(base / "manifest.yaml").name, base, "")]
