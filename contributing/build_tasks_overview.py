@@ -5,13 +5,13 @@ one row per task, with the per-task statistics reported in the RelBench papers
 (`v1 <https://arxiv.org/abs/2407.20060>`_, `v2 <https://arxiv.org/abs/2602.12606>`_).
 
     # write tasks.parquet locally (under --out, default '.') and print it
-    python scripts/build_tasks_overview.py relbench/core --out /tmp/core
+    python contributing/build_tasks_overview.py relbench/core --out /tmp/core
 
     # also upload it to STATS/tasks.parquet, next to STATS/databases.parquet
-    python scripts/build_tasks_overview.py relbench/core --push
+    python contributing/build_tasks_overview.py relbench/core --push
 
     # cross-check the computed numbers against the published paper tables
-    python scripts/build_tasks_overview.py relbench/core --check
+    python contributing/build_tasks_overview.py relbench/core --check
 
 ``<spec>`` is a Hub repo that hosts one or more datasets (``relbench/core``), a single
 hosted dataset (``relbench/core/rel-f1``), or a *local* dataset folder (a directory with a

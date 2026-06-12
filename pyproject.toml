@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "relbench"
-version = "2.1.2"
+version = "3.0.0"
 description = "RelBench: Relational Deep Learning Benchmark"
 authors = [{name = "RelBench Team", email = "relbench@cs.stanford.edu"}]
 readme = "README.md"
@@ -13,7 +13,13 @@ classifiers = [
 	"License :: OSI Approved :: MIT License",
 ]
 requires-python=">=3.10"
-keywords=[]
+keywords=[
+	"relational deep learning",
+	"graph neural networks",
+	"relational databases",
+	"benchmark",
+	"machine learning",
+]
 dependencies=[
 	"pandas",
 	"huggingface_hub",
@@ -23,7 +29,6 @@ dependencies=[
 	"duckdb",
 	"scikit-learn<=1.6.1",
 	"typing-extensions",
-	"datasets",
 	"graphviz",
 ]
 

@@ -4,12 +4,12 @@ This is the reproducible record (provenance) of a one-off cleanup applied to the
 databases in response to https://github.com/snap-stanford/relbench/issues/373. It removes,
 per the categories below, only columns that are *not* used by any task and are *not*
 keys/time columns -- so labels and the foreign-key graph are untouched (verify with
-``python -m relbench.check_provenance <dataset>``). It then re-renders each affected
+``python provenance/check_provenance.py <dataset>``). It then re-renders each affected
 dataset's ``schema.svg`` so the diagram matches the data.
 
-    python scripts/clean_databases.py                 # clean locally under --out, print plan
-    python scripts/clean_databases.py --push          # also upload cleaned db/ + schema.svg
-    python scripts/clean_databases.py rel-trial --push # restrict to one dataset
+    python provenance/clean_databases.py                 # clean locally under --out, print plan
+    python provenance/clean_databases.py --push          # also upload cleaned db/ + schema.svg
+    python provenance/clean_databases.py rel-trial --push # restrict to one dataset
 
 Only manifests + parquet footers are read for the schema diagram; affected table parquets
 are streamed (constant memory) to drop columns while preserving row order.

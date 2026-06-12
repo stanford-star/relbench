@@ -14,21 +14,27 @@
   <a href="https://relbench.stanford.edu/leaderboard/"><b>Leaderboard</b></a> ·
   <a href="https://relbench.stanford.edu/papers/"><b>Papers</b></a> ·
   <a href="https://huggingface.co/relbench"><b>Hugging Face</b></a> ·
-  <a href="https://relbench.stanford.edu/news/"><b>News</b></a>
+  <a href="#contributing"><b>Contributing</b></a>
 </p>
 
-**RelBench is an open benchmark for predictive machine learning on relational databases** —
-end-to-end deep learning on data spread across many tables, with no manual feature
-engineering. Datasets and tasks load straight from the [Hugging Face Hub](https://huggingface.co/relbench);
-releases, papers, and milestones live on the [website](https://relbench.stanford.edu/news/).
+## What is RelBench?
+
+Most real-world data lives in a **relational database**: many tables linked by foreign keys
+— customers, orders, products, events — not one flat spreadsheet. Getting that into a
+machine-learning model normally means slow, manual feature engineering to flatten it down.
+
+**RelBench is a benchmark for skipping that step and learning directly from the raw linked
+tables with deep learning.** Each dataset is a real relational database paired with
+predictive **tasks** — *"will this driver finish on the podium in their next race?"*,
+*"how much will this user spend next month?"* — each with temporal train/val/test splits and
+a standard metric, so results are comparable. Datasets and tasks load straight from the
+[Hugging Face Hub](https://huggingface.co/relbench).
 
 ## Get Started
 
-Install from PyPI:
-
 ```bash
-pip install relbench           # core data + task loading
-pip install relbench[example]  # + PyTorch Geometric & PyTorch Frame, for the GNN models
+pip install relbench           # data + task loading
+pip install relbench[example]  # + PyTorch Geometric & PyTorch Frame, for the GNN examples
 ```
 
 Load a dataset and a task — both come straight from the Hub, with **no per-dataset code**:
@@ -36,132 +42,49 @@ Load a dataset and a task — both come straight from the Hub, with **no per-dat
 ```python
 import relbench
 
-dataset = relbench.load_dataset("relbench/core/rel-f1")   # Hub 'org/repo[/subdir]', or a local path
-db = dataset.get_db()                            # a Database: tables linked by a foreign-key graph
+dataset = relbench.load_dataset("relbench/core/rel-f1")   # a Hub 'org/repo[/subdir]', or a local path
+db = dataset.get_db()                  # a Database: tables linked by a foreign-key graph
 
 task = relbench.load_task("relbench/core/rel-f1", "driver-position")
-train_table = task.get_table("train")            # train / val / test label tables
-test_table  = task.get_table("test")             # target column is hidden on test
+train_table = task.get_table("train")  # train / val / test label tables
+test_table  = task.get_table("test")   # the target column is hidden on test
 
-# ... train your model, predict on the test entities ...
-metrics = task.evaluate(test_pred)               # standardized metrics, chosen by task type
+# ... train any model on db + train_table, predict on the test entities ...
+metrics = task.evaluate(test_pred)     # standard metric for the task type
 ```
 
-`db` is a set of tables linked by a foreign-key graph; `dataset.val_timestamp` /
-`dataset.test_timestamp` give the temporal splits. RelBench is framework-agnostic — bring any
-modeling stack. `relbench.modeling` additionally provides a reference Graph Neural Network
-implementation on [PyTorch Geometric](https://github.com/pyg-team/pytorch_geometric) +
-[PyTorch Frame](https://github.com/pyg-team/pytorch-frame).
+`dataset.val_timestamp` / `dataset.test_timestamp` give the temporal split points. RelBench
+is framework-agnostic — bring any modeling stack. For a reference Graph Neural Network on
+[PyTorch Geometric](https://github.com/pyg-team/pytorch_geometric) +
+[PyTorch Frame](https://github.com/pyg-team/pytorch-frame), see `relbench.modeling` and the
+runnable scripts in [`examples/`](examples).
 
 ### Tutorials
 
-Jupyter notebooks you can open directly in Google Colab — no setup required:
+Open these directly in Google Colab — no setup required:
 
 | Tutorial | What it covers | |
 |---|---|---|
 | [**Quickstart**](https://colab.research.google.com/github/snap-stanford/relbench/blob/relbench-hf/tutorials/quickstart.ipynb) | Load a dataset/task, explore the schema, run a baseline | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/snap-stanford/relbench/blob/relbench-hf/tutorials/quickstart.ipynb) |
 | [**Training a GNN**](https://colab.research.google.com/github/snap-stanford/relbench/blob/relbench-hf/tutorials/gnn.ipynb) | A GNN baseline for an entity task (PyG + PyTorch Frame) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/snap-stanford/relbench/blob/relbench-hf/tutorials/gnn.ipynb) (needs a GPU) |
 
-The sources live in [`tutorials/`](tutorials); to run locally, `pip install relbench`
-(add `[example]` for the GNN) and open them with `jupyter notebook`.
-
 ## Contributing
 
-Contributing a **dataset** or **task** no longer needs any Python classes — a dataset is a
-self-describing folder you publish to the [Hugging Face Hub](https://huggingface.co):
+Adding a dataset or task takes **no code**. A dataset is a self-describing folder — a
+`manifest.yaml` (tables, keys, the foreign-key graph, the time splits), one plain parquet
+per table, and a `tasks/` subdirectory — that you publish to the
+[Hugging Face Hub](https://huggingface.co). RelBench loads it straight from its
+`org/repo[/subdir]` address; there is no central registry to register with.
 
-```
-<dataset>/
-  manifest.yaml            # description, tables, primary keys, foreign-key graph, splits
-  db/<table>.parquet       # one plain parquet per table (native dtypes)
-  tasks/<task>/
-    manifest.yaml          # task spec (+ a DuckDB query, for `forecast` tasks)
-    {train,val,test}.parquet
-  README.md, schema.svg    # dataset card + ER diagram (auto-generated)
-```
-
-`manifest.yaml` is the single source of truth for the relational structure (keys, the
-foreign-key graph, time columns), so the parquet also load with plain pandas/DuckDB. Tasks
-come in three kinds: **`forecast`** (temporal labels computed by a DuckDB query —
-regenerable, and CI-checked against the shipped labels), **`autocomplete`** (predict an
-existing column), and **`external`** (labels shipped as-is). Adding a task is just adding a
-`tasks/<name>/` directory.
-
-The published [`rel-f1`](https://huggingface.co/datasets/relbench/core) repo is a complete
-worked example. Once you have `manifest.yaml` + `db/*.parquet` + `tasks/`, generate the
-`schema.svg` diagram and the `README.md` card from the manifest:
-
-```python
-from relbench.manifest import DatasetManifest
-from relbench.schema import dataset_card, render_schema_svg
-m = DatasetManifest.load("manifest.yaml")
-render_schema_svg(m, "schema.svg", db_dir="db")     # ER diagram (reads db/*.parquet)
-open("README.md", "w").write(dataset_card(m, repo="<org>/<repo>"))  # prepend viewer config below
-```
-
-then verify, build the `STATS/` overview tables, and upload the whole folder:
-
-```bash
-python -m relbench.check_provenance .                    # forecast labels reproduce from SQL
-python scripts/build_databases_overview.py . --out STATS # STATS/databases.parquet
-python scripts/build_tasks_overview.py     . --out STATS # STATS/tasks.parquet  (add --check)
-hf upload <org>/<repo> . --repo-type dataset             # commit the whole dataset folder
-```
-
-### Overview tables (dataset viewer)
-
-Each Hub repo that hosts datasets keeps two small tables in a `STATS/` folder that drive
-the **databases** and **tasks** subsets of the
-[dataset viewer](https://huggingface.co/docs/hub/datasets-viewer):
-
-- `STATS/databases.parquet` — one row per database (tables, rows, columns, per-type task
-  counts, timestamps, size).
-- `STATS/tasks.parquet` — one row per task (train/val/test sizes, unique entities,
-  train/test entity overlap, destination links, metric, …): the statistics reported in
-  the RelBench [v1](https://arxiv.org/abs/2407.20060) /
-  [v2](https://arxiv.org/abs/2602.12606) papers.
-
-Regenerate them with the scripts in [`scripts/`](scripts). Only manifests and parquet
-footers/labels are read — never the full `db/` tables — so this is cheap even for repos
-with thousands of datasets:
-
-```bash
-python scripts/build_databases_overview.py <repo-or-path>   # -> databases.parquet
-python scripts/build_tasks_overview.py     <repo-or-path>   # -> tasks.parquet
-```
-
-`<repo-or-path>` is a Hub repo (`relbench/core`), a single dataset (`relbench/core/rel-f1`),
-or a local dataset folder — so this is exactly how you'd produce the tables for a **new**
-dataset. Add `--push` to upload to `STATS/`, `--out DIR` to choose where to write,
-and (for tasks) `--check` to cross-check the computed numbers against the published paper
-tables. `build_databases_overview.py` computes the structural columns but leaves `domain`,
-`description`, `license`, and `source_url` blank — fill those in by hand (`--merge` keeps
-edits across re-runs). Contributors are encouraged to add their own columns too.
-
-To wire the two tables into the viewer, the repo's `README.md` front matter declares them
-as two configs (the viewer unifies columns per config, so the two differently-shaped
-tables must be separate configs — shown as selectable "subsets"). The split name is free
-to label the collection (e.g. `eval`, `pretrain`):
-
-```yaml
-configs:
-- config_name: databases
-  data_files:
-  - split: eval
-    path: STATS/databases.parquet
-- config_name: tasks
-  data_files:
-  - split: eval
-    path: STATS/tasks.parquet
-```
-
-Datasets are loaded straight from the Hub by their `org/repo[/subdir]` address (or a local
-path) — there is no central registry to register into. For bug reports and feature requests,
-please open a GitHub issue or pull request.
+[**`contributing/README.md`**](contributing/README.md) is the full walkthrough, and the
+published [`relbench/core/rel-f1`](https://huggingface.co/datasets/relbench/core) is a
+complete worked example. For how RelBench's own databases were built, cleaned, and verified
+from their original sources, see [`provenance/`](provenance). Bug reports and feature
+requests: open a GitHub issue or pull request.
 
 ## Cite RelBench
 
-If you use RelBench in your work, please cite the position and benchmark papers:
+If you use RelBench, please cite the position and benchmark papers:
 
 ```bibtex
 @inproceedings{rdl,
@@ -170,18 +93,14 @@ If you use RelBench in your work, please cite the position and benchmark papers:
   booktitle={Forty-first International Conference on Machine Learning},
   year={2024}
 }
-```
 
-```bibtex
 @inproceedings{relbench,
   title={RelBench: A Benchmark for Deep Learning on Relational Databases},
   author={Robinson, Joshua and Ranjan, Rishabh and Hu, Weihua and Huang, Kexin and Han, Jiaqi and Dobles, Alejandro and Fey, Matthias and Lenssen, Jan Eric and Yuan, Yiwen and Zhang, Zecheng and He, Xinwei and Leskovec, Jure},
   booktitle={Advances in Neural Information Processing Systems},
   year={2024}
 }
-```
 
-```bibtex
 @misc{relbenchv2,
   title={RelBench v2: A Large-Scale Benchmark and Repository for Relational Data},
   author={Gu, Justin and Ranjan, Rishabh and Kanatsoulis, Charilaos and Tang, Haiming and Jurkovic, Martin and Hudovernik, Valter and Znidar, Mark and Chaturvedi, Pranshu and Shroff, Parth and Li, Fengyu and Leskovec, Jure},

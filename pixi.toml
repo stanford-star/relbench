@@ -17,7 +17,7 @@ find-links = [{ url = "https://data.pyg.org/whl/torch-2.7.0+cu126.html" }]
 
 [pypi-dependencies]
 pyg-lib = "*"
-relbench = { path = ".", editable = true, extras = ["full", "example", "dev", "test"] }
+relbench = { path = ".", editable = true, extras = ["example", "dev"] }
 
 [tasks.test]
-cmd = "pytest test/base test/datasets"
+cmd = "pytest test/base test/test_metrics.py"

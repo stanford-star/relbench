@@ -6,9 +6,9 @@ exactly what its SQL produces against the database; it fails on drift (SQL edite
 refreshing labels, or vice versa). Autocomplete and external tasks have no regenerating SQL
 and are skipped.
 
-    python -m relbench.check_provenance relbench/core/rel-f1
-    python -m relbench.check_provenance your-org/your-dataset
-    python -m relbench.check_provenance ./path/to/local/dataset
+    python provenance/check_provenance.py relbench/core/rel-f1
+    python provenance/check_provenance.py your-org/your-dataset
+    python provenance/check_provenance.py ./path/to/local/dataset
 """
 
 from __future__ import annotations

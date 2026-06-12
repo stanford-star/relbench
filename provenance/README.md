@@ -18,7 +18,7 @@ downloads cache under `$RELBENCH_RAW_CACHE` (default `~/.cache/relbench-raw`).
 Generators for datasets cleaned for issue
 [#373](https://github.com/snap-stanford/relbench/issues/373) apply the same drops at build
 time, so they reproduce the *current* published data; the exact per-column list also lives
-in [`../scripts/clean_databases.py`](../scripts/clean_databases.py).
+in [`clean_databases.py`](clean_databases.py).
 
 | generator | database | raw source | status |
 |---|---|---|---|
@@ -34,6 +34,23 @@ in [`../scripts/clean_databases.py`](../scripts/clean_databases.py).
 | `hm.py` | rel-hm | H&M (Kaggle) | needs Kaggle zip in `$RELBENCH_RAW_CACHE` |
 | `dbinfer.py` | `relbench/dbinfer` family | 4DBInfer pre-built `db.zip` artifacts | runnable (collection) |
 | `tgb.py` | `relbench/tgb` family | TGB pre-built `db.zip` artifacts | runnable (collection) |
+
+## Verifying and cleaning
+
+Two non-generator scripts round out the data's paper trail:
+
+- **`check_provenance.py`** — for a dataset's `forecast` tasks, regenerate the labels from
+  their manifest DuckDB query and assert they match the shipped labels. This is the
+  guarantee that hosted labels are exactly what their SQL produces.
+
+      python provenance/check_provenance.py relbench/core/rel-f1   # Hub repo, subdir, or local path
+
+- **`clean_databases.py`** — the reproducible record of the
+  [#373](https://github.com/snap-stanford/relbench/issues/373) cleanup applied to the
+  published databases: the canonical per-column drop list (100%-NaN / preprocessing
+  artifacts / future-leakage columns), plus the streaming drop + `schema.svg` refresh. The
+  generators above bake these same drops in, so this is the "what and why", not a step you
+  re-run.
 
 `dbinfer.py` / `tgb.py` mirror the legacy step for those `external` collections: the raw
 temporal-graph / 4DBInfer conversion happens upstream, and RelBench ingested the resulting
