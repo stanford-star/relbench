@@ -1824,7 +1824,7 @@ packages:
 - pypi: ./
   name: relbench
   version: 2.1.2
-  sha256: 6d6cbed493df6e574085aabfa3788bf6ab96c4a65a0021419466ca9d2c71f69a
+  sha256: 52b24332f59ee3989c326d980847d8c62cfd342d0fc729b50db1a4b9cd719452
   requires_dist:
   - pandas
   - huggingface-hub
@@ -1835,18 +1835,13 @@ packages:
   - scikit-learn<=1.6.1
   - typing-extensions
   - datasets
-  - pytorch-frame>=0.2.3 ; extra == 'full'
-  - torch-geometric ; extra == 'full'
+  - graphviz
   - sentence-transformers ; extra == 'example'
   - pytorch-frame[full] ; extra == 'example'
   - torch-geometric ; extra == 'example'
   - tqdm ; extra == 'example'
-  - pytest ; extra == 'test'
+  - pytest ; extra == 'dev'
   - pre-commit ; extra == 'dev'
-  - dbinfer-relbench-adapter ; extra == 'dbinfer'
-  - db-dtypes ; extra == 'dbinfer'
-  - redelex ; extra == 'ctu'
-  - graphviz ; extra == 'schema'
   requires_python: '>=3.10'
   editable: true
 - pypi: https://files.pythonhosted.org/packages/1e/db/4254e3eabe8020b458f1a747140d32277ec7a271daf1d235b70dc0b4e6e3/requests-2.32.5-py3-none-any.whl

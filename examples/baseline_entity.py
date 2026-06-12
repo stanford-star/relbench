@@ -134,25 +134,5 @@ elif task.task_type == TaskType.BINARY_CLASSIFICATION:
         print(f"Test: {test_metrics}")
 
 
-elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
-    eval_name_list = ["random_multilabel", "majority_multilabel"]
-    for name in eval_name_list:
-        train_metrics = evaluate(train_table, train_table, name=name)
-        val_metrics = evaluate(train_table, val_table, name=name)
-        test_metrics = evaluate(trainval_table, test_table, name=name)
-        print(f"{name}:")
-        print(f"Train: {train_metrics}")
-        print(f"Val: {val_metrics}")
-        print(f"Test: {test_metrics}")
-
-
-elif task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
-    eval_name_list = ["random", "majority", "entity_majority_multiclass"]
-    for name in eval_name_list:
-        train_metrics = evaluate(train_table, train_table, name=name)
-        val_metrics = evaluate(train_table, val_table, name=name)
-        test_metrics = evaluate(trainval_table, test_table, name=name)
-        print(f"{name}:")
-        print(f"Train: {train_metrics}")
-        print(f"Val: {val_metrics}")
-        print(f"Test: {test_metrics}")
+else:
+    raise ValueError(f"Unsupported task type: {task.task_type}")
