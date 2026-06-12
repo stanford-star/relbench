@@ -1,238 +1,151 @@
-import os
+r"""Generate the **rel-f1** database from its raw source (Ergast Formula 1 data).
+
+    python f1.py [OUT_DIR]      # default OUT_DIR: ./rel-f1
+
+Source: a static snapshot of the Ergast F1 database, hosted by RelBench. Produces the
+Hugging Face layout (manifest.yaml + db/*.parquet) reproducing relbench/core/rel-f1.
+"""
+
+import sys
 
 import numpy as np
 import pandas as pd
-import pooch
+from _lib import Table, fetch, write_hf
 
-from relbench.base import Database, Dataset, Table
-from relbench.utils import unzip_processor
+URL = "https://relbench.stanford.edu/data/relbench-f1-raw.zip"
+SHA = "2933348953b30aa9723b4831fea8071b336b74977bbcf1fb059da63a04f06eba"
+VAL_TIMESTAMP, TEST_TIMESTAMP = "2005-01-01", "2010-01-01"
 
 
-class F1Dataset(Dataset):
-    val_timestamp = pd.Timestamp("2005-01-01")
-    test_timestamp = pd.Timestamp("2010-01-01")
+def build(raw) -> dict:
+    circuits = pd.read_csv(raw / "circuits.csv")
+    drivers = pd.read_csv(raw / "drivers.csv")
+    results = pd.read_csv(raw / "results.csv")
+    races = pd.read_csv(raw / "races.csv")
+    standings = pd.read_csv(raw / "driver_standings.csv")
+    constructors = pd.read_csv(raw / "constructors.csv")
+    constructor_results = pd.read_csv(raw / "constructor_results.csv")
+    constructor_standings = pd.read_csv(raw / "constructor_standings.csv")
+    qualifying = pd.read_csv(raw / "qualifying.csv")
 
-    def make_db(self) -> Database:
-        r"""Process the raw files into a database."""
-        url = "https://relbench.stanford.edu/data/relbench-f1-raw.zip"
+    # Drop columns that are irrelevant, leak time, or are mostly missing.
+    races.drop(
+        columns=[
+            "url",
+            "fp1_date",
+            "fp1_time",
+            "fp2_date",
+            "fp2_time",
+            "fp3_date",
+            "fp3_time",
+            "quali_date",
+            "quali_time",
+            "sprint_date",
+            "sprint_time",
+        ],
+        inplace=True,
+    )
+    circuits.drop(columns=["url"], inplace=True)
+    drivers.drop(
+        columns=["number", "url"], inplace=True
+    )  # url unique; number 803/857 null
+    results.drop(
+        columns=["positionText", "time", "fastestLapTime", "fastestLapSpeed"],
+        inplace=True,
+    )
+    standings.drop(columns=["positionText"], inplace=True)
+    constructors.drop(columns=["url"], inplace=True)
+    constructor_standings.drop(columns=["positionText"], inplace=True)
+    constructor_results.drop(columns=["status"], inplace=True)  # only 17 rows are 'D'
+    qualifying.drop(columns=["q1", "q2", "q3"], inplace=True)
 
-        path = pooch.retrieve(
-            url,
-            known_hash="2933348953b30aa9723b4831fea8071b336b74977bbcf1fb059da63a04f06eba",
-            progressbar=True,
-            processor=unzip_processor,
-        )
+    # Combine race date + time into a single timestamp.
+    races["time"] = races["time"].replace(r"^\\N$", "00:00:00", regex=True)
+    races["date"] = pd.to_datetime(races["date"] + " " + races["time"])
 
-        path = os.path.join(path, "raw")
+    # Propagate the race timestamp to the dependent tables.
+    for tbl in (
+        results,
+        standings,
+        constructor_results,
+        constructor_standings,
+        qualifying,
+    ):
+        tbl["date"] = tbl.merge(races[["raceId", "date"]], on="raceId", how="left")[
+            "date"
+        ]
+    # Qualifying happens the day before the race.
+    qualifying["date"] = qualifying["date"] - pd.Timedelta(days=1)
 
-        circuits = pd.read_csv(os.path.join(path, "circuits.csv"))
-        drivers = pd.read_csv(os.path.join(path, "drivers.csv"))
-        results = pd.read_csv(os.path.join(path, "results.csv"))
-        races = pd.read_csv(os.path.join(path, "races.csv"))
-        standings = pd.read_csv(os.path.join(path, "driver_standings.csv"))
-        constructors = pd.read_csv(os.path.join(path, "constructors.csv"))
-        constructor_results = pd.read_csv(os.path.join(path, "constructor_results.csv"))
-        constructor_standings = pd.read_csv(
-            os.path.join(path, "constructor_standings.csv")
-        )
-        qualifying = pd.read_csv(os.path.join(path, "qualifying.csv"))
+    # "\N" -> NaN, and coerce the numeric result columns.
+    results = results.replace(r"^\\N$", np.nan, regex=True)
+    circuits = circuits.replace(r"^\\N$", np.nan, regex=True)
+    circuits["alt"] = circuits["alt"].astype(float)
+    for c in [
+        "rank",
+        "number",
+        "grid",
+        "position",
+        "points",
+        "laps",
+        "milliseconds",
+        "fastestLap",
+    ]:
+        results[c] = pd.to_numeric(results[c], errors="coerce")
+    drivers["dob"] = pd.to_datetime(drivers["dob"])
 
-        # Remove columns that are irrelevant, leak time,
-        # or have too many missing values
-
-        # Drop the Wikipedia URL and some time columns with many missing values
-        races.drop(
-            columns=[
-                "url",
-                "fp1_date",
-                "fp1_time",
-                "fp2_date",
-                "fp2_time",
-                "fp3_date",
-                "fp3_time",
-                "quali_date",
-                "quali_time",
-                "sprint_date",
-                "sprint_time",
-            ],
-            inplace=True,
-        )
-
-        # Drop the Wikipedia URL as it is unique for each row
-        circuits.drop(
-            columns=["url"],
-            inplace=True,
-        )
-
-        # Drop the Wikipedia URL (unique) and number (803 / 857 are nulls)
-        drivers.drop(
-            columns=["number", "url"],
-            inplace=True,
-        )
-
-        # Drop the positionText, time, fastestLapTime and fastestLapSpeed
-        results.drop(
-            columns=[
-                "positionText",
-                "time",
-                "fastestLapTime",
-                "fastestLapSpeed",
-            ],
-            inplace=True,
-        )
-
-        # Drop the positionText
-        standings.drop(
-            columns=["positionText"],
-            inplace=True,
-        )
-
-        # Drop the Wikipedia URL
-        constructors.drop(
-            columns=["url"],
-            inplace=True,
-        )
-
-        # Drop the positionText
-        constructor_standings.drop(
-            columns=["positionText"],
-            inplace=True,
-        )
-
-        # Drop the status as it only contains two categories, and
-        # only 17 rows have value 'D' (0.138%)
-        constructor_results.drop(
-            columns=["status"],
-            inplace=True,
-        )
-
-        # Drop the time in qualifying 1, 2, and 3
-        qualifying.drop(
-            columns=["q1", "q2", "q3"],
-            inplace=True,
-        )
-
-        # replase missing data and combine date and time columns
-        races["time"] = races["time"].replace(r"^\\N$", "00:00:00", regex=True)
-        races["date"] = races["date"] + " " + races["time"]
-        # Convert date column to pd.Timestamp
-        races["date"] = pd.to_datetime(races["date"])
-
-        # add time column to other tables
-        results = results.merge(races[["raceId", "date"]], on="raceId", how="left")
-        standings = standings.merge(races[["raceId", "date"]], on="raceId", how="left")
-        constructor_results = constructor_results.merge(
-            races[["raceId", "date"]], on="raceId", how="left"
-        )
-        constructor_standings = constructor_standings.merge(
-            races[["raceId", "date"]], on="raceId", how="left"
-        )
-
-        qualifying = qualifying.merge(
-            races[["raceId", "date"]], on="raceId", how="left"
-        )
-
-        # Subtract a day from the date to account for the fact
-        # that the qualifying time is the day before the main race
-        qualifying["date"] = qualifying["date"] - pd.Timedelta(days=1)
-
-        # Replace "\N" with NaN in results tables
-        results = results.replace(r"^\\N$", np.nan, regex=True)
-
-        # Replace "\N" with NaN in circuits tables, especially
-        # for the column `alt` which has 3 rows of "\N"
-        circuits = circuits.replace(r"^\\N$", np.nan, regex=True)
-        # Convert alt from string to float
-        circuits["alt"] = circuits["alt"].astype(float)
-
-        # Convert non-numeric values to NaN in the specified column
-        results["rank"] = pd.to_numeric(results["rank"], errors="coerce")
-        results["number"] = pd.to_numeric(results["number"], errors="coerce")
-        results["grid"] = pd.to_numeric(results["grid"], errors="coerce")
-        results["position"] = pd.to_numeric(results["position"], errors="coerce")
-        results["points"] = pd.to_numeric(results["points"], errors="coerce")
-        results["laps"] = pd.to_numeric(results["laps"], errors="coerce")
-        results["milliseconds"] = pd.to_numeric(
-            results["milliseconds"], errors="coerce"
-        )
-        results["fastestLap"] = pd.to_numeric(results["fastestLap"], errors="coerce")
-
-        # Convert drivers date of birth to datetime
-        drivers["dob"] = pd.to_datetime(drivers["dob"])
-
-        tables = {}
-
-        tables["races"] = Table(
-            df=pd.DataFrame(races),
-            fkey_col_to_pkey_table={
-                "circuitId": "circuits",
-            },
+    race_fk = {"raceId": "races"}
+    driver_fk = {"driverId": "drivers"}
+    constr_fk = {"constructorId": "constructors"}
+    return {
+        "races": Table(
+            df=races,
+            fkey_col_to_pkey_table={"circuitId": "circuits"},
             pkey_col="raceId",
             time_col="date",
-        )
-
-        tables["circuits"] = Table(
-            df=pd.DataFrame(circuits),
-            fkey_col_to_pkey_table={},
-            pkey_col="circuitId",
-            time_col=None,
-        )
-
-        tables["drivers"] = Table(
-            df=pd.DataFrame(drivers),
-            fkey_col_to_pkey_table={},
-            pkey_col="driverId",
-            time_col=None,
-        )
-
-        tables["results"] = Table(
-            df=pd.DataFrame(results),
-            fkey_col_to_pkey_table={
-                "raceId": "races",
-                "driverId": "drivers",
-                "constructorId": "constructors",
-            },
+        ),
+        "circuits": Table(df=circuits, fkey_col_to_pkey_table={}, pkey_col="circuitId"),
+        "drivers": Table(df=drivers, fkey_col_to_pkey_table={}, pkey_col="driverId"),
+        "constructors": Table(
+            df=constructors, fkey_col_to_pkey_table={}, pkey_col="constructorId"
+        ),
+        "results": Table(
+            df=results,
+            fkey_col_to_pkey_table={**race_fk, **driver_fk, **constr_fk},
             pkey_col="resultId",
             time_col="date",
-        )
-
-        tables["standings"] = Table(
-            df=pd.DataFrame(standings),
-            fkey_col_to_pkey_table={"raceId": "races", "driverId": "drivers"},
+        ),
+        "standings": Table(
+            df=standings,
+            fkey_col_to_pkey_table={**race_fk, **driver_fk},
             pkey_col="driverStandingsId",
             time_col="date",
-        )
-
-        tables["constructors"] = Table(
-            df=pd.DataFrame(constructors),
-            fkey_col_to_pkey_table={},
-            pkey_col="constructorId",
-            time_col=None,
-        )
-
-        tables["constructor_results"] = Table(
-            df=pd.DataFrame(constructor_results),
-            fkey_col_to_pkey_table={"raceId": "races", "constructorId": "constructors"},
+        ),
+        "constructor_results": Table(
+            df=constructor_results,
+            fkey_col_to_pkey_table={**race_fk, **constr_fk},
             pkey_col="constructorResultsId",
             time_col="date",
-        )
-
-        tables["constructor_standings"] = Table(
-            df=pd.DataFrame(constructor_standings),
-            fkey_col_to_pkey_table={"raceId": "races", "constructorId": "constructors"},
+        ),
+        "constructor_standings": Table(
+            df=constructor_standings,
+            fkey_col_to_pkey_table={**race_fk, **constr_fk},
             pkey_col="constructorStandingsId",
             time_col="date",
-        )
-
-        tables["qualifying"] = Table(
-            df=pd.DataFrame(qualifying),
-            fkey_col_to_pkey_table={
-                "raceId": "races",
-                "driverId": "drivers",
-                "constructorId": "constructors",
-            },
+        ),
+        "qualifying": Table(
+            df=qualifying,
+            fkey_col_to_pkey_table={**race_fk, **driver_fk, **constr_fk},
             pkey_col="qualifyId",
             time_col="date",
-        )
+        ),
+    }
 
-        return Database(tables)
+
+def main(out="rel-f1") -> None:
+    raw = fetch(URL, SHA) / "raw"
+    write_hf(out, "rel-f1", VAL_TIMESTAMP, TEST_TIMESTAMP, build(raw))
+
+
+if __name__ == "__main__":
+    main(sys.argv[1] if len(sys.argv) > 1 else "rel-f1")
