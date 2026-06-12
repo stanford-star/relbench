@@ -279,9 +279,14 @@ def _rows_from_hub(repo_id: str, subdir: str) -> list[dict]:
 # Explicit dtypes so a whole-column-null field (e.g. unfilled ``license``) still gets a
 # concrete Arrow type rather than the ``null`` type the HF dataset viewer can't read.
 _INT_COLS = {
-    "num_tables", "num_rows", "num_cols", "num_tasks",
-    "tasks_binary_classification", "tasks_regression",
-    "tasks_multiclass_classification", "tasks_multilabel_classification",
+    "num_tables",
+    "num_rows",
+    "num_cols",
+    "num_tasks",
+    "tasks_binary_classification",
+    "tasks_regression",
+    "tasks_multiclass_classification",
+    "tasks_multilabel_classification",
     "tasks_link_prediction",
 }
 _FLOAT_COLS = {"size_gb"}
@@ -319,7 +324,7 @@ def merge_existing(df: pd.DataFrame, spec: str) -> pd.DataFrame:
     from huggingface_hub import hf_hub_download
 
     prev = None
-    for fname in ("databases.parquet", "overview.parquet"):
+    for fname in ("STATS/databases.parquet", "databases.parquet", "overview.parquet"):
         try:
             prev = pd.read_parquet(hf_hub_download(repo_id, fname, repo_type="dataset"))
             print(f"merging curated columns from existing {fname}", flush=True)
@@ -376,12 +381,12 @@ def main() -> None:
 
         HfApi().upload_file(
             path_or_fileobj=str(out_path),
-            path_in_repo="databases.parquet",
+            path_in_repo="STATS/databases.parquet",
             repo_id=repo_id,
             repo_type="dataset",
-            commit_message="Add databases.parquet (databases split of the dataset viewer)",
+            commit_message="Add STATS/databases.parquet (databases subset of the viewer)",
         )
-        print(f"pushed databases.parquet to {repo_id}", flush=True)
+        print(f"pushed STATS/databases.parquet to {repo_id}", flush=True)
 
 
 if __name__ == "__main__":

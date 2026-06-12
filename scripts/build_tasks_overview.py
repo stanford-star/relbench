@@ -7,7 +7,7 @@ one row per task, with the per-task statistics reported in the RelBench papers
     # write tasks.parquet locally (under --out, default '.') and print it
     python scripts/build_tasks_overview.py relbench/v1 --out /tmp/v1
 
-    # also upload it to the repo root, next to databases.parquet
+    # also upload it to STATS/tasks.parquet, next to STATS/databases.parquet
     python scripts/build_tasks_overview.py relbench/v1 --push
 
     # cross-check the computed numbers against the published paper tables
@@ -569,12 +569,12 @@ def main() -> None:
 
         HfApi().upload_file(
             path_or_fileobj=str(out_path),
-            path_in_repo="tasks.parquet",
+            path_in_repo="STATS/tasks.parquet",
             repo_id=repo_id,
             repo_type="dataset",
-            commit_message="Add tasks.parquet (tasks split of the dataset viewer)",
+            commit_message="Add STATS/tasks.parquet (tasks subset of the dataset viewer)",
         )
-        print(f"pushed tasks.parquet to {repo_id}", flush=True)
+        print(f"pushed STATS/tasks.parquet to {repo_id}", flush=True)
 
 
 if __name__ == "__main__":
