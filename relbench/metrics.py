@@ -1,12 +1,16 @@
 r"""The metrics RelBench evaluates on.
 
-Only the three original RelBench task types are supported, with exactly one metric each
--- the user does not choose:
+RelBench provides an evaluator for the three core task types only, with exactly one metric
+each -- the user does not choose:
 
 * binary classification -> ``roc_auc``             (AUROC)
 * regression            -> NMAE, built per-task by :func:`make_nmae` (MAE
                            normalized by the train-split target std, ddof=1)
 * link prediction / rec.-> ``link_prediction_map`` (MAP@k, k = task's eval_k)
+
+Multiclass and multilabel tasks are definable and loadable, but RelBench provides no
+evaluator for them: ``task.metrics`` is empty -- pass your own to
+``task.evaluate(pred, metrics=[...])``.
 """
 
 from typing import Callable, Tuple

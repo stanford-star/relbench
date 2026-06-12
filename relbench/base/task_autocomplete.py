@@ -70,10 +70,10 @@ class AutoCompleteTask(EntityTask):
             self.metrics = [roc_auc]
             self.num_classes = 2
         else:
-            raise NotImplementedError(
-                f"Task type {self.task_type} is not supported. RelBench supports only "
-                f"regression, binary classification, and link prediction."
-            )
+            # Multiclass / multilabel tasks are definable and usable, but RelBench
+            # provides no evaluator for them -- bring your own via
+            # ``task.evaluate(pred, metrics=[...])``.
+            self.metrics = []
 
     def filter_dangling_entities(self, table: Table) -> Table:
         db = self.dataset.get_db(upto_test_timestamp=False)

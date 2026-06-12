@@ -47,9 +47,10 @@ from relbench.manifest import (
     validate_dataset_manifest,
 )
 
-# The single metric per supported task type. Only the three original RelBench task types are
-# supported; the user does not choose the metric. Regression's NMAE is built per-task (it
-# needs the train-split target std), so it is handled specially in `_resolve_metrics`.
+# The default metric per task type. RelBench provides evaluators for the three core task
+# types only (the user does not choose the metric); multiclass/multilabel tasks are
+# definable but carry no provided evaluator. Regression's NMAE is built per-task (it needs
+# the train-split target std), so it is handled specially in `_resolve_metrics`.
 DEFAULT_METRICS: dict[TaskType, list[str]] = {
     TaskType.BINARY_CLASSIFICATION: ["roc_auc"],
     TaskType.REGRESSION: ["nmae"],
@@ -94,13 +95,12 @@ def _make_std_getter(task, dataset_name: Optional[str], task_name: Optional[str]
 def _resolve_metrics(
     tm: TaskManifest, task=None, dataset_name: Optional[str] = None
 ) -> list:
-    # Metrics are not stored in the manifest; they default from the task type.
+    # Metrics are not stored in the manifest; they default from the task type. RelBench
+    # provides evaluators for the core task types only; multiclass/multilabel tasks are
+    # loadable but carry no evaluator -- bring your own via task.evaluate(pred, metrics=).
     task_type = TaskType(tm.task_type)
     if task_type not in DEFAULT_METRICS:
-        raise ValueError(
-            f"task '{tm.name}': task type {task_type.value!r} is not supported. "
-            f"RelBench supports only {[t.value for t in DEFAULT_METRICS]}."
-        )
+        return []
     out = []
     for name in DEFAULT_METRICS[task_type]:
         if name == "nmae":
