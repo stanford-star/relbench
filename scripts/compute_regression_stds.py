@@ -40,7 +40,12 @@ for name in datasets:
     spec = f"{V1_REPO}/{name}"
     ds = relbench.load_dataset(spec)
     for task_name in relbench.get_task_names(spec):
-        task = relbench.load_task(ds, task_name)
+        try:
+            task = relbench.load_task(ds, task_name)
+        except NotImplementedError:
+            # Unsupported task type (e.g. a multiclass autocomplete task); not a v1
+            # regression metric, so it has no std to store.
+            continue
         if task.task_type != TaskType.REGRESSION:
             continue
         std = relbench.train_std(task)

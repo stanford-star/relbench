@@ -4,8 +4,6 @@ from typing import Dict
 import numpy as np
 import pandas as pd
 import torch
-from scipy.stats import mode
-from sklearn.preprocessing import LabelEncoder
 from torch_geometric.seed import seed_everything
 
 from relbench.base import Dataset, EntityTask, Table, TaskType
@@ -30,7 +28,6 @@ test_table = task.get_table("test")
 
 def evaluate(train_table: Table, pred_table: Table, name: str) -> Dict[str, float]:
     is_test = task.target_col not in pred_table.df
-    is_multiclass = False
     if name == "global_zero":
         pred = np.zeros(len(pred_table))
     elif name == "global_mean":
@@ -52,44 +49,11 @@ def evaluate(train_table: Table, pred_table: Table, name: str) -> Dict[str, floa
         df = pred_table.df.merge(df, how="left", on=fkey)
         pred = df["__target__"].fillna(0).astype(float).values
     elif name == "random":
-        if not is_multiclass:
-            pred = np.random.rand(len(pred_table))
-        else:
-            pred = np.random.rand(len(pred_table), num_classes)
+        pred = np.random.rand(len(pred_table))
     elif name == "majority":
         past_target = train_table.df[task.target_col].astype(int)
         majority_label = int(past_target.mode().iloc[0])
-        if not is_multiclass:
-            pred = torch.full((len(pred_table),), fill_value=majority_label)
-        else:
-            pred = torch.full((len(pred_table), num_classes), fill_value=0)
-            pred[:, majority_label] = 1
-    elif name == "majority_multilabel":
-        past_target = train_table.df[task.target_col]
-        majority = mode(np.stack(past_target.values), axis=0).mode[0]
-        pred = np.stack([majority] * len(pred_table.df))
-    elif name == "random_multilabel":
-        num_labels = train_table.df[task.target_col].values[0].shape[0]
-        pred = np.random.rand(len(pred_table), num_labels)
-    elif name == "entity_majority_multiclass":
-        # Output majority label in the train set if exists, otherwise output randomly
-        pred = []
-        past_target = train_table.df[task.target_col].astype(int)
-        majority_label = int(past_target.mode().iloc[0])
-        for idx, row in pred_table.df.iterrows():
-            fkey = row[list(train_table.fkey_col_to_pkey_table.keys())[0]]
-            if fkey in train_table.df[train_table.pkey_col]:
-                train_set_rows = train_table.df.loc[
-                    train_table.df[train_table.pkey_col] == fkey
-                ]
-                majority_labels = train_set_rows[task.target_col].mode()
-                if len(majority_labels) > 0:
-                    pred.append(majority_labels[0])
-                else:
-                    pred.append(majority_label)
-            else:
-                pred.append(majority_label)
-        pred = np.array(pred)
+        pred = torch.full((len(pred_table),), fill_value=majority_label)
     else:
         raise ValueError("Unknown eval name called {name}.")
     return task.evaluate(pred, None if is_test else pred_table)

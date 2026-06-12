@@ -4,7 +4,6 @@ from typing import Dict
 import numpy as np
 import pandas as pd
 import torch
-from scipy.stats import mode
 from torch_geometric.seed import seed_everything
 
 from relbench import load_task
@@ -57,13 +56,6 @@ def evaluate(train_table: Table, pred_table: Table, name: str) -> Dict[str, floa
         past_target = train_table.df[task.target_col].astype(int)
         majority_label = int(past_target.mode().iloc[0])
         pred = torch.full((len(pred_table),), fill_value=majority_label)
-    elif name == "majority_multilabel":
-        past_target = train_table.df[task.target_col]
-        majority = mode(np.stack(past_target.values), axis=0).mode[0]
-        pred = np.stack([majority] * len(pred_table.df))
-    elif name == "random_multilabel":
-        num_labels = train_table.df[task.target_col].values[0].shape[0]
-        pred = np.random.rand(len(pred_table), num_labels)
     else:
         raise ValueError("Unknown eval name called {name}.")
     return task.evaluate(pred, None if is_test else pred_table)
