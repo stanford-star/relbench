@@ -19,14 +19,17 @@ hosted dataset (``relbench/v1/rel-f1``), or a *local* dataset folder (a director
 tables are downloaded -- never the (much larger) ``db/`` tables -- so this stays cheap
 even for repos with thousands of datasets.
 
-Columns (the first nine mirror the paper "task statistics" tables; the rest are extra
+Columns (the headline statistics mirror the paper "task statistics" tables; the rest is
 metadata pulled straight from each task manifest, handy for filtering the viewer):
 
-    dataset, task, task_type_short, num_rows_train, num_rows_val, num_rows_test,
-    num_unique_entities, pct_train_test_entity_overlap, num_dst_entities,
-    task_type, kind, metric, entity_table, entity_col, src_entity_table,
-    src_entity_col, dst_entity_table, dst_entity_col, target_col, time_col,
-    timedelta, num_eval_timestamps, eval_k, description
+    database, task, task_type, description, kind, num_rows_train, num_rows_val,
+    num_rows_test, num_unique_entities, pct_train_test_entity_overlap, num_dst_entities,
+    metric, entity_table, entity_col, src_entity_table, src_entity_col, dst_entity_table,
+    dst_entity_col, target_col, time_col, timedelta, num_eval_timestamps, eval_k
+
+Columns that never apply to the repo being built -- always null, e.g. the link-only
+``src/dst_entity_*``, ``eval_k`` and ``num_dst_entities`` for a repo with no link tasks --
+are dropped, so each repo's table carries only the columns that mean something for it.
 
 Statistic definitions (computed from the data, never copied from the papers):
 
@@ -61,21 +64,22 @@ import pyarrow.parquet as pq
 from relbench.hf import resolve_repo
 from relbench.manifest import DatasetManifest, TaskManifest
 
-# Column order: paper "task statistics" columns first, then extra manifest metadata.
-PAPER_COLS = [
-    "dataset",
+# Column order: identity, the task spec (task_type, description, kind), the headline
+# statistics (mirroring the paper task-stats tables), then the rest of the manifest
+# metadata. Columns that never apply to a given repo (always null -- e.g. the link-only
+# destination columns for a repo with no link tasks) are dropped per repo in ``build``.
+COLUMNS = [
+    "database",
     "task",
-    "task_type_short",
+    "task_type",
+    "description",
+    "kind",
     "num_rows_train",
     "num_rows_val",
     "num_rows_test",
     "num_unique_entities",
     "pct_train_test_entity_overlap",
     "num_dst_entities",
-]
-EXTRA_COLS = [
-    "task_type",
-    "kind",
     "metric",
     "entity_table",
     "entity_col",
@@ -88,40 +92,24 @@ EXTRA_COLS = [
     "timedelta",
     "num_eval_timestamps",
     "eval_k",
-    "description",
 ]
-COLUMNS = PAPER_COLS + EXTRA_COLS
-
-_SHORT = {
-    "binary_classification": "bcls",
-    "regression": "reg",
-    "multiclass_classification": "mcls",
-    "multilabel_classification": "mlcls",
-}
+# Columns shown in the printed summary and compared by the paper sanity check.
+HEADLINE_COLS = [
+    "database",
+    "task",
+    "task_type",
+    "num_rows_train",
+    "num_rows_val",
+    "num_rows_test",
+    "num_unique_entities",
+    "pct_train_test_entity_overlap",
+    "num_dst_entities",
+]
 _METRIC = {
     "binary_classification": "roc_auc",
     "regression": "nmae",
     "link_prediction": "link_prediction_map",
 }
-
-
-def _is_autocomplete_style(tm: TaskManifest) -> bool:
-    r"""Predict-an-existing-column task: an entity table + target, but no explicit
-    ``entity_col``. Shipped either as ``kind='autocomplete'`` or, when the labels are
-    precomputed, as ``kind='external'`` -- so we key on the task *shape*, not the kind.
-    """
-    return (
-        tm.task_type != "link_prediction"
-        and not tm.entity_col
-        and bool(tm.entity_table)
-    )
-
-
-def _task_type_short(tm: TaskManifest) -> str:
-    if tm.task_type == "link_prediction":
-        return "recommendation"
-    prefix = "auto" if _is_autocomplete_style(tm) else "entity"
-    return f"{prefix}-{_SHORT.get(tm.task_type, tm.task_type)}"
 
 
 def _metric(tm: TaskManifest) -> Optional[str]:
@@ -200,17 +188,17 @@ def task_row(dm: DatasetManifest, name: str, task: str, task_dir: Path) -> dict:
             num_dst = sum(p or 0 for p in parts)
 
     return {
-        "dataset": name,
+        "database": name,
         "task": task,
-        "task_type_short": _task_type_short(tm),
+        "task_type": tm.task_type,
+        "description": (tm.description or "").strip() or None,
+        "kind": tm.kind,
         "num_rows_train": rows["train"],
         "num_rows_val": rows["val"],
         "num_rows_test": rows["test"],
         "num_unique_entities": uniq,
         "pct_train_test_entity_overlap": overlap,
         "num_dst_entities": num_dst,
-        "task_type": tm.task_type,
-        "kind": tm.kind,
         "metric": _metric(tm),
         "entity_table": tm.entity_table,
         "entity_col": tm.entity_col,
@@ -223,7 +211,6 @@ def task_row(dm: DatasetManifest, name: str, task: str, task_dir: Path) -> dict:
         "timedelta": tm.timedelta,
         "num_eval_timestamps": tm.num_eval_timestamps,
         "eval_k": tm.eval_k,
-        "description": (tm.description or "").strip() or None,
     }
 
 
@@ -394,8 +381,13 @@ def build(spec: str) -> pd.DataFrame:
             flush=True,
         )
     df = pd.DataFrame(records, columns=COLUMNS)
-    df = df.sort_values(["dataset", "task"]).reset_index(drop=True)
-    return _finalize(df)
+    df = df.sort_values(["database", "task"]).reset_index(drop=True)
+    df = _finalize(df)
+    if len(df):
+        # Drop columns that never apply to this repo (always null) -- e.g. the link-only
+        # destination/eval_k columns for a repo whose tasks are all node tasks.
+        df = df.dropna(axis=1, how="all")
+    return df
 
 
 # --------------------------------------------------------------------------- #
@@ -503,7 +495,7 @@ def check(df: pd.DataFrame) -> None:
     )
     n_ok = n_diff = n_tasks = 0
     for name, ref in PAPER_REFERENCE.items():
-        sub = df[df["dataset"] == name]
+        sub = df[df["database"] == name]
         if sub.empty:
             continue
         print(f"\n  {name}:")
@@ -518,7 +510,9 @@ def check(df: pd.DataFrame) -> None:
             for field, want in zip(_CHECK_FIELDS, vals):
                 if want is None:
                     continue
-                got = r[field]
+                got = (
+                    r[field] if field in r.index else None
+                )  # may be dropped (all-null)
                 if got is None or pd.isna(got):
                     diffs.append(f"{field}: got None want {want}")
                 elif field == "pct_train_test_entity_overlap":
@@ -555,11 +549,12 @@ def main() -> None:
     out_path = out / "tasks.parquet"
     df.to_parquet(out_path, index=False)
     print(
-        f"\nwrote {out_path} ({len(df)} tasks, {df['dataset'].nunique()} datasets)",
+        f"\nwrote {out_path} ({len(df)} tasks, {df['database'].nunique()} databases)",
         flush=True,
     )
+    headline = [c for c in HEADLINE_COLS if c in df.columns]
     with pd.option_context("display.max_columns", None, "display.width", 200):
-        print(df[PAPER_COLS].to_string(index=False))
+        print(df[headline].to_string(index=False))
 
     if do_check:
         check(df)
