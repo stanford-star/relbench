@@ -38,12 +38,26 @@ CACHE = Path(
 )
 
 
+def clean_datetime(df, col: str):
+    r"""Coerce ``df[col]`` to datetime and drop rows that fail to parse (NaT)."""
+    import pandas as pd
+
+    df[col] = pd.to_datetime(df[col], errors="coerce")
+    before = len(df)
+    df = df.dropna(subset=[col])
+    print(f"  {col}: dropped {before - len(df)} rows with invalid dates", flush=True)
+    return df
+
+
 def fetch(url: str, sha256: Optional[str] = None) -> Path:
     r"""Download ``url`` (cached), verify ``sha256``, unzip if a ``.zip``; return the
     path."""
     CACHE.mkdir(parents=True, exist_ok=True)
     name = url.split("?")[0].rstrip("/").split("/")[-1]
-    blob = CACHE / name
+    # Key the cache by the full URL so different sources sharing a filename
+    # (e.g. several "db.zip") don't collide.
+    key = hashlib.sha1(url.encode()).hexdigest()[:12]
+    blob = CACHE / f"{key}-{name}"
     if not blob.exists():
         print(f"downloading {url}", flush=True)
         urllib.request.urlretrieve(url, blob)
@@ -54,7 +68,7 @@ def fetch(url: str, sha256: Optional[str] = None) -> Path:
                 f"sha256 mismatch for {url}:\n  got {got}\n  want {sha256}"
             )
     if blob.suffix == ".zip":
-        out = CACHE / (name + ".extracted")
+        out = CACHE / f"{key}-{name}.extracted"
         if not out.exists():
             with zipfile.ZipFile(blob) as z:
                 z.extractall(out)
