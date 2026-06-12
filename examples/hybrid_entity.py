@@ -96,17 +96,14 @@ if task.task_type == TaskType.BINARY_CLASSIFICATION:
 elif task.task_type == TaskType.REGRESSION:
     out_channels = 1
     loss_fn = L1Loss()
-    tune_metric = "mae"
+    tune_metric = "nmae"
     higher_is_better = False
     # Get the clamp value at inference time
     clamp_min, clamp_max = np.percentile(
         task.get_table("train").df[task.target_col].to_numpy(), [2, 98]
     )
-elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
-    out_channels = task.num_labels
-    loss_fn = BCEWithLogitsLoss()
-    tune_metric = "multilabel_auprc_macro"
-    higher_is_better = True
+else:
+    raise ValueError(f"Unsupported task type: {task.task_type}")
 
 loader_dict: Dict[str, NeighborLoader] = {}
 # Create a mapping for each split's entity table
@@ -186,10 +183,7 @@ def test(loader: NeighborLoader) -> np.ndarray:
             assert clamp_max is not None
             pred = torch.clamp(pred, clamp_min, clamp_max)
 
-        if task.task_type in [
-            TaskType.BINARY_CLASSIFICATION,
-            TaskType.MULTILABEL_CLASSIFICATION,
-        ]:
+        if task.task_type == TaskType.BINARY_CLASSIFICATION:
             pred = torch.sigmoid(pred)
 
         pred = pred.view(-1) if pred.size(1) == 1 else pred
@@ -339,12 +333,11 @@ from torch_frame.typing import Metric
 
 if tune_metric == "roc_auc":
     tune_metric = Metric.ROCAUC
-elif tune_metric == "mae":
+elif tune_metric == "nmae":
     tune_metric = Metric.MAE
 
 
 relbench2torch_frame = {
-    TaskType.MULTILABEL_CLASSIFICATION: TaskTypeTorchFrame.MULTILABEL_CLASSIFICATION,
     TaskType.BINARY_CLASSIFICATION: TaskTypeTorchFrame.BINARY_CLASSIFICATION,
     TaskType.REGRESSION: TaskTypeTorchFrame.REGRESSION,
 }

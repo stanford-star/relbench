@@ -24,34 +24,19 @@ dependencies=[
 	"scikit-learn<=1.6.1",
 	"typing-extensions",
 	"datasets",
+	"graphviz",
 ]
 
 [project.optional-dependencies]
-full=[
-	"pytorch_frame>=0.2.3",
-	"torch_geometric",
-]
 example=[
 	"sentence-transformers",
 	"pytorch_frame[full]",
 	"torch_geometric",
 	"tqdm",
 ]
-test=[
-	"pytest",
-]
 dev=[
+	"pytest",
 	"pre-commit",
-]
-dbinfer=[
-	"dbinfer-relbench-adapter",
-	"db-dtypes",
-]
-ctu=[
-	"redelex",
-]
-schema=[
-	"graphviz",
 ]
 
 [project.urls]

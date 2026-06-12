@@ -82,15 +82,8 @@ if task.task_type == TaskType.BINARY_CLASSIFICATION:
     col_to_stype[task.target_col] = torch_frame.categorical
 elif task.task_type == TaskType.REGRESSION:
     col_to_stype[task.target_col] = torch_frame.numerical
-elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
-    col_to_stype[task.target_col] = torch_frame.embedding
-elif task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
-    col_to_stype[task.target_col] = torch_frame.categorical
-    # task.metrics = task.metrics[:1]  # NOTE: Probabilistic multiclass predictions
-    # are not supported by torch_frame LightGBM to enable probabilities:
-    #  install torch_frame from https://github.com/ValterH/pytorch-frame
 else:
-    raise ValueError(f"Unsupported task type called {task.task_type}")
+    raise ValueError(f"Unsupported task type: {task.task_type}")
 
 # randomly subsample in case training data size is too large.
 if args.sample_size > 0 and args.sample_size < len(train_table):
@@ -169,45 +162,28 @@ tf_train = train_dataset.tensor_frame
 tf_val = train_dataset.convert_to_tensor_frame(dfs["val"])
 tf_test = train_dataset.convert_to_tensor_frame(dfs["test"])
 
-if task.task_type in [
-    TaskType.BINARY_CLASSIFICATION,
-    TaskType.MULTILABEL_CLASSIFICATION,
-]:
+if task.task_type == TaskType.BINARY_CLASSIFICATION:
     tune_metric = Metric.ROCAUC
 elif task.task_type == TaskType.REGRESSION:
     tune_metric = Metric.MAE
-elif task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
-    tune_metric = Metric.ACCURACY
 else:
-    raise ValueError(f"Task task type is unsupported {task.task_type}")
+    raise ValueError(f"Unsupported task type: {task.task_type}")
 
-if task.task_type in [
-    TaskType.BINARY_CLASSIFICATION,
-    TaskType.REGRESSION,
-    TaskType.MULTICLASS_CLASSIFICATION,
-]:
-    model = LightGBM(
-        task_type=train_dataset.task_type,
-        metric=tune_metric,
-        probability=True,
-        num_classes=(
-            task.num_classes
-            if task.task_type == TaskType.MULTICLASS_CLASSIFICATION
-            else None
-        ),
-    )
-    model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=args.num_trials)
+model = LightGBM(
+    task_type=train_dataset.task_type,
+    metric=tune_metric,
+    probability=True,
+)
+model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=args.num_trials)
 
-    pred = model.predict(tf_test=tf_train).numpy()
-    train_metrics = task.evaluate(pred, train_table)
+pred = model.predict(tf_test=tf_train).numpy()
+train_metrics = task.evaluate(pred, train_table)
 
-    pred = model.predict(tf_test=tf_val).numpy()
-    val_metrics = task.evaluate(pred, val_table)
+pred = model.predict(tf_test=tf_val).numpy()
+val_metrics = task.evaluate(pred, val_table)
 
-    pred = model.predict(tf_test=tf_test).numpy()
-    test_metrics = task.evaluate(pred)
-else:
-    raise ValueError(f"Task task type is unsupported {task.task_type}")
+pred = model.predict(tf_test=tf_test).numpy()
+test_metrics = task.evaluate(pred)
 
 print(f"Train: {train_metrics}")
 print(f"Val: {val_metrics}")

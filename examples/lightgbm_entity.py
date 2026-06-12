@@ -75,10 +75,8 @@ if task.task_type == TaskType.BINARY_CLASSIFICATION:
     col_to_stype[task.target_col] = torch_frame.categorical
 elif task.task_type == TaskType.REGRESSION:
     col_to_stype[task.target_col] = torch_frame.numerical
-elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
-    col_to_stype[task.target_col] = torch_frame.embedding
 else:
-    raise ValueError(f"Unsupported task type called {task.task_type}")
+    raise ValueError(f"Unsupported task type: {task.task_type}")
 
 # randomly subsample in case training data size is too large.
 if args.sample_size > 0 and args.sample_size < len(train_table):
@@ -118,55 +116,24 @@ tf_train = train_dataset.tensor_frame
 tf_val = train_dataset.convert_to_tensor_frame(dfs["val"])
 tf_test = train_dataset.convert_to_tensor_frame(dfs["test"])
 
-if task.task_type in [
-    TaskType.BINARY_CLASSIFICATION,
-    TaskType.MULTILABEL_CLASSIFICATION,
-]:
+if task.task_type == TaskType.BINARY_CLASSIFICATION:
     tune_metric = Metric.ROCAUC
 elif task.task_type == TaskType.REGRESSION:
     tune_metric = Metric.MAE
 else:
-    raise ValueError(f"Task task type is unsupported {task.task_type}")
+    raise ValueError(f"Unsupported task type: {task.task_type}")
 
-if task.task_type in [TaskType.BINARY_CLASSIFICATION, TaskType.REGRESSION]:
-    model = LightGBM(task_type=train_dataset.task_type, metric=tune_metric)
-    model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=args.num_trials)
+model = LightGBM(task_type=train_dataset.task_type, metric=tune_metric)
+model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=args.num_trials)
 
-    pred = model.predict(tf_test=tf_train).numpy()
-    train_metrics = task.evaluate(pred, train_table)
+pred = model.predict(tf_test=tf_train).numpy()
+train_metrics = task.evaluate(pred, train_table)
 
-    pred = model.predict(tf_test=tf_val).numpy()
-    val_metrics = task.evaluate(pred, val_table)
+pred = model.predict(tf_test=tf_val).numpy()
+val_metrics = task.evaluate(pred, val_table)
 
-    pred = model.predict(tf_test=tf_test).numpy()
-    test_metrics = task.evaluate(pred)
-
-elif TaskType.MULTILABEL_CLASSIFICATION:
-    y_train = tf_train.y.values.to(torch.long)
-    y_val = tf_val.y.values.to(torch.long)
-    pred_train_list = []
-    pred_val_list = []
-    pred_test_list = []
-    # Per-label evaluation
-    for i in tqdm(range(task.num_labels)):
-        model = LightGBM(
-            task_type=torch_frame.TaskType.BINARY_CLASSIFICATION, metric=tune_metric
-        )
-        tf_train.y = y_train[:, i]
-        tf_val.y = y_val[:, i]
-        model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=10)
-        pred_train_list.append(model.predict(tf_test=tf_train).numpy())
-        pred_val_list.append(model.predict(tf_test=tf_val).numpy())
-        pred_test_list.append(model.predict(tf_test=tf_test).numpy())
-
-    pred_train = np.stack(pred_train_list).transpose()
-    train_metrics = task.evaluate(pred_train, train_table)
-
-    pred_val = np.stack(pred_val_list).transpose()
-    val_metrics = task.evaluate(pred_val, val_table)
-
-    pred_test = np.stack(pred_test_list).transpose()
-    test_metrics = task.evaluate(pred_test)
+pred = model.predict(tf_test=tf_test).numpy()
+test_metrics = task.evaluate(pred)
 
 print(f"Train: {train_metrics}")
 print(f"Val: {val_metrics}")

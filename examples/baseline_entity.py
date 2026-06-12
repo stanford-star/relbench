@@ -30,9 +30,7 @@ test_table = task.get_table("test")
 
 def evaluate(train_table: Table, pred_table: Table, name: str) -> Dict[str, float]:
     is_test = task.target_col not in pred_table.df
-    is_multiclass = task.task_type == TaskType.MULTICLASS_CLASSIFICATION
-    if is_multiclass:
-        num_classes = len(train_table.df[task.target_col].unique())
+    is_multiclass = False
     if name == "global_zero":
         pred = np.zeros(len(pred_table))
     elif name == "global_mean":
