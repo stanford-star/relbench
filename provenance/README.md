@@ -27,7 +27,7 @@ in [`../scripts/clean_databases.py`](../scripts/clean_databases.py).
 | `arxiv.py` | rel-arxiv | arXiv citation db.zip (Dropbox) | ✅ reproduces published |
 | `stack.py` | rel-stack | Stack Exchange dump (relbench.stanford.edu) | runnable (large; +#373 drop) |
 | `trial.py` | rel-trial | ClinicalTrials/AACT (relbench.stanford.edu) | runnable (large; +#373 drops) |
-| `ratebeer.py` | rel-ratebeer | RateBeer db.zip (Dropbox) | runnable (large; +#373 drops) |
+| `ratebeer.py` | rel-ratebeer | RateBeer db.zip (Dropbox) | ✅ reproduces published (large; +#373 drops) |
 | `avito.py` | rel-avito | Avito ads (relbench.stanford.edu) | runnable; public source is a 100k **sample** |
 | `amazon.py` | rel-amazon | Amazon reviews (McAuley `jmcauley.ucsd.edu`) | runnable; large external download |
 | `event.py` | rel-event | Event Recommendation (Kaggle) | needs Kaggle zip in `$RELBENCH_RAW_CACHE` |
@@ -39,5 +39,6 @@ in [`../scripts/clean_databases.py`](../scripts/clean_databases.py).
 temporal-graph / 4DBInfer conversion happens upstream, and RelBench ingested the resulting
 pre-built `db.zip` artifacts — which these scripts download and rewrite into the HF layout.
 The Kaggle-gated sources (`event`, `hm`) need their competition zip placed in the cache
-first (the script names the expected file). `f1`/`salt`/`arxiv` are verified to reproduce
-their published databases table-for-table; the rest are faithful ports of the same logic.
+first (the script names the expected file). `f1`/`salt`/`arxiv`/`ratebeer` are verified to
+reproduce their published databases table-for-table (the latter exercises the #373 column
+drops); the rest are faithful ports of the same logic.
