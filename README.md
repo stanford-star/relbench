@@ -36,10 +36,10 @@ Load a dataset and a task — both come straight from the Hub, with **no per-dat
 ```python
 import relbench
 
-dataset = relbench.load_dataset("relbench/v1/rel-f1")   # Hub 'org/repo[/subdir]', or a local path
+dataset = relbench.load_dataset("relbench/core/rel-f1")   # Hub 'org/repo[/subdir]', or a local path
 db = dataset.get_db()                            # a Database: tables linked by a foreign-key graph
 
-task = relbench.load_task("relbench/v1/rel-f1", "driver-position")
+task = relbench.load_task("relbench/core/rel-f1", "driver-position")
 train_table = task.get_table("train")            # train / val / test label tables
 test_table  = task.get_table("test")             # target column is hidden on test
 
@@ -87,7 +87,7 @@ regenerable, and CI-checked against the shipped labels), **`autocomplete`** (pre
 existing column), and **`external`** (labels shipped as-is). Adding a task is just adding a
 `tasks/<name>/` directory.
 
-The published [`rel-f1`](https://huggingface.co/datasets/relbench/v1) repo is a complete
+The published [`rel-f1`](https://huggingface.co/datasets/relbench/core) repo is a complete
 worked example. Generate the card + diagram with `relbench.schema.dataset_card` /
 `render_schema_svg`, and verify a `forecast` task reproduces its labels with:
 
@@ -117,7 +117,7 @@ python scripts/build_databases_overview.py <repo-or-path>   # -> databases.parqu
 python scripts/build_tasks_overview.py     <repo-or-path>   # -> tasks.parquet
 ```
 
-`<repo-or-path>` is a Hub repo (`relbench/v1`), a single dataset (`relbench/v1/rel-f1`),
+`<repo-or-path>` is a Hub repo (`relbench/core`), a single dataset (`relbench/core/rel-f1`),
 or a local dataset folder — so this is exactly how you'd produce the tables for a **new**
 dataset. Add `--push` to upload to `STATS/`, `--out DIR` to choose where to write,
 and (for tasks) `--check` to cross-check the computed numbers against the published paper

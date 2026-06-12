@@ -1,18 +1,19 @@
 r"""Compute and publish the RelBench v1 regression-target stds.
 
-For every regression task in the ``relbench/v1`` datasets, compute the standard deviation
+For every regression task in the ``relbench/core`` datasets, compute the standard deviation
 (ddof=1) of the target on the *train* split and store them all together in one file at the
-root of the ``relbench/v1`` Hub repo. These stds normalize MAE into NMAE (the regression
+root of the ``relbench/core`` Hub repo. These stds normalize MAE into NMAE (the regression
 metric); see ``relbench.metrics.make_nmae`` / ``relbench.hf.load_v1_regression_stds``.
 
     # write regression_stds.json locally (under OUT) and print it
     python scripts/compute_regression_stds.py
 
-    # also upload it to the relbench/v1 dataset repo
+    # also upload it to the relbench/core dataset repo
     python scripts/compute_regression_stds.py --push
 
 Keyed by "<dataset>/<task>" (e.g. "rel-f1/driver-position").
 """
+
 import json
 import sys
 from pathlib import Path
@@ -28,10 +29,14 @@ OUT = Path(sys.argv[sys.argv.index("--out") + 1]) if "--out" in sys.argv else Pa
 
 api = HfApi()
 
-# Enumerate the sub-datasets of relbench/v1 (each has a top-level <name>/manifest.yaml).
+# Enumerate the sub-datasets of relbench/core (each has a top-level <name>/manifest.yaml).
 files = api.list_repo_files(V1_REPO, repo_type="dataset")
 datasets = sorted(
-    {f.split("/")[0] for f in files if f.endswith("/manifest.yaml") and f.count("/") == 1}
+    {
+        f.split("/")[0]
+        for f in files
+        if f.endswith("/manifest.yaml") and f.count("/") == 1
+    }
 )
 print(f"{V1_REPO}: {len(datasets)} sub-datasets", flush=True)
 

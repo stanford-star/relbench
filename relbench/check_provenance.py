@@ -6,7 +6,7 @@ exactly what its SQL produces against the database; it fails on drift (SQL edite
 refreshing labels, or vice versa). Autocomplete and external tasks have no regenerating SQL
 and are skipped.
 
-    python -m relbench.check_provenance relbench/v1/rel-f1
+    python -m relbench.check_provenance relbench/core/rel-f1
     python -m relbench.check_provenance your-org/your-dataset
     python -m relbench.check_provenance ./path/to/local/dataset
 """
@@ -38,15 +38,22 @@ def _match(a: pd.DataFrame, b: pd.DataFrame, keys, target, is_list) -> bool:
     if set(map(tuple, a[keys].to_numpy())) != set(map(tuple, b[keys].to_numpy())):
         return False
     if is_list:
-        return all(set(map(int, x)) == set(map(int, y)) for x, y in zip(a[target], b[target]))
+        return all(
+            set(map(int, x)) == set(map(int, y)) for x, y in zip(a[target], b[target])
+        )
     x, y = a[target].to_numpy(), b[target].to_numpy()
     if np.issubdtype(x.dtype, np.number) and np.issubdtype(y.dtype, np.number):
         return bool(np.allclose(x, y, equal_nan=True))
-    return bool((pd.Series(x).fillna("∅").astype(str) == pd.Series(y).fillna("∅").astype(str)).all())
+    return bool(
+        (
+            pd.Series(x).fillna("∅").astype(str) == pd.Series(y).fillna("∅").astype(str)
+        ).all()
+    )
 
 
 def check_provenance(dataset: str) -> bool:
-    r"""Return True iff every ``forecast`` task's regenerated labels match its hosted labels."""
+    r"""Return True iff every ``forecast`` task's regenerated labels match its hosted
+    labels."""
     ok_all, checked = True, 0
     for name in get_task_names(dataset):
         regen = load_task(dataset, name, regenerate=True)
@@ -60,8 +67,11 @@ def check_provenance(dataset: str) -> bool:
             ok = _match(r, c, keys, target, is_list)
             ok_all &= ok
             checked += 1
-            print(f"{name:<24} {split:<5} regen={len(r):>7} cached={len(c):>7} "
-                  f"{'PASS' if ok else 'FAIL'}", flush=True)
+            print(
+                f"{name:<24} {split:<5} regen={len(r):>7} cached={len(c):>7} "
+                f"{'PASS' if ok else 'FAIL'}",
+                flush=True,
+            )
     print(f"\n{'PROVENANCE OK' if ok_all else 'PROVENANCE DRIFT'} ({checked} checks)")
     return ok_all
 

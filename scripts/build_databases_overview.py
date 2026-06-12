@@ -5,13 +5,13 @@ viewer: one row per database, with the structural statistics reported in the Rel
 papers (`v1 <https://arxiv.org/abs/2407.20060>`_, `v2 <https://arxiv.org/abs/2602.12606>`_).
 
     # write databases.parquet locally (under --out, default '.') and print it
-    python scripts/build_databases_overview.py relbench/v1 --out /tmp/v1
+    python scripts/build_databases_overview.py relbench/core --out /tmp/v1
 
     # preserve hand-curated columns from the repo's existing table, then upload
-    python scripts/build_databases_overview.py relbench/v1 --merge --push
+    python scripts/build_databases_overview.py relbench/core --merge --push
 
-``<spec>`` is a Hub repo hosting one or more datasets (``relbench/v1``), a single hosted
-dataset (``relbench/v1/rel-f1``), or a *local* dataset folder. Only manifests and parquet
+``<spec>`` is a Hub repo hosting one or more datasets (``relbench/core``), a single hosted
+dataset (``relbench/core/rel-f1``), or a *local* dataset folder. Only manifests and parquet
 *footers* are read -- never the table data -- so this is cheap even for large repos.
 
 Columns. The structural ones are computed from the data:
@@ -374,7 +374,7 @@ def main() -> None:
     if do_push:
         if Path(spec).exists():
             sys.exit(
-                "--push needs a Hub repo spec (e.g. 'relbench/v1'), not a local path"
+                "--push needs a Hub repo spec (e.g. 'relbench/core'), not a local path"
             )
         repo_id, _ = resolve_repo(spec)
         from huggingface_hub import HfApi

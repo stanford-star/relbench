@@ -7,8 +7,8 @@ labels). Adding a task later is just adding a directory.
 
 Public API::
 
-    ds   = relbench.load_dataset("relbench/v1/rel-f1")   # Hub 'org/repo[/subdir]' or a local path
-    task = relbench.load_task("relbench/v1/rel-f1", "driver-position")
+    ds   = relbench.load_dataset("relbench/core/rel-f1")   # Hub 'org/repo[/subdir]' or a local path
+    task = relbench.load_task("relbench/core/rel-f1", "driver-position")
     db   = ds.get_db()
     train = task.get_table("train")
     task.evaluate(pred)
@@ -61,7 +61,7 @@ def train_std(task) -> float:
     r"""Standard deviation (ddof=1) of a regression task's target on its train split.
 
     This is the normalizer that turns MAE into NMAE. For the hosted RelBench v1 tasks the
-    same values are precomputed and stored at ``relbench/v1`` (see
+    same values are precomputed and stored at ``relbench/core`` (see
     :func:`relbench.hf.load_v1_regression_stds`); this utility recomputes one from scratch.
     """
     df = task.get_table("train").df
@@ -70,7 +70,10 @@ def train_std(task) -> float:
 
 def _make_std_getter(task, dataset_name: Optional[str], task_name: Optional[str]):
     r"""Lazily resolve the NMAE normalizer for ``task``: hosted v1 std if available, else
-    compute it from the train split. Lazy so merely loading a task triggers no I/O."""
+    compute it from the train split.
+
+    Lazy so merely loading a task triggers no I/O.
+    """
     from functools import lru_cache as _lru_cache
 
     @_lru_cache(maxsize=1)
@@ -142,7 +145,9 @@ class RelBenchDataset(Dataset):
     artifacts are already reindexed at build time, so load is pure I/O.
     """
 
-    def __init__(self, dataset_dir: Union[str, Path], manifest: DatasetManifest) -> None:
+    def __init__(
+        self, dataset_dir: Union[str, Path], manifest: DatasetManifest
+    ) -> None:
         self.dataset_dir = Path(dataset_dir)
         self.db_dir = self.dataset_dir / "db"
         self.manifest = manifest
@@ -248,7 +253,9 @@ class _HostedLabelsMixin:
 
 
 class _ForecastEntityTask(_HostedLabelsMixin, EntityTask):
-    def __init__(self, dataset: Dataset, tm: TaskManifest, task_dir=None, regenerate=False):
+    def __init__(
+        self, dataset: Dataset, tm: TaskManifest, task_dir=None, regenerate=False
+    ):
         self.task_type = TaskType(tm.task_type)
         self.entity_table = tm.entity_table
         self.entity_col = tm.entity_col
@@ -256,7 +263,9 @@ class _ForecastEntityTask(_HostedLabelsMixin, EntityTask):
         self.time_col = tm.time_col
         self.timedelta = _parse_timedelta(tm.timedelta)
         self.num_eval_timestamps = tm.num_eval_timestamps
-        self.metrics = _resolve_metrics(tm, task=self, dataset_name=dataset.manifest.name)
+        self.metrics = _resolve_metrics(
+            tm, task=self, dataset_name=dataset.manifest.name
+        )
         self._sql = tm.sql
         self._task_dir = Path(task_dir) if task_dir is not None else None
         self._regenerate = regenerate
@@ -273,7 +282,9 @@ class _ForecastEntityTask(_HostedLabelsMixin, EntityTask):
 
 
 class _ForecastRecommendationTask(_HostedLabelsMixin, RecommendationTask):
-    def __init__(self, dataset: Dataset, tm: TaskManifest, task_dir=None, regenerate=False):
+    def __init__(
+        self, dataset: Dataset, tm: TaskManifest, task_dir=None, regenerate=False
+    ):
         self.task_type = TaskType(tm.task_type)
         self.src_entity_table = tm.src_entity_table
         self.src_entity_col = tm.src_entity_col
@@ -284,7 +295,9 @@ class _ForecastRecommendationTask(_HostedLabelsMixin, RecommendationTask):
         self.timedelta = _parse_timedelta(tm.timedelta)
         self.num_eval_timestamps = tm.num_eval_timestamps
         self.eval_k = tm.eval_k
-        self.metrics = _resolve_metrics(tm, task=self, dataset_name=dataset.manifest.name)
+        self.metrics = _resolve_metrics(
+            tm, task=self, dataset_name=dataset.manifest.name
+        )
         self._sql = tm.sql
         self._task_dir = Path(task_dir) if task_dir is not None else None
         self._regenerate = regenerate
@@ -304,7 +317,9 @@ class _ForecastRecommendationTask(_HostedLabelsMixin, RecommendationTask):
 
 
 class _AutoCompleteTask(_HostedLabelsMixin, AutoCompleteTask):
-    def __init__(self, dataset: Dataset, tm: TaskManifest, task_dir=None, regenerate=False):
+    def __init__(
+        self, dataset: Dataset, tm: TaskManifest, task_dir=None, regenerate=False
+    ):
         self._task_dir = Path(task_dir) if task_dir is not None else None
         self._regenerate = regenerate
         super().__init__(
@@ -334,7 +349,9 @@ class _AutoCompleteTask(_HostedLabelsMixin, AutoCompleteTask):
             )
         elif split == "test":
             if self.dataset.test_timestamp + self.timedelta > db.max_timestamp:
-                raise RuntimeError("test timestamp + timedelta exceeds db max timestamp")
+                raise RuntimeError(
+                    "test timestamp + timedelta exceeds db max timestamp"
+                )
             start, end = db.max_timestamp, self.dataset.test_timestamp
         else:
             raise ValueError(f"unknown split: {split!r}")
@@ -343,17 +360,24 @@ class _AutoCompleteTask(_HostedLabelsMixin, AutoCompleteTask):
 
 
 class _ExternalEntityTask(_HostedLabelsMixin, EntityTask):
-    r"""Entity task whose labels are built externally (e.g. dbinfer) and served as-is."""
+    r"""Entity task whose labels are built externally (e.g. dbinfer) and served as-
+    is."""
 
-    def __init__(self, dataset: Dataset, tm: TaskManifest, task_dir=None, regenerate=False):
+    def __init__(
+        self, dataset: Dataset, tm: TaskManifest, task_dir=None, regenerate=False
+    ):
         self.task_type = TaskType(tm.task_type)
         self.entity_table = tm.entity_table
         self.entity_col = tm.entity_col
         self.target_col = tm.target_col
         self.time_col = tm.time_col
-        self.timedelta = _parse_timedelta(tm.timedelta) if tm.timedelta else pd.Timedelta(days=1)
+        self.timedelta = (
+            _parse_timedelta(tm.timedelta) if tm.timedelta else pd.Timedelta(days=1)
+        )
         self.num_eval_timestamps = tm.num_eval_timestamps
-        self.metrics = _resolve_metrics(tm, task=self, dataset_name=dataset.manifest.name)
+        self.metrics = _resolve_metrics(
+            tm, task=self, dataset_name=dataset.manifest.name
+        )
         self._task_dir = Path(task_dir) if task_dir is not None else None
         self._regenerate = False  # external labels are not regenerable
         super().__init__(dataset, cache_dir=None)
@@ -365,7 +389,9 @@ class _ExternalEntityTask(_HostedLabelsMixin, EntityTask):
 class _ExternalRecommendationTask(_HostedLabelsMixin, RecommendationTask):
     r"""Link task whose labels/eval are built externally (e.g. TGB) and served as-is."""
 
-    def __init__(self, dataset: Dataset, tm: TaskManifest, task_dir=None, regenerate=False):
+    def __init__(
+        self, dataset: Dataset, tm: TaskManifest, task_dir=None, regenerate=False
+    ):
         self.task_type = TaskType(tm.task_type)
         self.src_entity_table = tm.src_entity_table
         self.src_entity_col = tm.src_entity_col
@@ -373,10 +399,14 @@ class _ExternalRecommendationTask(_HostedLabelsMixin, RecommendationTask):
         self.dst_entity_col = tm.dst_entity_col
         self.target_col = tm.target_col
         self.time_col = tm.time_col
-        self.timedelta = _parse_timedelta(tm.timedelta) if tm.timedelta else pd.Timedelta(days=1)
+        self.timedelta = (
+            _parse_timedelta(tm.timedelta) if tm.timedelta else pd.Timedelta(days=1)
+        )
         self.num_eval_timestamps = tm.num_eval_timestamps
         self.eval_k = tm.eval_k
-        self.metrics = _resolve_metrics(tm, task=self, dataset_name=dataset.manifest.name)
+        self.metrics = _resolve_metrics(
+            tm, task=self, dataset_name=dataset.manifest.name
+        )
         self._task_dir = Path(task_dir) if task_dir is not None else None
         self._regenerate = False
         super().__init__(dataset, cache_dir=None)
@@ -411,7 +441,9 @@ def build_task(
 # --------------------------------------------------------------------------- #
 
 
-def _resolve_dataset_dir(name_or_path: Union[str, Path], revision: Optional[str]) -> Path:
+def _resolve_dataset_dir(
+    name_or_path: Union[str, Path], revision: Optional[str]
+) -> Path:
     p = Path(name_or_path)
     if p.exists() and (p / "manifest.yaml").exists():
         return p
@@ -427,7 +459,9 @@ def load_dataset(
     return RelBenchDataset(dataset_dir, manifest)
 
 
-def get_task_names(name_or_path: Union[str, Path], *, revision: Optional[str] = None) -> list[str]:
+def get_task_names(
+    name_or_path: Union[str, Path], *, revision: Optional[str] = None
+) -> list[str]:
     r"""List tasks available for a dataset by enumerating ``tasks/*/manifest.yaml``."""
     dataset_dir = _resolve_dataset_dir(name_or_path, revision)
     tasks_dir = dataset_dir / "tasks"
@@ -453,7 +487,9 @@ def load_task(
         dataset_dir = ds.dataset_dir
     else:
         dataset_dir = _resolve_dataset_dir(dataset, revision)
-        ds = RelBenchDataset(dataset_dir, DatasetManifest.load(dataset_dir / "manifest.yaml"))
+        ds = RelBenchDataset(
+            dataset_dir, DatasetManifest.load(dataset_dir / "manifest.yaml")
+        )
 
     task_dir = dataset_dir / "tasks" / task_name
     tm = TaskManifest.load(task_dir / "manifest.yaml")
