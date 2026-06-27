@@ -21,6 +21,7 @@ from tqdm import tqdm
 
 from relbench import load_dataset, load_task
 from relbench.base import Dataset, RecommendationTask, TaskType
+from relbench.leaderboard import write_prediction_table, evaluate_task
 from relbench.modeling.graph import get_link_train_table_input, make_pkey_fkey_graph
 from relbench.modeling.loader import SparseTensor
 from relbench.modeling.utils import get_stype_proposal
@@ -213,5 +214,8 @@ val_metrics = task.evaluate(val_pred, task.get_table("val"))
 print(f"Best Val metrics: {val_metrics}")
 
 test_pred = test(loader_dict["test"])
-test_metrics = task.evaluate(test_pred)
+os.makedirs("/tmp/relbench_preds", exist_ok=True)
+pred_path = f"/tmp/relbench_preds/{args.dataset}__{args.task}.csv"
+write_prediction_table(task, test_pred, pred_path)
+test_metrics = evaluate_task(f"{args.dataset}/{args.task}", pred_path)
 print(f"Best test metrics: {test_metrics}")

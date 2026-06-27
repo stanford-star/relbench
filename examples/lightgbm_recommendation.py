@@ -19,6 +19,7 @@ from torch_geometric.seed import seed_everything
 
 from relbench import load_dataset, load_task
 from relbench.base import Dataset, RecommendationTask, Table
+from relbench.leaderboard import write_prediction_table, evaluate_task
 from relbench.modeling.utils import get_stype_proposal, remove_pkey_fkey
 
 LINK_PRED_BASELINE_TARGET_COL_NAME = "link_pred_baseline_target_column_name"
@@ -364,6 +365,37 @@ model = LightGBM(task_type=train_dataset.task_type, metric=tune_metric)
 model.tune(tf_train=tf_train, tf_val=tf_val, num_trials=args.num_trials)
 
 
+def predict_link(
+    lightgbm_output: pd.DataFrame,
+    src_entity_name: str,
+    dst_entity_name: str,
+    timestamp_col_name: str,
+    eval_k: int,
+    pred_score: float,
+    target_table: Table,
+) -> np.ndarray:
+    def adjust_past_dst_entities(values):
+        if len(values) < eval_k:
+            return values + [-1] * (eval_k - len(values))
+        else:
+            return values[:eval_k]
+
+    grouped_df = (
+        lightgbm_output.sort_values(pred_score, ascending=False)
+        .groupby([src_entity_name, timestamp_col_name])[dst_entity_name]
+        .apply(list)
+        .reset_index()
+    )
+    grouped_df = target_table.df[[src_entity_name, timestamp_col_name]].merge(
+        grouped_df, on=[src_entity_name, timestamp_col_name], how="left"
+    )
+
+    dst_entity_array = (
+        grouped_df[dst_entity_name].apply(adjust_past_dst_entities).tolist()
+    )
+    return np.array(dst_entity_array, dtype=int)
+
+
 def evaluate(
     lightgbm_output: pd.DataFrame,
     src_entity_name: str,
@@ -394,26 +426,15 @@ def evaluate(
         Dict[str, float]: The link pred metrics
     """
 
-    def adjust_past_dst_entities(values):
-        if len(values) < eval_k:
-            return values + [-1] * (eval_k - len(values))
-        else:
-            return values[:eval_k]
-
-    grouped_df = (
-        lightgbm_output.sort_values(pred_score, ascending=False)
-        .groupby([src_entity_name, timestamp_col_name])[dst_entity_name]
-        .apply(list)
-        .reset_index()
+    dst_entity_array = predict_link(
+        lightgbm_output,
+        src_entity_name,
+        dst_entity_name,
+        timestamp_col_name,
+        eval_k,
+        pred_score,
+        train_table,
     )
-    grouped_df = train_table.df[[src_entity_name, timestamp_col_name]].merge(
-        grouped_df, on=[src_entity_name, timestamp_col_name], how="left"
-    )
-
-    dst_entity_array = (
-        grouped_df[dst_entity_name].apply(adjust_past_dst_entities).tolist()
-    )
-    dst_entity_array = np.array(dst_entity_array, dtype=int)
     metrics = task.evaluate(dst_entity_array, train_table)
     return metrics
 
@@ -454,7 +475,7 @@ print(f"Val: {val_metrics}")
 pred = model.predict(tf_test=tf_test).numpy()
 lightgbm_output = dfs["test"]
 lightgbm_output[PRED_SCORE_COL_NAME] = pred
-test_metrics = evaluate(
+test_pred = predict_link(
     lightgbm_output,
     src_entity,
     dst_entity,
@@ -462,6 +483,9 @@ test_metrics = evaluate(
     task.eval_k,
     PRED_SCORE_COL_NAME,
     test_table,
-    task,
 )
+os.makedirs("/tmp/relbench_preds", exist_ok=True)
+pred_path = f"/tmp/relbench_preds/{args.dataset}__{args.task}.csv"
+write_prediction_table(task, test_pred, pred_path)
+test_metrics = evaluate_task(f"{args.dataset}/{args.task}", pred_path)
 print(f"Test: {test_metrics}")

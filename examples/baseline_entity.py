@@ -1,4 +1,5 @@
 import argparse
+import os
 from typing import Dict
 
 import numpy as np
@@ -8,6 +9,7 @@ from torch_geometric.seed import seed_everything
 
 from relbench.base import Dataset, EntityTask, Table, TaskType
 from relbench import load_dataset, load_task
+from relbench.leaderboard import write_prediction_table, evaluate_task
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stack")
@@ -26,8 +28,7 @@ val_table = task.get_table("val")
 test_table = task.get_table("test")
 
 
-def evaluate(train_table: Table, pred_table: Table, name: str) -> Dict[str, float]:
-    is_test = task.target_col not in pred_table.df
+def predict(train_table: Table, pred_table: Table, name: str) -> np.ndarray:
     if name == "global_zero":
         pred = np.zeros(len(pred_table))
     elif name == "global_mean":
@@ -56,6 +57,12 @@ def evaluate(train_table: Table, pred_table: Table, name: str) -> Dict[str, floa
         pred = torch.full((len(pred_table),), fill_value=majority_label)
     else:
         raise ValueError("Unknown eval name called {name}.")
+    return pred
+
+
+def evaluate(train_table: Table, pred_table: Table, name: str) -> Dict[str, float]:
+    is_test = task.target_col not in pred_table.df
+    pred = predict(train_table, pred_table, name)
     return task.evaluate(pred, None if is_test else pred_table)
 
 
@@ -79,7 +86,11 @@ if task.task_type == TaskType.REGRESSION:
     for name in eval_name_list:
         train_metrics = evaluate(train_table, train_table, name=name)
         val_metrics = evaluate(train_table, val_table, name=name)
-        test_metrics = evaluate(trainval_table, test_table, name=name)
+        test_pred = predict(trainval_table, test_table, name=name)
+        os.makedirs("/tmp/relbench_preds", exist_ok=True)
+        pred_path = f"/tmp/relbench_preds/{args.dataset}__{args.task}.csv"
+        write_prediction_table(task, test_pred, pred_path)
+        test_metrics = evaluate_task(f"{args.dataset}/{args.task}", pred_path)
         print(f"{name}:")
         print(f"Train: {train_metrics}")
         print(f"Val: {val_metrics}")
@@ -91,7 +102,11 @@ elif task.task_type == TaskType.BINARY_CLASSIFICATION:
     for name in eval_name_list:
         train_metrics = evaluate(train_table, train_table, name=name)
         val_metrics = evaluate(train_table, val_table, name=name)
-        test_metrics = evaluate(trainval_table, test_table, name=name)
+        test_pred = predict(trainval_table, test_table, name=name)
+        os.makedirs("/tmp/relbench_preds", exist_ok=True)
+        pred_path = f"/tmp/relbench_preds/{args.dataset}__{args.task}.csv"
+        write_prediction_table(task, test_pred, pred_path)
+        test_metrics = evaluate_task(f"{args.dataset}/{args.task}", pred_path)
         print(f"{name}:")
         print(f"Train: {train_metrics}")
         print(f"Val: {val_metrics}")

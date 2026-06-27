@@ -39,6 +39,7 @@ from tqdm import tqdm
 
 from relbench import load_dataset, load_task
 from relbench.base import Dataset, RecommendationTask, Table, TaskType
+from relbench.leaderboard import write_prediction_table, evaluate_task
 
 
 class TimeEncoder(torch.nn.Module):
@@ -1211,7 +1212,10 @@ def main() -> None:
         test_pred, test_table = build_pred_at(
             test_ts, split="test", max_rows=int(args.max_test_rows)
         )
-        test_metrics = task.evaluate(test_pred, test_table)
+        os.makedirs("/tmp/relbench_preds", exist_ok=True)
+        pred_path = f"/tmp/relbench_preds/{args.dataset}__{args.task}.csv"
+        write_prediction_table(task, test_pred, pred_path)
+        test_metrics = evaluate_task(f"{args.dataset}/{args.task}", pred_path)
 
     print(f"Best val:  {val_metrics}")
     print(f"Best test: {test_metrics}")

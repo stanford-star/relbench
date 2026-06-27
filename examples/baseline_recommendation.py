@@ -1,4 +1,5 @@
 import argparse
+import os
 from collections import Counter
 from typing import Dict
 
@@ -8,6 +9,7 @@ from torch_geometric.seed import seed_everything
 
 from relbench.base import Dataset, RecommendationTask, Table
 from relbench import load_dataset, load_task
+from relbench.leaderboard import write_prediction_table, evaluate_task
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stack")
@@ -46,12 +48,11 @@ def past_visit_aggr(x):
     return topk
 
 
-def evaluate(
+def predict(
     train_table: Table,
     pred_table: Table,
     name: str,
-) -> Dict[str, float]:
-    is_test = task.dst_entity_col not in pred_table.df
+) -> np.ndarray:
     if name == "past_visit":
         """Predict the most frequently-visited dst nodes per each src node."""
         df = (
@@ -81,6 +82,16 @@ def evaluate(
         pred = np.tile(np.array(topk), (len(pred_table), 1))
     else:
         raise ValueError("Unknown eval name called {name}.")
+    return pred
+
+
+def evaluate(
+    train_table: Table,
+    pred_table: Table,
+    name: str,
+) -> Dict[str, float]:
+    is_test = task.dst_entity_col not in pred_table.df
+    pred = predict(train_table, pred_table, name)
     return task.evaluate(pred, None if is_test else pred_table)
 
 
@@ -88,7 +99,11 @@ eval_name_list = ["past_visit", "global_popularity"]
 for name in eval_name_list:
     train_metrics = evaluate(train_table, train_table, name=name)
     val_metrics = evaluate(train_table, val_table, name=name)
-    test_metrics = evaluate(trainval_table, test_table, name=name)
+    test_pred = predict(trainval_table, test_table, name=name)
+    os.makedirs("/tmp/relbench_preds", exist_ok=True)
+    pred_path = f"/tmp/relbench_preds/{args.dataset}__{args.task}.csv"
+    write_prediction_table(task, test_pred, pred_path)
+    test_metrics = evaluate_task(f"{args.dataset}/{args.task}", pred_path)
     print(f"{name}:")
     print(f"Train: {train_metrics}")
     print(f"Val: {val_metrics}")

@@ -21,6 +21,7 @@ from tqdm import tqdm
 
 from relbench import load_dataset, load_task
 from relbench.base import Dataset, RecommendationTask, TaskType
+from relbench.leaderboard import write_prediction_table, evaluate_task
 from relbench.modeling.graph import get_link_train_table_input, make_pkey_fkey_graph
 from relbench.modeling.loader import LinkNeighborLoader
 from relbench.modeling.utils import get_stype_proposal
@@ -274,7 +275,10 @@ print(f"Best Val metrics: {val_metrics}")
 
 if "test" in eval_loaders_dict:
     test_pred = test(*eval_loaders_dict["test"])
-    test_metrics = task.evaluate(test_pred, task.get_table("test"))
+    os.makedirs("/tmp/relbench_preds", exist_ok=True)
+    pred_path = f"/tmp/relbench_preds/{args.dataset}__{args.task}.csv"
+    write_prediction_table(task, test_pred, pred_path)
+    test_metrics = evaluate_task(f"{args.dataset}/{args.task}", pred_path)
     print(f"Best test metrics: {test_metrics}")
 else:
     print("Best test metrics: <skipped: empty test split>")

@@ -68,6 +68,47 @@ Open these directly in Google Colab — no setup required:
 | [**Quickstart**](https://colab.research.google.com/github/snap-stanford/relbench/blob/relbench-hf/tutorials/quickstart.ipynb) | Load a dataset/task, explore the schema, run a baseline | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/snap-stanford/relbench/blob/relbench-hf/tutorials/quickstart.ipynb) |
 | [**Training a GNN**](https://colab.research.google.com/github/snap-stanford/relbench/blob/relbench-hf/tutorials/gnn.ipynb) | A GNN baseline for an entity task (PyG + PyTorch Frame) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/snap-stanford/relbench/blob/relbench-hf/tutorials/gnn.ipynb) (needs a GPU) |
 
+## Submitting to the leaderboard
+
+RelBench has three independent leaderboards — **classification**, **regression**, and
+**recommendation** — each scored separately. A submission to one is a directory of
+**prediction-table CSVs**, one per task, each named `<dataset>__<task>.csv` (a double
+underscore between dataset and task).
+
+A prediction table is a task's test table with the target column replaced by your model's
+predictions:
+
+- **binary classification** — a predicted probability in `[0, 1]`;
+- **regression** — a numeric prediction on the original target scale;
+- **recommendation** — the top-`eval_k` predicted destination entity ids, as a JSON list per row.
+
+Write these from code with `relbench.leaderboard.write_prediction_table(task, pred, path)`,
+and score a single task with `relbench.leaderboard.evaluate_task(task_name, csv)` (where
+`task_name` is `"<dataset>/<task>"`).
+
+Each leaderboard is graded over its **complete** task set — **classification** has 12 tasks,
+**regression** 9, and **recommendation** 10. The exact lists live in
+`relbench.leaderboard.LEADERBOARD_TASKS`:
+
+- **Classification** (12): `rel-amazon/user-churn`, `rel-amazon/item-churn`, `rel-avito/user-visits`, `rel-avito/user-clicks`, `rel-event/user-repeat`, `rel-event/user-ignore`, `rel-f1/driver-dnf`, `rel-f1/driver-top3`, `rel-hm/user-churn`, `rel-stack/user-engagement`, `rel-stack/user-badge`, `rel-trial/study-outcome`
+- **Regression** (9): `rel-amazon/user-ltv`, `rel-amazon/item-ltv`, `rel-avito/ad-ctr`, `rel-event/user-attendance`, `rel-f1/driver-position`, `rel-hm/item-sales`, `rel-stack/post-votes`, `rel-trial/study-adverse`, `rel-trial/site-success`
+- **Recommendation** (10): `rel-amazon/user-item-purchase`, `rel-amazon/user-item-rate`, `rel-amazon/user-item-review`, `rel-avito/user-ad-visit`, `rel-f1/driver-circuit-compete`, `rel-hm/user-item-purchase`, `rel-stack/user-post-comment`, `rel-stack/post-post-related`, `rel-trial/condition-sponsor-run`, `rel-trial/site-sponsor-run`
+
+Validate locally before sending:
+
+```bash
+python -m relbench.leaderboard <submission_dir>
+```
+
+For every task this checks coverage (a prediction for each test point), key uniqueness and
+an exact match against the ground-truth test table, and value ranges; it then prints
+per-task metrics, per-leaderboard aggregate metrics, and a verdict for each leaderboard.
+
+Once the report marks a leaderboard **SUITABLE**, zip the submission directory and email it
+to [**relbench@cs.stanford.edu**](mailto:relbench@cs.stanford.edu) along with your method
+metadata — method name, variant, architecture, a link to the paper, and whether the model
+weights are open.
+
 ## Contributing
 
 Adding a dataset or task takes **no code**. A dataset is a self-describing folder — a

@@ -19,6 +19,7 @@ from torch_geometric.seed import seed_everything
 
 from relbench import load_task
 from relbench.base import EntityTask, TaskType
+from relbench.leaderboard import write_prediction_table, evaluate_task
 from relbench.modeling.utils import get_stype_proposal, remove_pkey_fkey
 
 parser = argparse.ArgumentParser()
@@ -183,7 +184,13 @@ pred = model.predict(tf_test=tf_val).numpy()
 val_metrics = task.evaluate(pred, val_table)
 
 pred = model.predict(tf_test=tf_test).numpy()
-test_metrics = task.evaluate(pred)
+if task.task_type in (TaskType.BINARY_CLASSIFICATION, TaskType.REGRESSION):
+    os.makedirs("/tmp/relbench_preds", exist_ok=True)
+    pred_path = f"/tmp/relbench_preds/{args.dataset}__{args.task}.csv"
+    write_prediction_table(task, pred, pred_path)
+    test_metrics = evaluate_task(f"{args.dataset}/{args.task}", pred_path)
+else:
+    test_metrics = task.evaluate(pred)
 
 print(f"Train: {train_metrics}")
 print(f"Val: {val_metrics}")
