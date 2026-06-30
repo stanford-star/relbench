@@ -441,7 +441,7 @@ def evaluate(
 
 # NOTE: train/val metrics will be artificially high since all true links are
 # included in the candidate set
-pred = model.predict(tf_test=tf_train).numpy()
+pred = model.predict(tf_test=tf_train).cpu().numpy()
 lightgbm_output = dfs["train"]
 lightgbm_output[PRED_SCORE_COL_NAME] = pred
 train_metrics = evaluate(
@@ -456,7 +456,7 @@ train_metrics = evaluate(
 )
 print(f"Train: {train_metrics}")
 
-pred = model.predict(tf_test=tf_val_pred).numpy()
+pred = model.predict(tf_test=tf_val_pred).cpu().numpy()
 lightgbm_output = val_df_pred
 lightgbm_output[PRED_SCORE_COL_NAME] = pred
 val_metrics = evaluate(
@@ -472,7 +472,7 @@ val_metrics = evaluate(
 print(f"Val: {val_metrics}")
 
 
-pred = model.predict(tf_test=tf_test).numpy()
+pred = model.predict(tf_test=tf_test).cpu().numpy()
 lightgbm_output = dfs["test"]
 lightgbm_output[PRED_SCORE_COL_NAME] = pred
 test_pred = predict_link(
