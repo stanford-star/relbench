@@ -50,13 +50,19 @@ def resolve_repo(spec: str) -> tuple[str, str]:
     r"""Split a Hub spec into ``(repo_id, subdir)``.
 
     ``"org/name"`` -> ``("org/name", "")``; ``"org/name/a/b"`` -> ``("org/name", "a/b")``.
+    A bare ``"name"`` (no ``org/``) defaults to the hosted RelBench repo
+    :data:`RELBENCH_HF`: ``"rel-f1"`` -> ``(RELBENCH_HF, "rel-f1")``, i.e. the same as
+    ``"<RELBENCH_HF>/rel-f1"``. This lets datasets/tasks be addressed by their short
+    name (``"rel-f1"``, ``"rel-amazon"``) without spelling out the hosting org.
     """
-    parts = spec.strip("/").split("/")
-    if len(parts) < 2:
+    parts = [p for p in spec.strip("/").split("/") if p]
+    if len(parts) == 0:
         raise ValueError(
             f"'{spec}' is not a Hub 'org/name' repo id (optionally with a '/subdir'). "
-            f"Pass a Hub 'org/name[/subdir]' or a local path."
+            f"Pass a Hub 'org/name[/subdir]', a bare dataset name, or a local path."
         )
+    if len(parts) == 1:
+        return RELBENCH_HF, parts[0]
     return f"{parts[0]}/{parts[1]}", "/".join(parts[2:])
 
 
