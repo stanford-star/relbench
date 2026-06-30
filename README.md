@@ -118,11 +118,18 @@ per-task metrics, per-leaderboard aggregate metrics, and a verdict for each lead
 also parses and validates `metadata.yaml`, printing the method metadata and flagging any
 missing required field or out-of-range value.
 
-Once the report marks a leaderboard **SUITABLE** with clean metadata, zip the submission
-directory (CSVs + `metadata.yaml`) and submit it at
+Once the report marks a leaderboard **SUITABLE** with clean metadata, submit — either
+straight from the CLI:
+
+```bash
+python -m relbench.leaderboard <submission_dir> --submit
+```
+
+which validates locally then uploads the directory, or by zipping it (CSVs +
+`metadata.yaml`) and uploading at
 [**tabular.stanford.edu/leaderboard/submit**](https://tabular.stanford.edu/leaderboard/submit/).
-It is re-validated server-side and, on success, opens a pull request for maintainer review;
-your entry appears on the leaderboard once it is merged.
+Either way it is re-validated server-side and, on success, opens a pull request for
+maintainer review; your entry appears on the leaderboard once it is merged.
 
 ## Contributing
 

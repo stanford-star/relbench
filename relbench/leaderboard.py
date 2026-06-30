@@ -705,6 +705,49 @@ def _print_report(result: Dict[str, Any]) -> None:
 # --------------------------------------------------------------------------- #
 # CLI
 # --------------------------------------------------------------------------- #
+# Default leaderboard submission service (the RelBench validator Space). Override with
+# --endpoint or the RELBENCH_LEADERBOARD_ENDPOINT environment variable.
+DEFAULT_ENDPOINT = "https://star-project-relbench-validator.hf.space"
+
+
+def _submit_to_service(pred_dir: Union[str, os.PathLike], endpoint: str) -> bool:
+    r"""Zip the submission directory and POST it to the service's ``/submit``.
+
+    The service re-validates server-side and, on success, opens a pull request. Returns True
+    if the service accepted the submission (pending review, or a dry run).
+    """
+    import io
+    import zipfile
+
+    import requests  # lazy import: keep the local validation path dependency-light
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for p in sorted(Path(pred_dir).iterdir()):
+            if p.is_file():
+                zf.write(p, p.name)
+    buf.seek(0)
+
+    url = endpoint.rstrip("/") + "/submit"
+    print(f"\nUploading submission to {url} ...")
+    resp = requests.post(
+        url, files={"file": ("submission.zip", buf, "application/zip")}, timeout=900
+    )
+    try:
+        data = resp.json()
+    except ValueError:
+        print(f"  service returned HTTP {resp.status_code}: {resp.text[:300]}")
+        return False
+    status = data.get("status", "error")
+    print(f"  status: {status}")
+    message = data.get("message") or data.get("detail")
+    if message:
+        print(f"  {message}")
+    if data.get("pr_url"):
+        print(f"  pull request: {data['pr_url']}")
+    return status in ("pending_review", "dry_run")
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     r"""CLI entry point. Returns the process exit code (0 if any family is suitable)."""
     parser = argparse.ArgumentParser(
@@ -723,11 +766,33 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         help="process-pool size (default: min(num_tasks, cpu_count); 1 runs in-process)",
     )
     parser.add_argument("--quiet", action="store_true", help="suppress the printed report")
+    parser.add_argument(
+        "--submit",
+        action="store_true",
+        help="after validating, upload the submission to the leaderboard service",
+    )
+    parser.add_argument(
+        "--endpoint",
+        default=os.getenv("RELBENCH_LEADERBOARD_ENDPOINT", DEFAULT_ENDPOINT),
+        help="submission service URL (default: the RelBench validator Space)",
+    )
     args = parser.parse_args(argv)
 
     result = evaluate_submission(
         args.pred_dir, num_workers=args.num_workers, verbose=not args.quiet
     )
+
+    if args.submit:
+        metadata = result.get("metadata") or {"errors": ["metadata not parsed"]}
+        if not result["suitable"]:
+            print("\nNot submitting: no leaderboard is complete and valid.")
+            return 1
+        if metadata.get("errors"):
+            print("\nNot submitting: metadata.yaml issues — "
+                  + "; ".join(metadata["errors"]))
+            return 1
+        return 0 if _submit_to_service(args.pred_dir, args.endpoint) else 1
+
     return 0 if result["suitable"] else 1
 
 
