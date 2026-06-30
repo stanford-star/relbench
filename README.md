@@ -118,7 +118,7 @@ per-task metrics, per-leaderboard aggregate metrics, and a verdict for each lead
 also parses and validates `metadata.yaml`, printing the method metadata and flagging any
 missing required field or out-of-range value.
 
-Once the report marks a leaderboard **SUITABLE** with clean metadata, submit — either
+Once the report marks a leaderboard **validated** with clean metadata, submit — either
 straight from the CLI:
 
 ```bash

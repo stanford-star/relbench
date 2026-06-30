@@ -36,7 +36,7 @@ CLI
 ===
 ``python -m relbench.leaderboard <pred_dir> [--num-workers N] [--quiet]`` runs
 :func:`evaluate_submission` and prints the report. It exits ``0`` if *at least one*
-leaderboard family is suitable (complete and fully valid), and non-zero otherwise.
+leaderboard family is validated (complete and fully valid), and non-zero otherwise.
 """
 
 from __future__ import annotations
@@ -535,7 +535,7 @@ def evaluate_submission(
                 },
                 ...
               },
-              "suitable": [family, ...],         # families that are complete
+              "validated": [family, ...],        # families that passed (all tasks valid)
               "metadata": {                      # parsed metadata.yaml (see load_metadata)
                   "fields": dict, "errors": [str], "warnings": [str],
               },
@@ -576,7 +576,7 @@ def evaluate_submission(
         tasks_out[task_name] = entry
 
     families_out: Dict[str, Dict[str, Any]] = {}
-    suitable: List[str] = []
+    validated: List[str] = []
     for family, canonical in LEADERBOARD_TASKS.items():
         present = [t for t in canonical if t in tasks_out]
         valid = [t for t in present if tasks_out[t]["status"] == "ok"]
@@ -594,13 +594,13 @@ def evaluate_submission(
 
         if complete:
             verdict = (
-                f"SUITABLE for the {family} leaderboard "
+                f"validated for the {family} leaderboard "
                 f"({len(valid)}/{len(canonical)} tasks valid)"
             )
-            suitable.append(family)
+            validated.append(family)
         else:
             verdict = (
-                f"NOT suitable for the {family} leaderboard "
+                f"rejected for the {family} leaderboard "
                 f"({len(valid)}/{len(canonical)} tasks valid) "
                 f"-- missing: {missing}; invalid: {invalid}"
             )
@@ -621,7 +621,7 @@ def evaluate_submission(
     result = {
         "tasks": tasks_out,
         "families": families_out,
-        "suitable": suitable,
+        "validated": validated,
         "metadata": load_metadata(pred_dir),
     }
     if verbose:
@@ -687,7 +687,7 @@ def _print_report(result: Dict[str, Any]) -> None:
     print("  " + "-" * 78)
     for family in LEADERBOARD_TASKS:
         fam = families[family]
-        mark = "[OK]  " if fam["complete"] else "[--]  "
+        mark = "[validated] " if fam["complete"] else "[rejected]  "
         agg = "n/a" if fam["aggregate"] is None else f"{fam['aggregate']:.6f}"
         print(
             f"  {mark}{family:<16} valid={fam['num_valid']}/{fam['num_total']}  "
@@ -695,10 +695,10 @@ def _print_report(result: Dict[str, Any]) -> None:
         )
         print(f"        {fam['verdict']}")
     print()
-    if result["suitable"]:
-        print(f"Suitable leaderboard(s): {', '.join(result['suitable'])}")
+    if result["validated"]:
+        print(f"Validated leaderboard(s): {', '.join(result['validated'])}")
     else:
-        print("Suitable leaderboard(s): none")
+        print("Validated leaderboard(s): none")
     print("=" * 80)
 
 
@@ -749,12 +749,12 @@ def _submit_to_service(pred_dir: Union[str, os.PathLike], endpoint: str) -> bool
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
-    r"""CLI entry point. Returns the process exit code (0 if any family is suitable)."""
+    r"""CLI entry point. Returns the process exit code (0 if any family is validated)."""
     parser = argparse.ArgumentParser(
         prog="python -m relbench.leaderboard",
         description=(
             "Evaluate a directory of RelBench prediction CSVs as a leaderboard "
-            "submission. Exit code 0 if at least one leaderboard family is suitable "
+            "submission. Exit code 0 if at least one leaderboard family is validated "
             "(all of its tasks present and valid), non-zero otherwise."
         ),
     )
@@ -784,8 +784,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     if args.submit:
         metadata = result.get("metadata") or {"errors": ["metadata not parsed"]}
-        if not result["suitable"]:
-            print("\nNot submitting: no leaderboard is complete and valid.")
+        if not result["validated"]:
+            print("\nNot submitting: no leaderboard was validated.")
             return 1
         if metadata.get("errors"):
             print("\nNot submitting: metadata.yaml issues — "
@@ -793,7 +793,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             return 1
         return 0 if _submit_to_service(args.pred_dir, args.endpoint) else 1
 
-    return 0 if result["suitable"] else 1
+    return 0 if result["validated"] else 1
 
 
 if __name__ == "__main__":
