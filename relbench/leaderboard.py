@@ -166,6 +166,24 @@ def load_metadata(pred_dir: Union[str, os.PathLike]) -> Dict[str, Any]:
     return out
 
 
+def _extra_files(pred_dir: Union[str, os.PathLike]) -> List[str]:
+    r"""Names of entries in ``pred_dir`` that are not prediction CSVs or ``metadata.yaml``.
+
+    A submission directory must contain **only** the prediction-table CSVs and
+    ``metadata.yaml`` — anything else (other file types, stray artifacts, subdirectories) is
+    reported so it can be removed. Hidden dotfiles are ignored.
+    """
+    extra: List[str] = []
+    for p in sorted(Path(pred_dir).iterdir()):
+        if p.name.startswith("."):
+            continue
+        if p.is_dir():
+            extra.append(p.name + "/")
+        elif p.suffix != ".csv" and p.name != METADATA_FILENAME:
+            extra.append(p.name)
+    return extra
+
+
 # --------------------------------------------------------------------------- #
 # Task introspection helpers
 # --------------------------------------------------------------------------- #
@@ -536,6 +554,7 @@ def evaluate_submission(
                 ...
               },
               "validated": [family, ...],        # families that passed (all tasks valid)
+              "extra_files": [str],              # non-CSV/metadata entries (must be empty)
               "metadata": {                      # parsed metadata.yaml (see load_metadata)
                   "fields": dict, "errors": [str], "warnings": [str],
               },
@@ -622,6 +641,7 @@ def evaluate_submission(
         "tasks": tasks_out,
         "families": families_out,
         "validated": validated,
+        "extra_files": _extra_files(pred_dir),
         "metadata": load_metadata(pred_dir),
     }
     if verbose:
@@ -658,6 +678,14 @@ def _print_report(result: Dict[str, Any]) -> None:
 
     if result.get("metadata") is not None:
         _print_metadata(result["metadata"])
+        print()
+
+    extra = result.get("extra_files") or []
+    if extra:
+        print("Unexpected files (a submission must contain only prediction CSVs and "
+              "metadata.yaml):")
+        for name in extra:
+            print(f"  [error]   {name}")
         print()
 
     name_w = max([len("task")] + [len(t) for t in tasks]) if tasks else len("task")
@@ -784,6 +812,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     if args.submit:
         metadata = result.get("metadata") or {"errors": ["metadata not parsed"]}
+        if result.get("extra_files"):
+            print("\nNot submitting: remove non-submission files — "
+                  + ", ".join(result["extra_files"]))
+            return 1
         if not result["validated"]:
             print("\nNot submitting: no leaderboard was validated.")
             return 1

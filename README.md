@@ -94,6 +94,9 @@ url: https://arxiv.org/abs/... # optional — paper / project / code link
 note: caveats / eval details, shown on hover   # optional
 ```
 
+The submission directory must contain **only** these files — the prediction CSVs and
+`metadata.yaml`. Any other entry (saved arrays, logs, subdirectories) makes it invalid.
+
 Write these from code with `relbench.leaderboard.write_prediction_table(task, pred, path)`,
 and score a single task with `relbench.leaderboard.evaluate_task(task_name, csv)` (where
 `task_name` is `"<dataset>/<task>"`).
