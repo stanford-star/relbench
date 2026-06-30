@@ -82,7 +82,7 @@ predictions:
 - **regression** — a numeric prediction on the original target scale;
 - **recommendation** — the top-`eval_k` predicted destination entity ids, as a JSON list per row.
 
-Alongside the CSVs, include a **`manifest.yaml`** describing the method — this is what the
+Alongside the CSVs, include a **`metadata.yaml`** describing the method — this is what the
 leaderboard displays. `method` is required; the rest are recommended:
 
 ```yaml
@@ -124,11 +124,11 @@ python -m relbench.leaderboard <submission_dir>
 For every task this checks coverage (a prediction for each test point), key uniqueness and
 an exact match against the ground-truth test table, and value ranges; it then prints
 per-task metrics, per-leaderboard aggregate metrics, and a verdict for each leaderboard. It
-also parses and validates `manifest.yaml`, printing the method metadata and flagging any
+also parses and validates `metadata.yaml`, printing the method metadata and flagging any
 missing required field or out-of-range value.
 
-Once the report marks a leaderboard **SUITABLE** with a clean manifest, zip the submission
-directory (CSVs + `manifest.yaml`) and submit it at
+Once the report marks a leaderboard **SUITABLE** with clean metadata, zip the submission
+directory (CSVs + `metadata.yaml`) and submit it at
 [**tabular.stanford.edu/leaderboard/submit**](https://tabular.stanford.edu/leaderboard/submit/).
 It is re-validated server-side and, on success, opens a pull request for maintainer review;
 your entry appears on the leaderboard once it is merged.

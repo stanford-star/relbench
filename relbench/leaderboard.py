@@ -61,7 +61,7 @@ __all__ = [
     "write_prediction_table",
     "evaluate_task",
     "evaluate_submission",
-    "load_manifest",
+    "load_metadata",
     "main",
 ]
 
@@ -108,22 +108,22 @@ _LINK_PAD = -1
 
 
 # --------------------------------------------------------------------------- #
-# Submission manifest
+# Submission metadata
 # --------------------------------------------------------------------------- #
-# A submission directory may carry a ``manifest.yaml`` describing the method; these fields
+# A submission directory may carry a ``metadata.yaml`` describing the method; these fields
 # are surfaced on the leaderboard. ``method`` is required; the rest are recommended. Enum
-# fields are checked against their allowed values. The report prints the manifest and any
+# fields are checked against their allowed values. The report prints the metadata and any
 # issues alongside the metrics, so the same check runs locally and at submission time.
-MANIFEST_FILENAME = "manifest.yaml"
-MANIFEST_REQUIRED = ["method"]
-MANIFEST_RECOMMENDED = [
+METADATA_FILENAME = "metadata.yaml"
+METADATA_REQUIRED = ["method"]
+METADATA_RECOMMENDED = [
     "variant", "regime", "arch", "avail", "pretrain", "input",
     "venue", "date", "paper", "website", "code", "note",
 ]
 # Submitter contact — recorded with the submission but kept off the public leaderboard row.
-MANIFEST_CONTACT = ["submitter_name", "submitter_email"]
-MANIFEST_FIELDS = MANIFEST_REQUIRED + MANIFEST_RECOMMENDED + MANIFEST_CONTACT
-MANIFEST_ENUMS: Dict[str, set] = {
+METADATA_CONTACT = ["submitter_name", "submitter_email"]
+METADATA_FIELDS = METADATA_REQUIRED + METADATA_RECOMMENDED + METADATA_CONTACT
+METADATA_ENUMS: Dict[str, set] = {
     "regime": {"task-specific", "zero-shot"},
     "avail": {"open", "closed"},
     "pretrain": {"pretrained", "scratch"},
@@ -131,40 +131,40 @@ MANIFEST_ENUMS: Dict[str, set] = {
 }
 
 
-def load_manifest(pred_dir: Union[str, os.PathLike]) -> Dict[str, Any]:
-    r"""Read and validate ``<pred_dir>/manifest.yaml``.
+def load_metadata(pred_dir: Union[str, os.PathLike]) -> Dict[str, Any]:
+    r"""Read and validate ``<pred_dir>/metadata.yaml``.
 
     Returns ``{"fields": {...}, "errors": [...], "warnings": [...]}``. ``errors`` are
-    blocking for a leaderboard submission (no manifest, unparseable file, missing
+    blocking for a leaderboard submission (no metadata, unparseable file, missing
     ``method``, or an out-of-range enum); ``warnings`` are advisory (missing recommended
     fields, unknown keys). ``fields`` holds the recognized, non-empty values.
     """
-    path = Path(pred_dir) / MANIFEST_FILENAME
+    path = Path(pred_dir) / METADATA_FILENAME
     out: Dict[str, Any] = {"fields": {}, "errors": [], "warnings": []}
     if not path.exists():
-        out["errors"].append(f"no {MANIFEST_FILENAME} in the submission directory")
+        out["errors"].append(f"no {METADATA_FILENAME} in the submission directory")
         return out
     try:
         raw = yaml.safe_load(path.read_text())
     except yaml.YAMLError as e:
-        out["errors"].append(f"could not parse {MANIFEST_FILENAME}: {e}")
+        out["errors"].append(f"could not parse {METADATA_FILENAME}: {e}")
         return out
     if not isinstance(raw, dict):
-        out["errors"].append(f"{MANIFEST_FILENAME} must be a mapping of fields")
+        out["errors"].append(f"{METADATA_FILENAME} must be a mapping of fields")
         return out
 
     fields = {k: v for k, v in raw.items() if v not in (None, "")}
-    out["fields"] = {k: fields[k] for k in MANIFEST_FIELDS if k in fields}
+    out["fields"] = {k: fields[k] for k in METADATA_FIELDS if k in fields}
 
-    for k in sorted(set(fields) - set(MANIFEST_FIELDS)):
+    for k in sorted(set(fields) - set(METADATA_FIELDS)):
         out["warnings"].append(f"unknown field '{k}' (ignored)")
-    for k in MANIFEST_REQUIRED:
+    for k in METADATA_REQUIRED:
         if k not in fields:
             out["errors"].append(f"missing required field '{k}'")
-    for k, allowed in MANIFEST_ENUMS.items():
+    for k, allowed in METADATA_ENUMS.items():
         if k in fields and str(fields[k]) not in allowed:
             out["errors"].append(f"field '{k}'='{fields[k]}' not in {sorted(allowed)}")
-    missing = [k for k in MANIFEST_RECOMMENDED if k not in fields]
+    missing = [k for k in METADATA_RECOMMENDED if k not in fields]
     if missing:
         out["warnings"].append("missing recommended field(s): " + ", ".join(missing))
     return out
@@ -540,7 +540,7 @@ def evaluate_submission(
                 ...
               },
               "suitable": [family, ...],         # families that are complete
-              "manifest": {                      # parsed manifest.yaml (see load_manifest)
+              "metadata": {                      # parsed metadata.yaml (see load_metadata)
                   "fields": dict, "errors": [str], "warnings": [str],
               },
             }
@@ -626,7 +626,7 @@ def evaluate_submission(
         "tasks": tasks_out,
         "families": families_out,
         "suitable": suitable,
-        "manifest": load_manifest(pred_dir),
+        "metadata": load_metadata(pred_dir),
     }
     if verbose:
         _print_report(result)
@@ -636,19 +636,19 @@ def evaluate_submission(
 # --------------------------------------------------------------------------- #
 # Reporting
 # --------------------------------------------------------------------------- #
-def _print_manifest(manifest: Dict[str, Any]) -> None:
-    fields = manifest.get("fields", {})
-    print("Method (manifest.yaml):")
+def _print_metadata(metadata: Dict[str, Any]) -> None:
+    fields = metadata.get("fields", {})
+    print("Method (metadata.yaml):")
     if fields:
         w = max(len(k) for k in fields)
-        for k in MANIFEST_FIELDS:
+        for k in METADATA_FIELDS:
             if k in fields:
                 print(f"  {k.ljust(w)} : {fields[k]}")
     else:
-        print("  (no manifest fields found)")
-    for e in manifest.get("errors", []):
+        print("  (no metadata fields found)")
+    for e in metadata.get("errors", []):
         print(f"  [error]   {e}")
-    for warn in manifest.get("warnings", []):
+    for warn in metadata.get("warnings", []):
         print(f"  [warning] {warn}")
 
 
@@ -660,8 +660,8 @@ def _print_report(result: Dict[str, Any]) -> None:
     print("RelBench leaderboard submission report")
     print("=" * 80)
 
-    if result.get("manifest") is not None:
-        _print_manifest(result["manifest"])
+    if result.get("metadata") is not None:
+        _print_metadata(result["metadata"])
         print()
 
     name_w = max([len("task")] + [len(t) for t in tasks]) if tasks else len("task")
