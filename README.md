@@ -82,6 +82,27 @@ predictions:
 - **regression** — a numeric prediction on the original target scale;
 - **recommendation** — the top-`eval_k` predicted destination entity ids, as a JSON list per row.
 
+Alongside the CSVs, include a **`manifest.yaml`** describing the method — this is what the
+leaderboard displays. `method` is required; the rest are recommended:
+
+```yaml
+method: RelGNN                      # required — display name
+variant: pretrained + fine-tuned    # optional qualifier
+regime: task-specific               # task-specific | zero-shot
+arch: GNN
+avail: open                         # open | closed (weights)
+pretrain: pretrained                # pretrained | scratch
+input: relational                   # relational | flat
+venue: ICLR 2026
+date: 2026-06
+paper: https://arxiv.org/abs/...
+website: https://...
+code: https://github.com/...
+note: caveats / eval details, shown on hover
+submitter_name: Jane Doe
+submitter_email: jane@example.edu   # recorded privately; not shown on the leaderboard
+```
+
 Write these from code with `relbench.leaderboard.write_prediction_table(task, pred, path)`,
 and score a single task with `relbench.leaderboard.evaluate_task(task_name, csv)` (where
 `task_name` is `"<dataset>/<task>"`).
@@ -102,12 +123,15 @@ python -m relbench.leaderboard <submission_dir>
 
 For every task this checks coverage (a prediction for each test point), key uniqueness and
 an exact match against the ground-truth test table, and value ranges; it then prints
-per-task metrics, per-leaderboard aggregate metrics, and a verdict for each leaderboard.
+per-task metrics, per-leaderboard aggregate metrics, and a verdict for each leaderboard. It
+also parses and validates `manifest.yaml`, printing the method metadata and flagging any
+missing required field or out-of-range value.
 
-Once the report marks a leaderboard **SUITABLE**, zip the submission directory and email it
-to [**relbench@cs.stanford.edu**](mailto:relbench@cs.stanford.edu) along with your method
-metadata — method name, variant, architecture, a link to the paper, and whether the model
-weights are open.
+Once the report marks a leaderboard **SUITABLE** with a clean manifest, zip the submission
+directory (CSVs + `manifest.yaml`) and submit it at
+[**tabular.stanford.edu/leaderboard/submit**](https://tabular.stanford.edu/leaderboard/submit/).
+It is re-validated server-side and, on success, opens a pull request for maintainer review;
+your entry appears on the leaderboard once it is merged.
 
 ## Contributing
 

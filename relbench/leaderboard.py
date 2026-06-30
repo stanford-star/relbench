@@ -50,6 +50,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
+import yaml
 
 from relbench.base import TaskType
 from relbench.hf import CORE_REPO
@@ -60,6 +61,7 @@ __all__ = [
     "write_prediction_table",
     "evaluate_task",
     "evaluate_submission",
+    "load_manifest",
     "main",
 ]
 
@@ -103,6 +105,69 @@ _FAMILY_METRIC: Dict[str, str] = {
 # Padding id for link-prediction rows shorter than eval_k. Destination ids are
 # non-negative reindexed integers, so -1 can never match a ground-truth id.
 _LINK_PAD = -1
+
+
+# --------------------------------------------------------------------------- #
+# Submission manifest
+# --------------------------------------------------------------------------- #
+# A submission directory may carry a ``manifest.yaml`` describing the method; these fields
+# are surfaced on the leaderboard. ``method`` is required; the rest are recommended. Enum
+# fields are checked against their allowed values. The report prints the manifest and any
+# issues alongside the metrics, so the same check runs locally and at submission time.
+MANIFEST_FILENAME = "manifest.yaml"
+MANIFEST_REQUIRED = ["method"]
+MANIFEST_RECOMMENDED = [
+    "variant", "regime", "arch", "avail", "pretrain", "input",
+    "venue", "date", "paper", "website", "code", "note",
+]
+# Submitter contact — recorded with the submission but kept off the public leaderboard row.
+MANIFEST_CONTACT = ["submitter_name", "submitter_email"]
+MANIFEST_FIELDS = MANIFEST_REQUIRED + MANIFEST_RECOMMENDED + MANIFEST_CONTACT
+MANIFEST_ENUMS: Dict[str, set] = {
+    "regime": {"task-specific", "zero-shot"},
+    "avail": {"open", "closed"},
+    "pretrain": {"pretrained", "scratch"},
+    "input": {"relational", "flat"},
+}
+
+
+def load_manifest(pred_dir: Union[str, os.PathLike]) -> Dict[str, Any]:
+    r"""Read and validate ``<pred_dir>/manifest.yaml``.
+
+    Returns ``{"fields": {...}, "errors": [...], "warnings": [...]}``. ``errors`` are
+    blocking for a leaderboard submission (no manifest, unparseable file, missing
+    ``method``, or an out-of-range enum); ``warnings`` are advisory (missing recommended
+    fields, unknown keys). ``fields`` holds the recognized, non-empty values.
+    """
+    path = Path(pred_dir) / MANIFEST_FILENAME
+    out: Dict[str, Any] = {"fields": {}, "errors": [], "warnings": []}
+    if not path.exists():
+        out["errors"].append(f"no {MANIFEST_FILENAME} in the submission directory")
+        return out
+    try:
+        raw = yaml.safe_load(path.read_text())
+    except yaml.YAMLError as e:
+        out["errors"].append(f"could not parse {MANIFEST_FILENAME}: {e}")
+        return out
+    if not isinstance(raw, dict):
+        out["errors"].append(f"{MANIFEST_FILENAME} must be a mapping of fields")
+        return out
+
+    fields = {k: v for k, v in raw.items() if v not in (None, "")}
+    out["fields"] = {k: fields[k] for k in MANIFEST_FIELDS if k in fields}
+
+    for k in sorted(set(fields) - set(MANIFEST_FIELDS)):
+        out["warnings"].append(f"unknown field '{k}' (ignored)")
+    for k in MANIFEST_REQUIRED:
+        if k not in fields:
+            out["errors"].append(f"missing required field '{k}'")
+    for k, allowed in MANIFEST_ENUMS.items():
+        if k in fields and str(fields[k]) not in allowed:
+            out["errors"].append(f"field '{k}'='{fields[k]}' not in {sorted(allowed)}")
+    missing = [k for k in MANIFEST_RECOMMENDED if k not in fields]
+    if missing:
+        out["warnings"].append("missing recommended field(s): " + ", ".join(missing))
+    return out
 
 
 # --------------------------------------------------------------------------- #
@@ -475,6 +540,9 @@ def evaluate_submission(
                 ...
               },
               "suitable": [family, ...],         # families that are complete
+              "manifest": {                      # parsed manifest.yaml (see load_manifest)
+                  "fields": dict, "errors": [str], "warnings": [str],
+              },
             }
     """
     pred_dir = Path(pred_dir)
@@ -554,7 +622,12 @@ def evaluate_submission(
             "verdict": verdict,
         }
 
-    result = {"tasks": tasks_out, "families": families_out, "suitable": suitable}
+    result = {
+        "tasks": tasks_out,
+        "families": families_out,
+        "suitable": suitable,
+        "manifest": load_manifest(pred_dir),
+    }
     if verbose:
         _print_report(result)
     return result
@@ -563,6 +636,22 @@ def evaluate_submission(
 # --------------------------------------------------------------------------- #
 # Reporting
 # --------------------------------------------------------------------------- #
+def _print_manifest(manifest: Dict[str, Any]) -> None:
+    fields = manifest.get("fields", {})
+    print("Method (manifest.yaml):")
+    if fields:
+        w = max(len(k) for k in fields)
+        for k in MANIFEST_FIELDS:
+            if k in fields:
+                print(f"  {k.ljust(w)} : {fields[k]}")
+    else:
+        print("  (no manifest fields found)")
+    for e in manifest.get("errors", []):
+        print(f"  [error]   {e}")
+    for warn in manifest.get("warnings", []):
+        print(f"  [warning] {warn}")
+
+
 def _print_report(result: Dict[str, Any]) -> None:
     tasks = result["tasks"]
     families = result["families"]
@@ -570,6 +659,10 @@ def _print_report(result: Dict[str, Any]) -> None:
     print("=" * 80)
     print("RelBench leaderboard submission report")
     print("=" * 80)
+
+    if result.get("manifest") is not None:
+        _print_manifest(result["manifest"])
+        print()
 
     name_w = max([len("task")] + [len(t) for t in tasks]) if tasks else len("task")
     metric_w = max(
