@@ -343,7 +343,7 @@ train_dataset = torch_frame.data.Dataset(
     col_to_stype=col_to_stype,
     target_col=target_col_name,
     col_to_text_embedder_cfg=TextEmbedderConfig(
-        text_embedder=GloveTextEmbedding(device=device),
+        text_embedder=GloveTextEmbedding(device="cpu"),
         batch_size=256,
     ),
 )

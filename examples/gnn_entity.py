@@ -135,7 +135,7 @@ data, col_stats_dict = make_pkey_fkey_graph(
     db,
     col_to_stype_dict=col_to_stype_dict,
     text_embedder_cfg=TextEmbedderConfig(
-        text_embedder=GloveTextEmbedding(device=device), batch_size=256
+        text_embedder=GloveTextEmbedding(device="cpu"), batch_size=256
     ),
     cache_dir=f"{args.cache_dir}/{args.dataset}_{cache_name}/materialized",
 )
