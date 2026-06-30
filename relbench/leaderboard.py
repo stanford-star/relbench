@@ -53,7 +53,7 @@ import pandas as pd
 import yaml
 
 from relbench.base import TaskType
-from relbench.hf import CORE_REPO
+from relbench.hf import RELBENCH_HF
 from relbench.load import load_task
 
 __all__ = [
@@ -432,7 +432,7 @@ def evaluate_task(
             :func:`relbench.load.load_task` -- a local dataset directory, a Hub
             ``org/repo[/subdir]`` spec, or a loaded ``RelBenchDataset``. When ``None`` the
             dataset is resolved from the ``task_name`` prefix as
-            ``"<CORE_REPO>/<dataset>"`` (the hosted RelBench core location).
+            ``"<RELBENCH_HF>/<dataset>"`` (the hosted RelBench core location).
 
     Returns:
         The metric dict produced by the task's own ``task.evaluate`` (identical to the
@@ -443,7 +443,7 @@ def evaluate_task(
             probabilities, undecodable link lists, ...).
     """
     dataset_name, name = _split_task_name(task_name)
-    dataset_arg = dataset if dataset is not None else f"{CORE_REPO}/{dataset_name}"
+    dataset_arg = dataset if dataset is not None else f"{RELBENCH_HF}/{dataset_name}"
     task = load_task(dataset_arg, name)
     _supported(task)
 

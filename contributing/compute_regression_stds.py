@@ -22,7 +22,7 @@ from huggingface_hub import HfApi
 
 import relbench
 from relbench.base import TaskType
-from relbench.hf import CORE_REPO, REGRESSION_STDS_FILE
+from relbench.hf import RELBENCH_HF, REGRESSION_STDS_FILE
 
 
 def main() -> None:
@@ -36,7 +36,7 @@ def main() -> None:
     api = HfApi()
 
     # Enumerate relbench/core's sub-datasets (each has a top-level <name>/manifest.yaml).
-    files = api.list_repo_files(CORE_REPO, repo_type="dataset")
+    files = api.list_repo_files(RELBENCH_HF, repo_type="dataset")
     datasets = sorted(
         {
             f.split("/")[0]
@@ -44,11 +44,11 @@ def main() -> None:
             if f.endswith("/manifest.yaml") and f.count("/") == 1
         }
     )
-    print(f"{CORE_REPO}: {len(datasets)} sub-datasets", flush=True)
+    print(f"{RELBENCH_HF}: {len(datasets)} sub-datasets", flush=True)
 
     stds: dict[str, float] = {}
     for name in datasets:
-        spec = f"{CORE_REPO}/{name}"
+        spec = f"{RELBENCH_HF}/{name}"
         ds = relbench.load_dataset(spec)
         for task_name in relbench.get_task_names(spec):
             try:
@@ -80,11 +80,11 @@ def main() -> None:
         api.upload_file(
             path_or_fileobj=str(out_path),
             path_in_repo=REGRESSION_STDS_FILE,
-            repo_id=CORE_REPO,
+            repo_id=RELBENCH_HF,
             repo_type="dataset",
             commit_message="Add regression-target stds (normalize MAE -> NMAE)",
         )
-        print(f"pushed {REGRESSION_STDS_FILE} to {CORE_REPO}", flush=True)
+        print(f"pushed {REGRESSION_STDS_FILE} to {RELBENCH_HF}", flush=True)
 
 
 if __name__ == "__main__":
