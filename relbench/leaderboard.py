@@ -554,7 +554,7 @@ def evaluate_submission(
                 ...
               },
               "validated": [family, ...],        # families that passed (all tasks valid)
-              "extra_files": [str],              # non-CSV/metadata entries (must be empty)
+              "extra_files": [str],              # non-CSV/metadata entries (ignored)
               "metadata": {                      # parsed metadata.yaml (see load_metadata)
                   "fields": dict, "errors": [str], "warnings": [str],
               },
@@ -682,10 +682,9 @@ def _print_report(result: Dict[str, Any]) -> None:
 
     extra = result.get("extra_files") or []
     if extra:
-        print("Unexpected files (a submission must contain only prediction CSVs and "
-              "metadata.yaml):")
+        print("Ignored (not part of a submission; --package drops these from the zip):")
         for name in extra:
-            print(f"  [error]   {name}")
+            print(f"  - {name}")
         print()
 
     name_w = max([len("task")] + [len(t) for t in tasks]) if tasks else len("task")
@@ -738,42 +737,60 @@ def _print_report(result: Dict[str, Any]) -> None:
 DEFAULT_ENDPOINT = "https://star-project-relbench-validator.hf.space"
 
 
-def _submit_to_service(pred_dir: Union[str, os.PathLike], endpoint: str) -> bool:
-    r"""Zip the submission directory and POST it to the service's ``/submit``.
+def _prompt_metadata(pred_dir: Union[str, os.PathLike]) -> None:
+    r"""Interactively collect method metadata and write ``<pred_dir>/metadata.yaml``."""
+    print(f"\nNo {METADATA_FILENAME} found — let's create one.")
 
-    The service re-validates server-side and, on success, opens a pull request. Returns True
-    if the service accepted the submission (pending review, or a dry run).
+    def ask(label: str, *, required: bool = False, choices: Optional[List[str]] = None) -> str:
+        while True:
+            val = input(f"  {label}: ").strip()
+            if not val:
+                if required:
+                    print("    (required)")
+                    continue
+                return ""
+            if choices and val not in choices:
+                print(f"    (choose one of: {', '.join(choices)})")
+                continue
+            return val
+
+    fields: Dict[str, Any] = {
+        "name": ask("name (display name)", required=True),
+        "type": ask("type (fine-tuned / in-context)", required=True,
+                    choices=sorted(METADATA_ENUMS["type"])),
+        "email": ask("email (kept private)", required=True),
+    }
+    url = ask("url (optional — paper / project / code link)")
+    if url:
+        fields["url"] = url
+    note = ask("note (optional)")
+    if note:
+        fields["note"] = note
+
+    path = Path(pred_dir) / METADATA_FILENAME
+    path.write_text(yaml.safe_dump(fields, sort_keys=False))
+    print(f"  wrote {path}")
+
+
+def _package(pred_dir: Union[str, os.PathLike], out: Union[str, os.PathLike],
+             extra: Sequence[str]) -> Path:
+    r"""Zip the submission (prediction CSVs + ``metadata.yaml`` only) into ``out``.
+
+    Anything else in the directory (``extra``) is reported and left out of the zip.
     """
-    import io
     import zipfile
 
-    import requests  # lazy import: keep the local validation path dependency-light
-
-    buf = io.BytesIO()
-    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
-        for p in sorted(Path(pred_dir).iterdir()):
-            if p.is_file():
+    pred_dir = Path(pred_dir)
+    if extra:
+        print("\nExcluding files that aren't part of a submission:")
+        for name in extra:
+            print(f"  - {name}")
+    out = Path(out)
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as zf:
+        for p in sorted(pred_dir.iterdir()):
+            if p.is_file() and (p.suffix == ".csv" or p.name == METADATA_FILENAME):
                 zf.write(p, p.name)
-    buf.seek(0)
-
-    url = endpoint.rstrip("/") + "/submit"
-    print(f"\nUploading submission to {url} ...")
-    resp = requests.post(
-        url, files={"file": ("submission.zip", buf, "application/zip")}, timeout=900
-    )
-    try:
-        data = resp.json()
-    except ValueError:
-        print(f"  service returned HTTP {resp.status_code}: {resp.text[:300]}")
-        return False
-    status = data.get("status", "error")
-    print(f"  status: {status}")
-    message = data.get("message") or data.get("detail")
-    if message:
-        print(f"  {message}")
-    if data.get("pr_url"):
-        print(f"  pull request: {data['pr_url']}")
-    return status in ("pending_review", "dry_run")
+    return out
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
@@ -795,14 +812,20 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     )
     parser.add_argument("--quiet", action="store_true", help="suppress the printed report")
     parser.add_argument(
-        "--submit",
+        "--package",
         action="store_true",
-        help="after validating, upload the submission to the leaderboard service",
+        help="build a submission zip (prediction CSVs + metadata.yaml; prompts for "
+             "metadata if missing, drops anything else) and print how to submit it",
+    )
+    parser.add_argument(
+        "--out",
+        default=None,
+        help="output zip path for --package (default: <dir-name>.zip in the cwd)",
     )
     parser.add_argument(
         "--endpoint",
         default=os.getenv("RELBENCH_LEADERBOARD_ENDPOINT", DEFAULT_ENDPOINT),
-        help="submission service URL (default: the RelBench validator Space)",
+        help="submission service URL shown in the --package instructions",
     )
     args = parser.parse_args(argv)
 
@@ -810,20 +833,27 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         args.pred_dir, num_workers=args.num_workers, verbose=not args.quiet
     )
 
-    if args.submit:
-        metadata = result.get("metadata") or {"errors": ["metadata not parsed"]}
-        if result.get("extra_files"):
-            print("\nNot submitting: remove non-submission files — "
-                  + ", ".join(result["extra_files"]))
-            return 1
-        if not result["validated"]:
-            print("\nNot submitting: no leaderboard was validated.")
-            return 1
-        if metadata.get("errors"):
-            print("\nNot submitting: metadata.yaml issues — "
+    if args.package:
+        # Create metadata.yaml interactively if it isn't there, then re-read it.
+        if not (Path(args.pred_dir) / METADATA_FILENAME).exists():
+            _prompt_metadata(args.pred_dir)
+        metadata = load_metadata(args.pred_dir)
+        if metadata["errors"]:
+            print("\nCannot package — metadata.yaml issues: "
                   + "; ".join(metadata["errors"]))
             return 1
-        return 0 if _submit_to_service(args.pred_dir, args.endpoint) else 1
+        if not result["validated"]:
+            print("\nCannot package — no leaderboard was validated; fix the prediction "
+                  "tables first.")
+            return 1
+        out = args.out or f"{Path(args.pred_dir).resolve().name}.zip"
+        _package(args.pred_dir, out, result.get("extra_files") or [])
+        endpoint = args.endpoint.rstrip("/")
+        print(f"\nCreated submission package: {out}")
+        print("Submit it from the CLI:\n")
+        print(f'  curl -F "file=@{out}" {endpoint}/submit\n')
+        print("or upload it on the website: https://tabular.stanford.edu/leaderboard/submit/")
+        return 0
 
     return 0 if result["validated"] else 1
 

@@ -94,8 +94,8 @@ url: https://arxiv.org/abs/... # optional — paper / project / code link
 note: caveats / eval details, shown on hover   # optional
 ```
 
-The submission directory must contain **only** these files — the prediction CSVs and
-`metadata.yaml`. Any other entry (saved arrays, logs, subdirectories) makes it invalid.
+A submission is just the prediction CSVs and `metadata.yaml`; any other files (saved arrays,
+logs, subdirectories) are ignored — `--package` (below) lists and drops them from the zip.
 
 Write these from code with `relbench.leaderboard.write_prediction_table(task, pred, path)`,
 and score a single task with `relbench.leaderboard.evaluate_task(task_name, csv)` (where
@@ -121,15 +121,21 @@ per-task metrics, per-leaderboard aggregate metrics, and a verdict for each lead
 also parses and validates `metadata.yaml`, printing the method metadata and flagging any
 missing required field or out-of-range value.
 
-Once the report marks a leaderboard **validated** with clean metadata, submit — either
-straight from the CLI:
+Once a leaderboard is **validated**, build a submission package:
 
 ```bash
-python -m relbench.leaderboard <submission_dir> --submit
+python -m relbench.leaderboard <submission_dir> --package
 ```
 
-which validates locally then uploads the directory, or by zipping it (CSVs +
-`metadata.yaml`) and uploading at
+This re-validates, **prompts you for the `metadata.yaml` fields if it's missing** (and writes
+it), drops any files that aren't prediction CSVs or `metadata.yaml`, and writes a clean zip —
+then prints the command to submit it. Submit that zip from the CLI:
+
+```bash
+curl -F "file=@<submission>.zip" https://star-project-relbench-validator.hf.space/submit
+```
+
+or upload it on the website at
 [**tabular.stanford.edu/leaderboard/submit**](https://tabular.stanford.edu/leaderboard/submit/).
 Either way it is re-validated server-side and, on success, opens a pull request for
 maintainer review; your entry appears on the leaderboard once it is merged.
