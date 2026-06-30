@@ -111,24 +111,17 @@ _LINK_PAD = -1
 # Submission metadata
 # --------------------------------------------------------------------------- #
 # A submission directory may carry a ``metadata.yaml`` describing the method; these fields
-# are surfaced on the leaderboard. ``method`` and ``regime`` are required; the rest are
-# recommended. Enum fields are checked against their allowed values. The report prints the
-# metadata and any issues alongside the metrics, so the same check runs locally and at
-# submission time.
+# are surfaced on the leaderboard. ``name``, ``regime`` and ``email`` are required; ``url``
+# and ``note`` are optional. ``regime`` is checked against its allowed values. The submission
+# date is stamped server-side, not taken from here. ``email`` is recorded with the submission
+# but kept off the public leaderboard row. The report prints the metadata and any issues
+# alongside the metrics, so the same check runs locally and at submission time.
 METADATA_FILENAME = "metadata.yaml"
-METADATA_REQUIRED = ["method", "regime"]
-METADATA_RECOMMENDED = [
-    "variant", "arch", "avail", "pretrain", "input",
-    "venue", "date", "paper", "website", "code", "note",
-]
-# Submitter contact — recorded with the submission but kept off the public leaderboard row.
-METADATA_CONTACT = ["submitter_name", "submitter_email"]
-METADATA_FIELDS = METADATA_REQUIRED + METADATA_RECOMMENDED + METADATA_CONTACT
+METADATA_REQUIRED = ["name", "regime", "email"]
+METADATA_RECOMMENDED = ["url", "note"]
+METADATA_FIELDS = METADATA_REQUIRED + METADATA_RECOMMENDED
 METADATA_ENUMS: Dict[str, set] = {
     "regime": {"fine-tuned", "in-context"},
-    "avail": {"open", "closed"},
-    "pretrain": {"pretrained", "scratch"},
-    "input": {"relational", "flat"},
 }
 
 
@@ -136,9 +129,9 @@ def load_metadata(pred_dir: Union[str, os.PathLike]) -> Dict[str, Any]:
     r"""Read and validate ``<pred_dir>/metadata.yaml``.
 
     Returns ``{"fields": {...}, "errors": [...], "warnings": [...]}``. ``errors`` are
-    blocking for a leaderboard submission (no metadata, unparseable file, missing
-    ``method``, or an out-of-range enum); ``warnings`` are advisory (missing recommended
-    fields, unknown keys). ``fields`` holds the recognized, non-empty values.
+    blocking for a leaderboard submission (no metadata, unparseable file, a missing required
+    field, an out-of-range enum, or a malformed email); ``warnings`` are advisory (missing
+    recommended fields, unknown keys). ``fields`` holds the recognized, non-empty values.
     """
     path = Path(pred_dir) / METADATA_FILENAME
     out: Dict[str, Any] = {"fields": {}, "errors": [], "warnings": []}
@@ -165,6 +158,8 @@ def load_metadata(pred_dir: Union[str, os.PathLike]) -> Dict[str, Any]:
     for k, allowed in METADATA_ENUMS.items():
         if k in fields and str(fields[k]) not in allowed:
             out["errors"].append(f"field '{k}'='{fields[k]}' not in {sorted(allowed)}")
+    if "email" in fields and "@" not in str(fields["email"]):
+        out["errors"].append(f"field 'email'='{fields['email']}' is not a valid email")
     missing = [k for k in METADATA_RECOMMENDED if k not in fields]
     if missing:
         out["warnings"].append("missing recommended field(s): " + ", ".join(missing))

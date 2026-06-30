@@ -83,24 +83,15 @@ predictions:
 - **recommendation** — the top-`eval_k` predicted destination entity ids, as a JSON list per row.
 
 Alongside the CSVs, include a **`metadata.yaml`** describing the method — this is what the
-leaderboard displays. `method` and `regime` are required; the rest are recommended:
+leaderboard displays. `name`, `regime` and `email` are required; `url` and `note` are
+optional. The submission date is recorded automatically.
 
 ```yaml
-method: RelGNN                      # required — display name
-variant: pretrained + fine-tuned    # optional qualifier
-regime: fine-tuned                  # required — fine-tuned | in-context
-arch: GNN
-avail: open                         # open | closed (weights)
-pretrain: pretrained                # pretrained | scratch
-input: relational                   # relational | flat
-venue: ICLR 2026
-date: 2026-06
-paper: https://arxiv.org/abs/...
-website: https://...
-code: https://github.com/...
-note: caveats / eval details, shown on hover
-submitter_name: Jane Doe
-submitter_email: jane@example.edu   # recorded privately; not shown on the leaderboard
+name: RelGNN                    # required — display name
+regime: fine-tuned             # required — fine-tuned | in-context
+email: jane@example.edu        # required — recorded privately; not shown on the leaderboard
+url: https://arxiv.org/abs/... # optional — paper / project / code link
+note: caveats / eval details, shown on hover   # optional
 ```
 
 Write these from code with `relbench.leaderboard.write_prediction_table(task, pred, path)`,
