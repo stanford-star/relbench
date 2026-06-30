@@ -111,17 +111,17 @@ _LINK_PAD = -1
 # Submission metadata
 # --------------------------------------------------------------------------- #
 # A submission directory may carry a ``metadata.yaml`` describing the method; these fields
-# are surfaced on the leaderboard. ``name``, ``regime`` and ``email`` are required; ``url``
-# and ``note`` are optional. ``regime`` is checked against its allowed values. The submission
+# are surfaced on the leaderboard. ``name``, ``type`` and ``email`` are required; ``url``
+# and ``note`` are optional. ``type`` is checked against its allowed values. The submission
 # date is stamped server-side, not taken from here. ``email`` is recorded with the submission
 # but kept off the public leaderboard row. The report prints the metadata and any issues
 # alongside the metrics, so the same check runs locally and at submission time.
 METADATA_FILENAME = "metadata.yaml"
-METADATA_REQUIRED = ["name", "regime", "email"]
+METADATA_REQUIRED = ["name", "type", "email"]
 METADATA_RECOMMENDED = ["url", "note"]
 METADATA_FIELDS = METADATA_REQUIRED + METADATA_RECOMMENDED
 METADATA_ENUMS: Dict[str, set] = {
-    "regime": {"fine-tuned", "in-context"},
+    "type": {"fine-tuned", "in-context"},
 }
 
 
