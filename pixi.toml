@@ -11,17 +11,30 @@ version = "0.1.0"
 uv = "*"
 python = "==3.10"
 
-# CPU torch + matching pyg-lib wheels (this dev box and CI have no GPU). For GPU work,
-# point torch at a CUDA build and switch find-links to the matching data.pyg.org index,
-# e.g. https://data.pyg.org/whl/torch-2.9.0+cu128.html.
 [pypi-options]
 index-url = "https://pypi.org/simple"
-find-links = [{ url = "https://data.pyg.org/whl/torch-2.9.0+cpu.html" }]
 
 [pypi-dependencies]
+relbench = { path = ".", editable = true, extras = ["example", "dev"] }
+
+# Two environments select the accelerator for torch + the matching pyg-lib wheels.
+# `default` (= cpu) targets this dev box and CI, which have no GPU. `gpu` pulls CUDA
+# (cu128) builds; run the examples on a GPU node with `pixi run -e gpu python examples/...`.
+[feature.cpu.pypi-options]
+find-links = [{ url = "https://data.pyg.org/whl/torch-2.9.0+cpu.html" }]
+[feature.cpu.pypi-dependencies]
 torch = { version = "==2.9.1", index = "https://download.pytorch.org/whl/cpu" }
 pyg-lib = "*"
-relbench = { path = ".", editable = true, extras = ["example", "dev"] }
+
+[feature.gpu.pypi-options]
+find-links = [{ url = "https://data.pyg.org/whl/torch-2.9.0+cu128.html" }]
+[feature.gpu.pypi-dependencies]
+torch = { version = "==2.9.1", index = "https://download.pytorch.org/whl/cu128" }
+pyg-lib = "*"
+
+[environments]
+default = ["cpu"]
+gpu = ["gpu"]
 
 [tasks.test]
 cmd = "pytest test"
