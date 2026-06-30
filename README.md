@@ -83,12 +83,12 @@ predictions:
 - **recommendation** — the top-`eval_k` predicted destination entity ids, as a JSON list per row.
 
 Alongside the CSVs, include a **`metadata.yaml`** describing the method — this is what the
-leaderboard displays. `method` is required; the rest are recommended:
+leaderboard displays. `method` and `regime` are required; the rest are recommended:
 
 ```yaml
 method: RelGNN                      # required — display name
 variant: pretrained + fine-tuned    # optional qualifier
-regime: task-specific               # task-specific | zero-shot
+regime: fine-tuned                  # required — fine-tuned | in-context
 arch: GNN
 avail: open                         # open | closed (weights)
 pretrain: pretrained                # pretrained | scratch

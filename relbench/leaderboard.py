@@ -111,20 +111,21 @@ _LINK_PAD = -1
 # Submission metadata
 # --------------------------------------------------------------------------- #
 # A submission directory may carry a ``metadata.yaml`` describing the method; these fields
-# are surfaced on the leaderboard. ``method`` is required; the rest are recommended. Enum
-# fields are checked against their allowed values. The report prints the metadata and any
-# issues alongside the metrics, so the same check runs locally and at submission time.
+# are surfaced on the leaderboard. ``method`` and ``regime`` are required; the rest are
+# recommended. Enum fields are checked against their allowed values. The report prints the
+# metadata and any issues alongside the metrics, so the same check runs locally and at
+# submission time.
 METADATA_FILENAME = "metadata.yaml"
-METADATA_REQUIRED = ["method"]
+METADATA_REQUIRED = ["method", "regime"]
 METADATA_RECOMMENDED = [
-    "variant", "regime", "arch", "avail", "pretrain", "input",
+    "variant", "arch", "avail", "pretrain", "input",
     "venue", "date", "paper", "website", "code", "note",
 ]
 # Submitter contact — recorded with the submission but kept off the public leaderboard row.
 METADATA_CONTACT = ["submitter_name", "submitter_email"]
 METADATA_FIELDS = METADATA_REQUIRED + METADATA_RECOMMENDED + METADATA_CONTACT
 METADATA_ENUMS: Dict[str, set] = {
-    "regime": {"task-specific", "zero-shot"},
+    "regime": {"fine-tuned", "in-context"},
     "avail": {"open", "closed"},
     "pretrain": {"pretrained", "scratch"},
     "input": {"relational", "flat"},
