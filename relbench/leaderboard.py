@@ -735,7 +735,7 @@ def _print_report(result: Dict[str, Any]) -> None:
 # --------------------------------------------------------------------------- #
 # Default leaderboard submission service (the RelBench validator Space). Override with
 # --endpoint or the RELBENCH_LEADERBOARD_ENDPOINT environment variable.
-DEFAULT_ENDPOINT = "https://star-project-relbench-validator.hf.space"
+DEFAULT_ENDPOINT = "https://stanford-star-relbench-validator.hf.space"
 
 
 def _prompt_metadata(pred_dir: Union[str, os.PathLike]) -> None:

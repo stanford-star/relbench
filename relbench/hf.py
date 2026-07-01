@@ -6,7 +6,7 @@ Address it as:
 
 * a local path, e.g. ``/data/rel-f1``;
 * a Hub repo, e.g. ``relbench/rel-f1`` (manifest at the repo root); or
-* a Hub sub-path, e.g. ``star-project/relbench/rel-f1`` (manifest under ``rel-f1/`` in ``star-project/relbench``).
+* a Hub sub-path, e.g. ``stanford-star/relbench/rel-f1`` (manifest under ``rel-f1/`` in ``stanford-star/relbench``).
 
 There is no central registry of names and no pinned revisions: the latest ``main`` is used
 unless you pass ``revision=`` explicitly.
@@ -20,15 +20,15 @@ from pathlib import Path
 from typing import Optional
 
 # Where the per-task regression-target stds for the RelBench core datasets live. One JSON
-# file at the root of the ``star-project/relbench`` Hub dataset repo, keyed by "<dataset>/<task>".
+# file at the root of the ``stanford-star/relbench`` Hub dataset repo, keyed by "<dataset>/<task>".
 # These normalize MAE into NMAE (nmae = mae / std); see relbench.metrics.make_nmae.
-RELBENCH_HF = "star-project/relbench"
+RELBENCH_HF = "stanford-star/relbench"
 REGRESSION_STDS_FILE = "regression_stds.json"
 
 
 @lru_cache(maxsize=None)
 def load_core_regression_stds(revision: Optional[str] = None) -> dict[str, float]:
-    r"""Fetch the hosted ``star-project/relbench`` regression-std table as ``{"<dataset>/<task>":
+    r"""Fetch the hosted ``stanford-star/relbench`` regression-std table as ``{"<dataset>/<task>":
     std}``.
 
     Uses ``hf_hub_download``, so if the file is already in the local HF cache (e.g. the user
@@ -69,8 +69,8 @@ def resolve_repo(spec: str) -> tuple[str, str]:
 def download_dataset_dir(spec: str, revision: Optional[str] = None) -> Path:
     r"""Download a dataset from the Hub and return its local directory.
 
-    Only the addressed sub-path is fetched, so loading ``star-project/relbench/rel-f1`` does not pull
-    every dataset in ``star-project/relbench``.
+    Only the addressed sub-path is fetched, so loading ``stanford-star/relbench/rel-f1`` does not pull
+    every dataset in ``stanford-star/relbench``.
     """
     from huggingface_hub import snapshot_download
 
