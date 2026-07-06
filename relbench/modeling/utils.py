@@ -47,7 +47,6 @@ def get_stype_proposal(db: Database) -> Dict[str, Dict[str, stype]]:
         Dict[str, Dict[str, Any]]: A dictionary mapping table name into
             :obj:`col_to_stype` (mapping column names into inferred stypes).
     """
-
     inferred_col_to_stype_dict = {}
     for table_name, table in db.table_dict.items():
         df = table.df

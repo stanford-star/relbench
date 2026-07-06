@@ -80,7 +80,6 @@ class DBInferDatasetBase(Dataset):
 
     def get_db(self, upto_test_timestamp: bool = True) -> Database:
         """DBInfer datasets are static, so never trim by timestamp."""
-
         return super().get_db(upto_test_timestamp=False)
 
 

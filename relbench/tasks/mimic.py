@@ -9,7 +9,8 @@ from relbench.metrics import accuracy, average_precision, f1, roc_auc
 
 
 class ICULengthOfStayTask(EntityTask):
-    r"""Binary classification: Predict if ICU length of stay is ≥ 3 days during the first ICU stay."""
+    r"""Binary classification: Predict if ICU length of stay is ≥ 3 days during the
+    first ICU stay."""
 
     task_type = TaskType.BINARY_CLASSIFICATION
     entity_col = "subject_id"

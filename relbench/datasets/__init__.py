@@ -54,7 +54,6 @@ def register_dataset(
     `cache_dir` is added to kwargs by default. If you want to override it, you
     can pass `cache_dir` as a keyword argument in `kwargs`.
     """
-
     cache_dir = f"{get_relbench_cache_dir()}/{name}"
     kwargs = {"cache_dir": cache_dir, **kwargs}
     dataset_registry[name] = (cls, args, kwargs)
@@ -71,7 +70,6 @@ def download_dataset(name: str) -> None:
     The downloaded database will be automatically picked up by the dataset object, when
     `dataset.get_db()` is called.
     """
-
     if name == "rel-mimic":
         from relbench.datasets.mimic import verify_mimic_access
 
@@ -104,7 +102,6 @@ def get_dataset(name: str, download=True) -> Dataset:
     raw files, the cache will be used. `download=True` will verify that the
     cached database matches the RelBench version even in this case.
     """
-
     if download:
         download_dataset(name)
 

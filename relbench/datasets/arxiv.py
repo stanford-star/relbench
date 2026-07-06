@@ -13,7 +13,6 @@ class ArxivDataset(Dataset):
 
     def make_db(self) -> Database:
         r"""Process the raw files into a database."""
-
         url = (
             "https://www.dropbox.com/scl/fi/tjj6r1fqikt4j0rz4qomu/db.zip?rlkey=1ykfkp8pj3hu6n4utz8g9dkx2&st"
             "=azmm56dc&dl=1"

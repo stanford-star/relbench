@@ -32,7 +32,6 @@ def _tgb_eval_hits_and_mrr(
     k_value: int,
 ) -> dict[str, float]:
     r"""Compute one-vs-many Hits@k and MRR with tie-aware ranking."""
-
     y_pred_pos = np.asarray(y_pred_pos).reshape(-1, 1)
     y_pred_neg = np.asarray(y_pred_neg)
     if y_pred_neg.ndim != 2 or y_pred_neg.shape[0] != y_pred_pos.shape[0]:

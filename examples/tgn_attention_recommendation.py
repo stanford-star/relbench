@@ -1,5 +1,4 @@
-"""
-Temporal recommendation baseline: TGN + attention (TransformerConv).
+"""Temporal recommendation baseline: TGN + attention (TransformerConv).
 
 This script ports the core TGB2 "TGN + GraphAttentionEmbedding" training recipe
 to RelBench's RecommendationTask interface.

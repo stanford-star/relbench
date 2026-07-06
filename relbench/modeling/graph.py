@@ -149,7 +149,6 @@ def get_node_train_table_input(
     task: EntityTask,
 ) -> NodeTrainTableInput:
     r"""Get the training table input for node prediction."""
-
     nodes = torch.from_numpy(table.df[task.entity_col].astype(int).values)
 
     time: Optional[Tensor] = None
@@ -201,7 +200,6 @@ def get_link_train_table_input(
     task: RecommendationTask,
 ) -> LinkTrainTableInput:
     r"""Get the training table input for link prediction."""
-
     src_node_idx: Tensor = torch.from_numpy(
         table.df[task.src_entity_col].astype(int).values
     )

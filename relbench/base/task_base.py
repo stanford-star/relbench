@@ -96,12 +96,10 @@ class BaseTask:
         To be implemented by subclass. The table rows need not be ordered
         deterministically.
         """
-
         raise NotImplementedError
 
     def _get_table(self, split: str) -> Table:
         r"""Helper function to get a table for a split."""
-
         db = self.dataset.get_db(upto_test_timestamp=split != "test")
 
         if split == "train":
@@ -169,7 +167,6 @@ class BaseTask:
 
         The table is cached in memory.
         """
-
         if mask_input_cols is None:
             mask_input_cols = split == "test"
 

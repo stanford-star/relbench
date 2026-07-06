@@ -15,7 +15,6 @@ class Database:
 
     def __init__(self, table_dict: Dict[str, Table]) -> None:
         r"""Creates a database from a dictionary of tables."""
-
         self.table_dict = table_dict
 
     def __repr__(self) -> str:
@@ -26,14 +25,12 @@ class Database:
 
         Simply saves each table individually with the table name as base name of file.
         """
-
         for name, table in self.table_dict.items():
             table.save(f"{path}/{name}.parquet")
 
     @classmethod
     def load(cls, path: Union[str, os.PathLike]) -> Self:
         r"""Load a database from a directory of tables in parquet files."""
-
         table_dict = {}
         for table_path in Path(path).glob("*.parquet"):
             table = Table.load(table_path)
@@ -45,7 +42,6 @@ class Database:
     @lru_cache(maxsize=None)
     def min_timestamp(self) -> pd.Timestamp:
         r"""Return the earliest timestamp in the database."""
-
         return min(
             table.min_timestamp
             for table in self.table_dict.values()
@@ -56,7 +52,6 @@ class Database:
     @lru_cache(maxsize=None)
     def max_timestamp(self) -> pd.Timestamp:
         r"""Return the latest timestamp in the database."""
-
         return max(
             table.max_timestamp
             for table in self.table_dict.values()
@@ -65,7 +60,6 @@ class Database:
 
     def upto(self, timestamp: pd.Timestamp) -> Self:
         r"""Return a database with all rows upto timestamp."""
-
         return Database(
             table_dict={
                 name: table.upto(timestamp) for name, table in self.table_dict.items()
@@ -74,7 +68,6 @@ class Database:
 
     def from_(self, timestamp: pd.Timestamp) -> Self:
         r"""Return a database with all rows from timestamp."""
-
         return Database(
             table_dict={
                 name: table.from_(timestamp) for name, table in self.table_dict.items()

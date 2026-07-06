@@ -58,7 +58,6 @@ def register_task(
     `cache_dir` is added to kwargs by default. If you want to override it, you
     can pass `cache_dir` as a keyword argument in `kwargs`.
     """
-
     cache_dir = f"{get_relbench_cache_dir()}/{dataset_name}/tasks/{task_name}"
     kwargs = {"cache_dir": cache_dir, **kwargs}
     task_registry[dataset_name][task_name] = (cls, args, kwargs)
@@ -75,7 +74,6 @@ def download_task(dataset_name: str, task_name: str) -> None:
     The downloaded task tables will be automatically picked up by the task object, when
     `task.get_table(split)` is called.
     """
-
     DOWNLOAD_REGISTRY.fetch(
         f"{dataset_name}/tasks/{task_name}.zip",
         processor=pooch.Unzip(extract_dir="."),
@@ -104,7 +102,6 @@ def get_task(dataset_name: str, task_name: str, download=False) -> BaseTask:
     scratch, the cache will be used. `download=True` will verify that the
     cached task tables matches the RelBench version even in this case.
     """
-
     if download:
         download_task(dataset_name, task_name)
     dataset = get_dataset(dataset_name, download=download)

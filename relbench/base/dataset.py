@@ -42,7 +42,6 @@ class Dataset:
                 the cached file. If None, we will not use cached file and re-process
                 everything from scratch without saving the cache.
         """
-
         self.cache_dir = cache_dir
 
         self.target_col = None
@@ -91,7 +90,6 @@ class Dataset:
 
         `upto_test_timestamp` is True by default to prevent test leakage.
         """
-
         db_path = f"{self.cache_dir}/db"
         if self.cache_dir and Path(db_path).exists() and any(Path(db_path).iterdir()):
             print(f"Loading Database object from {db_path}...")
@@ -141,7 +139,6 @@ class Dataset:
         Returns:
             Database: The modified database object.
         """
-
         # Remove the target column from the source entity table
         # Ensure the entity table has a primary key if not add one
         # Remove any other columns marked for removal

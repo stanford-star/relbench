@@ -109,7 +109,6 @@ class Table:
 
         Table without time_col are returned as is.
         """
-
         if self.time_col is None:
             return self
 
@@ -125,7 +124,6 @@ class Table:
 
         Table without time_col are returned as is.
         """
-
         if self.time_col is None:
             return self
 
@@ -140,7 +138,6 @@ class Table:
     @lru_cache(maxsize=None)
     def min_timestamp(self) -> pd.Timestamp:
         r"""Return the earliest time in the table."""
-
         if self.time_col is None:
             raise ValueError("Table has no time column.")
 
@@ -150,7 +147,6 @@ class Table:
     @lru_cache(maxsize=None)
     def max_timestamp(self) -> pd.Timestamp:
         r"""Return the latest time in the table."""
-
         if self.time_col is None:
             raise ValueError("Table has no time column.")
 

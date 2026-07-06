@@ -32,7 +32,6 @@ class AmazonDataset(Dataset):
 
     def make_db(self) -> Database:
         r"""Process the raw files into a database."""
-
         ### product table ###
 
         url_key = self._category_to_url_key[self.category]
