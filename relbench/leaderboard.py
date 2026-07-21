@@ -111,13 +111,12 @@ _LINK_PAD = -1
 # Submission metadata
 # --------------------------------------------------------------------------- #
 # A submission directory may carry a ``metadata.yaml`` describing the method; these fields
-# are surfaced on the leaderboard. ``name``, ``type`` and ``email`` are required; ``url``
-# and ``note`` are optional. ``type`` is checked against its allowed values. The submission
-# date is stamped server-side, not taken from here. ``email`` is recorded with the submission
-# but kept off the public leaderboard row. The report prints the metadata and any issues
-# alongside the metrics, so the same check runs locally and at submission time.
+# are surfaced on the leaderboard. ``name`` and ``type`` are required; ``url`` and
+# ``note`` are optional. ``type`` is checked against its allowed values. The submission
+# date is stamped server-side, not taken from here. The report prints the metadata and any
+# issues alongside the metrics, so the same check runs locally and at submission time.
 METADATA_FILENAME = "metadata.yaml"
-METADATA_REQUIRED = ["name", "type", "email"]
+METADATA_REQUIRED = ["name", "type"]
 METADATA_RECOMMENDED = ["url", "note"]
 METADATA_FIELDS = METADATA_REQUIRED + METADATA_RECOMMENDED
 METADATA_ENUMS: Dict[str, set] = {
@@ -130,7 +129,7 @@ def load_metadata(pred_dir: Union[str, os.PathLike]) -> Dict[str, Any]:
 
     Returns ``{"fields": {...}, "errors": [...], "warnings": [...]}``. ``errors`` are
     blocking for a leaderboard submission (no metadata, unparseable file, a missing required
-    field, an out-of-range enum, or a malformed email); ``warnings`` are advisory (missing
+    field, or an out-of-range enum); ``warnings`` are advisory (missing
     recommended fields, unknown keys). ``fields`` holds the recognized, non-empty values.
     """
     path = Path(pred_dir) / METADATA_FILENAME
@@ -158,8 +157,6 @@ def load_metadata(pred_dir: Union[str, os.PathLike]) -> Dict[str, Any]:
     for k, allowed in METADATA_ENUMS.items():
         if k in fields and str(fields[k]) not in allowed:
             out["errors"].append(f"field '{k}'='{fields[k]}' not in {sorted(allowed)}")
-    if "email" in fields and "@" not in str(fields["email"]):
-        out["errors"].append(f"field 'email'='{fields['email']}' is not a valid email")
     missing = [k for k in METADATA_RECOMMENDED if k not in fields]
     if missing:
         out["warnings"].append("missing recommended field(s): " + ", ".join(missing))
@@ -759,7 +756,6 @@ def _prompt_metadata(pred_dir: Union[str, os.PathLike]) -> None:
         "name": ask("name (display name)", required=True),
         "type": ask("type (fine-tuned / in-context)", required=True,
                     choices=sorted(METADATA_ENUMS["type"])),
-        "email": ask("email (kept private)", required=True),
     }
     url = ask("url (optional — paper / project / code link)")
     if url:

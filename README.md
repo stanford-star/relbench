@@ -83,13 +83,12 @@ predictions:
 - **recommendation** — the top-`eval_k` predicted destination entity ids, as a JSON list per row.
 
 Alongside the CSVs, include a **`metadata.yaml`** describing the method — this is what the
-leaderboard displays. `name`, `type` and `email` are required; `url` and `note` are
+leaderboard displays. `name` and `type` are required; `url` and `note` are
 optional. The submission date is recorded automatically.
 
 ```yaml
 name: RelGNN                    # required — display name
 type: fine-tuned               # required — fine-tuned | in-context
-email: jane@example.edu        # required — recorded privately; not shown on the leaderboard
 url: https://arxiv.org/abs/... # optional — paper / project / code link
 note: caveats / eval details, shown on hover   # optional
 ```
