@@ -260,7 +260,7 @@ def test_evaluate_submission(fake_ds_dir, tmp_path, monkeypatch):
     result = evaluate_submission(pred_dir, num_workers=1, verbose=True)
 
     # Structured return shape.
-    assert set(result) == {"tasks", "families", "suitable"}
+    assert set(result) == {"tasks", "families", "validated", "extra_files"}
     assert set(result["families"]) == set(LEADERBOARD_TASKS)
 
     clf = result["tasks"]["rel-amazon/user-churn"]
@@ -289,8 +289,8 @@ def test_evaluate_submission(fake_ds_dir, tmp_path, monkeypatch):
     assert fams["recommendation"]["complete"] is False
     assert fams["regression"]["num_valid"] == 0
     assert fams["regression"]["complete"] is False
-    assert result["suitable"] == []
-    assert "NOT suitable" in fams["classification"]["verdict"]
+    assert result["validated"] == []
+    assert "rejected" in fams["classification"]["verdict"]
 
     # Aggregate is the mean over valid tasks (one task here).
     assert fams["classification"]["aggregate"] == pytest.approx(clf["metric"])

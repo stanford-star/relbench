@@ -18,7 +18,8 @@ the target column replaced by predictions:
   source row, the top-``eval_k`` predicted destination ids (same id space as the
   ground-truth destination lists), encoded as a JSON list string in the CSV cell.
 
-Prediction tables are stored as CSV. Their *key columns* (the non-prediction columns that
+Prediction tables are stored as CSV (optionally gzipped, ``.csv.gz``). Their *key columns*
+(the non-prediction columns that
 uniquely identify a test row) are ``[entity_col, time_col]`` for an EntityTask and
 ``[src_entity_col, time_col]`` for a RecommendationTask; they must form a 1:1 bijection
 with the ground-truth test table (every test row covered exactly once, no extras, no
@@ -37,6 +38,8 @@ CLI
 ``python -m relbench.leaderboard <pred_dir> [--num-workers N] [--quiet]`` runs
 :func:`evaluate_submission` and prints the report. It exits ``0`` if *at least one*
 leaderboard family is validated (complete and fully valid), and non-zero otherwise.
+``--package`` additionally writes a clean submission zip to attach to a leaderboard
+submission issue on GitHub (method metadata is entered in the issue form itself).
 """
 
 from __future__ import annotations
@@ -50,7 +53,6 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
-import yaml
 
 from relbench.base import TaskType
 from relbench.hf import RELBENCH_HF
@@ -61,7 +63,6 @@ __all__ = [
     "write_prediction_table",
     "evaluate_task",
     "evaluate_submission",
-    "load_metadata",
     "main",
 ]
 
@@ -108,67 +109,21 @@ _LINK_PAD = -1
 
 
 # --------------------------------------------------------------------------- #
-# Submission metadata
+# Submission directory contents
 # --------------------------------------------------------------------------- #
-# A submission directory may carry a ``metadata.yaml`` describing the method; these fields
-# are surfaced on the leaderboard. ``name`` and ``type`` are required; ``url`` and
-# ``note`` are optional. ``type`` is checked against its allowed values. The submission
-# date is stamped server-side, not taken from here. The report prints the metadata and any
-# issues alongside the metrics, so the same check runs locally and at submission time.
-METADATA_FILENAME = "metadata.yaml"
-METADATA_REQUIRED = ["name", "type"]
-METADATA_RECOMMENDED = ["url", "note"]
-METADATA_FIELDS = METADATA_REQUIRED + METADATA_RECOMMENDED
-METADATA_ENUMS: Dict[str, set] = {
-    "type": {"fine-tuned", "in-context"},
-}
-
-
-def load_metadata(pred_dir: Union[str, os.PathLike]) -> Dict[str, Any]:
-    r"""Read and validate ``<pred_dir>/metadata.yaml``.
-
-    Returns ``{"fields": {...}, "errors": [...], "warnings": [...]}``. ``errors`` are
-    blocking for a leaderboard submission (no metadata, unparseable file, a missing required
-    field, or an out-of-range enum); ``warnings`` are advisory (missing
-    recommended fields, unknown keys). ``fields`` holds the recognized, non-empty values.
-    """
-    path = Path(pred_dir) / METADATA_FILENAME
-    out: Dict[str, Any] = {"fields": {}, "errors": [], "warnings": []}
-    if not path.exists():
-        out["errors"].append(f"no {METADATA_FILENAME} in the submission directory")
-        return out
-    try:
-        raw = yaml.safe_load(path.read_text())
-    except yaml.YAMLError as e:
-        out["errors"].append(f"could not parse {METADATA_FILENAME}: {e}")
-        return out
-    if not isinstance(raw, dict):
-        out["errors"].append(f"{METADATA_FILENAME} must be a mapping of fields")
-        return out
-
-    fields = {k: v for k, v in raw.items() if v not in (None, "")}
-    out["fields"] = {k: fields[k] for k in METADATA_FIELDS if k in fields}
-
-    for k in sorted(set(fields) - set(METADATA_FIELDS)):
-        out["warnings"].append(f"unknown field '{k}' (ignored)")
-    for k in METADATA_REQUIRED:
-        if k not in fields:
-            out["errors"].append(f"missing required field '{k}'")
-    for k, allowed in METADATA_ENUMS.items():
-        if k in fields and str(fields[k]) not in allowed:
-            out["errors"].append(f"field '{k}'='{fields[k]}' not in {sorted(allowed)}")
-    missing = [k for k in METADATA_RECOMMENDED if k not in fields]
-    if missing:
-        out["warnings"].append("missing recommended field(s): " + ", ".join(missing))
-    return out
+# A submission is just the prediction tables: one ``<dataset>__<task>.csv`` (or
+# ``.csv.gz``) per task. Method metadata (name, type, url, note) is entered in the GitHub
+# submission-issue form, not carried in the directory.
+def _is_prediction_file(p: Path) -> bool:
+    return p.suffix == ".csv" or p.name.endswith(".csv.gz")
 
 
 def _extra_files(pred_dir: Union[str, os.PathLike]) -> List[str]:
-    r"""Names of entries in ``pred_dir`` that are not prediction CSVs or ``metadata.yaml``.
+    r"""Names of entries in ``pred_dir`` that are not prediction tables.
 
-    A submission directory must contain **only** the prediction-table CSVs and
-    ``metadata.yaml`` — anything else (other file types, stray artifacts, subdirectories) is
-    reported so it can be removed. Hidden dotfiles are ignored.
+    A submission must contain **only** the prediction-table CSVs — anything else (other
+    file types, stray artifacts, subdirectories) is reported so it can be removed. Hidden
+    dotfiles are ignored.
     """
     extra: List[str] = []
     for p in sorted(Path(pred_dir).iterdir()):
@@ -176,7 +131,7 @@ def _extra_files(pred_dir: Union[str, os.PathLike]) -> List[str]:
             continue
         if p.is_dir():
             extra.append(p.name + "/")
-        elif p.suffix != ".csv" and p.name != METADATA_FILENAME:
+        elif not _is_prediction_file(p):
             extra.append(p.name)
     return extra
 
@@ -468,12 +423,16 @@ def evaluate_task(
 # evaluate_submission
 # --------------------------------------------------------------------------- #
 def _task_name_from_path(path: Path) -> str:
-    r"""``<dataset>__<task>.csv`` -> ``<dataset>/<task>``.
+    r"""``<dataset>__<task>.csv[.gz]`` -> ``<dataset>/<task>``.
 
     The first double underscore separates dataset from task; task names may contain single
     hyphens (and are otherwise left untouched).
     """
-    stem = path.stem
+    stem = path.name
+    for suffix in (".csv.gz", ".csv"):
+        if stem.endswith(suffix):
+            stem = stem[: -len(suffix)]
+            break
     if "__" not in stem:
         return stem
     dataset_name, name = stem.split("__", 1)
@@ -509,7 +468,7 @@ def evaluate_submission(
 ) -> Dict[str, Any]:
     r"""Evaluate a directory of prediction CSVs as a leaderboard submission.
 
-    Discovers ``*.csv`` files in ``pred_dir`` (filename convention
+    Discovers ``*.csv`` / ``*.csv.gz`` files in ``pred_dir`` (filename convention
     ``<dataset>__<task>.csv`` -> task ``<dataset>/<task>``), scores every task in parallel,
     groups results by leaderboard family, and reports per-family suitability.
 
@@ -551,16 +510,13 @@ def evaluate_submission(
                 ...
               },
               "validated": [family, ...],        # families that passed (all tasks valid)
-              "extra_files": [str],              # non-CSV/metadata entries (ignored)
-              "metadata": {                      # parsed metadata.yaml (see load_metadata)
-                  "fields": dict, "errors": [str], "warnings": [str],
-              },
+              "extra_files": [str],              # non-prediction-table entries (ignored)
             }
     """
     pred_dir = Path(pred_dir)
-    csv_paths = sorted(pred_dir.glob("*.csv"))
+    csv_paths = sorted(list(pred_dir.glob("*.csv")) + list(pred_dir.glob("*.csv.gz")))
     if not csv_paths:
-        raise FileNotFoundError(f"no prediction CSVs (*.csv) found in {pred_dir}")
+        raise FileNotFoundError(f"no prediction CSVs (*.csv / *.csv.gz) found in {pred_dir}")
 
     jobs: List[Tuple[str, str]] = [
         (_task_name_from_path(p), str(p)) for p in csv_paths
@@ -639,7 +595,6 @@ def evaluate_submission(
         "families": families_out,
         "validated": validated,
         "extra_files": _extra_files(pred_dir),
-        "metadata": load_metadata(pred_dir),
     }
     if verbose:
         _print_report(result)
@@ -649,22 +604,6 @@ def evaluate_submission(
 # --------------------------------------------------------------------------- #
 # Reporting
 # --------------------------------------------------------------------------- #
-def _print_metadata(metadata: Dict[str, Any]) -> None:
-    fields = metadata.get("fields", {})
-    print("Method (metadata.yaml):")
-    if fields:
-        w = max(len(k) for k in fields)
-        for k in METADATA_FIELDS:
-            if k in fields:
-                print(f"  {k.ljust(w)} : {fields[k]}")
-    else:
-        print("  (no metadata fields found)")
-    for e in metadata.get("errors", []):
-        print(f"  [error]   {e}")
-    for warn in metadata.get("warnings", []):
-        print(f"  [warning] {warn}")
-
-
 def _print_report(result: Dict[str, Any]) -> None:
     tasks = result["tasks"]
     families = result["families"]
@@ -673,14 +612,9 @@ def _print_report(result: Dict[str, Any]) -> None:
     print("RelBench leaderboard submission report")
     print("=" * 80)
 
-    if result.get("metadata") is not None:
-        _print_metadata(result["metadata"])
-        print()
-
     extra = result.get("extra_files") or []
     if extra:
-        print("Not part of a submission (the server rejects these; --submit / --package "
-              "drop them when building the zip):")
+        print("Not part of a submission (--package drops these when building the zip):")
         for name in extra:
             print(f"  - {name}")
         print()
@@ -730,65 +664,22 @@ def _print_report(result: Dict[str, Any]) -> None:
 # --------------------------------------------------------------------------- #
 # CLI
 # --------------------------------------------------------------------------- #
-# Default leaderboard submission service (the RelBench validator Space). Override with
-# --endpoint or the RELBENCH_LEADERBOARD_ENDPOINT environment variable.
-DEFAULT_ENDPOINT = "https://stanford-star-relbench-validator.hf.space"
+# Where validated submissions are turned into leaderboard entries: a submission is a GitHub
+# issue on the RelBench repository, created from the submission form with the prediction
+# tables attached. CI validates it and a maintainer approval publishes the entry.
+SUBMISSION_ISSUE_URL = (
+    "https://github.com/stanford-star/relbench/issues/new?template=submission.yml"
+)
 
-
-def _prompt_metadata(pred_dir: Union[str, os.PathLike]) -> None:
-    r"""Interactively collect method metadata and write ``<pred_dir>/metadata.yaml``."""
-    print(f"\nNo {METADATA_FILENAME} found — let's create one.")
-
-    def ask(label: str, *, required: bool = False, choices: Optional[List[str]] = None) -> str:
-        while True:
-            val = input(f"  {label}: ").strip()
-            if not val:
-                if required:
-                    print("    (required)")
-                    continue
-                return ""
-            if choices and val not in choices:
-                print(f"    (choose one of: {', '.join(choices)})")
-                continue
-            return val
-
-    fields: Dict[str, Any] = {
-        "name": ask("name (display name)", required=True),
-        "type": ask("type (fine-tuned / in-context)", required=True,
-                    choices=sorted(METADATA_ENUMS["type"])),
-    }
-    url = ask("url (optional — paper / project / code link)")
-    if url:
-        fields["url"] = url
-    note = ask("note (optional)")
-    if note:
-        fields["note"] = note
-
-    path = Path(pred_dir) / METADATA_FILENAME
-    path.write_text(yaml.safe_dump(fields, sort_keys=False))
-    print(f"  wrote {path}")
-
-
-def _clean_metadata_text(path: Path) -> str:
-    r"""Serialize ``metadata.yaml`` keeping only the recognized, non-empty fields.
-
-    Unknown fields (already reported as warnings by :func:`load_metadata`) are dropped so
-    the prepared submission carries exactly the fields the leaderboard uses.
-    """
-    raw = yaml.safe_load(path.read_text())
-    fields = {k: raw[k] for k in METADATA_FIELDS if k in raw and raw[k] not in (None, "")}
-    dropped = sorted(set(raw) - set(fields))
-    if dropped:
-        print("\nDropping unrecognized metadata field(s) from the submission: "
-              + ", ".join(dropped))
-    return yaml.safe_dump(fields, sort_keys=False)
+# GitHub caps issue attachments at 25 MB each; above that the per-task .csv.gz files must
+# be attached individually instead of one zip.
+_ATTACHMENT_LIMIT = 25 * 1024 * 1024
 
 
 def _zip_submission(pred_dir: Union[str, os.PathLike], extra: Sequence[str]) -> bytes:
-    r"""Zip the submission (prediction CSVs + ``metadata.yaml`` only) and return the bytes.
+    r"""Zip the submission (prediction tables only) and return the bytes.
 
-    Anything else in the directory (``extra``) is reported and left out of the zip, and
-    ``metadata.yaml`` is rewritten with only the recognized fields.
+    Anything else in the directory (``extra``) is reported and left out of the zip.
     """
     import io
     import zipfile
@@ -801,37 +692,44 @@ def _zip_submission(pred_dir: Union[str, os.PathLike], extra: Sequence[str]) -> 
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         for p in sorted(pred_dir.iterdir()):
-            if p.is_file() and p.suffix == ".csv":
+            if p.is_file() and _is_prediction_file(p):
                 zf.write(p, p.name)
-        zf.writestr(METADATA_FILENAME, _clean_metadata_text(pred_dir / METADATA_FILENAME))
     return buf.getvalue()
 
 
-def _upload(zip_bytes: bytes, endpoint: str) -> bool:
-    r"""POST the submission zip to the service's ``/submit`` and print the verdict.
+def _package(pred_dir: Union[str, os.PathLike], extra: Sequence[str], out: Path) -> None:
+    r"""Write the submission zip and print how to submit it.
 
-    The service re-validates and, on success, opens a pull request. Returns True if it
-    accepted the submission (pending review, or a dry run).
+    If the zip exceeds GitHub's per-attachment limit, also write per-task ``.csv.gz``
+    files (each far smaller than the zip) to ``<out>.d/`` and point the user at those.
     """
-    import requests  # lazy import: keep the validation path dependency-light
+    import gzip
+    import shutil
 
-    url = endpoint.rstrip("/") + "/submit"
-    print(f"\nUploading to {url} (this can take a minute — the server re-validates) ...")
-    resp = requests.post(
-        url, files={"file": ("submission.zip", zip_bytes, "application/zip")}, timeout=1800
-    )
-    try:
-        data = resp.json()
-    except ValueError:
-        print(f"  service returned HTTP {resp.status_code}: {resp.text[:300]}")
-        return False
-    print(f"  status: {data.get('status', 'error')}")
-    message = data.get("message") or data.get("detail")
-    if message:
-        print(f"  {message}")
-    if data.get("pr_url"):
-        print(f"  pull request: {data['pr_url']}")
-    return data.get("status") in ("pending_review", "dry_run")
+    zip_bytes = _zip_submission(pred_dir, extra)
+    out.write_bytes(zip_bytes)
+    print(f"\nCreated submission package: {out} ({len(zip_bytes) / 1e6:.1f} MB)")
+
+    attach = f"attach {out.name}"
+    if len(zip_bytes) > _ATTACHMENT_LIMIT:
+        gz_dir = out.with_suffix(out.suffix + ".d")
+        gz_dir.mkdir(exist_ok=True)
+        for p in sorted(Path(pred_dir).iterdir()):
+            if not (p.is_file() and _is_prediction_file(p)):
+                continue
+            gz = gz_dir / (p.name if p.name.endswith(".gz") else p.name + ".gz")
+            if p.name.endswith(".gz"):
+                shutil.copyfile(p, gz)
+            else:
+                with open(p, "rb") as f_in, gzip.open(gz, "wb") as f_out:
+                    shutil.copyfileobj(f_in, f_out)
+        print(f"The zip exceeds GitHub's 25 MB attachment limit, so the per-task "
+              f".csv.gz files were also written to {gz_dir}/")
+        attach = f"attach the .csv.gz files from {gz_dir.name}/"
+
+    print("\nSubmit by opening a submission issue and dragging the file(s) into it:")
+    print(f"  {SUBMISSION_ISSUE_URL}")
+    print(f"  ({attach}; method name, type and links are entered in the issue form)")
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
@@ -853,26 +751,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     )
     parser.add_argument("--quiet", action="store_true", help="suppress the printed report")
     parser.add_argument(
-        "--submit",
-        action="store_true",
-        help="validate, build a clean zip (CSVs + metadata.yaml; prompts for metadata if "
-             "missing, drops anything else), and upload it to the leaderboard service",
-    )
-    parser.add_argument(
         "--package",
         action="store_true",
-        help="like --submit but only write the zip locally (and print how to submit it) "
-             "instead of uploading",
+        help="after validating, write a clean submission zip (prediction tables only) and "
+             "print how to submit it as a GitHub issue",
     )
     parser.add_argument(
         "--out",
         default=None,
         help="output zip path for --package (default: <dir-name>.zip in the cwd)",
-    )
-    parser.add_argument(
-        "--endpoint",
-        default=os.getenv("RELBENCH_LEADERBOARD_ENDPOINT", DEFAULT_ENDPOINT),
-        help="submission service URL for --submit (and shown in --package instructions)",
     )
     args = parser.parse_args(argv)
 
@@ -880,33 +767,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         args.pred_dir, num_workers=args.num_workers, verbose=not args.quiet
     )
 
-    if args.submit or args.package:
-        # Create metadata.yaml interactively if it isn't there, then re-read it.
-        if not (Path(args.pred_dir) / METADATA_FILENAME).exists():
-            _prompt_metadata(args.pred_dir)
-        metadata = load_metadata(args.pred_dir)
-        if metadata["errors"]:
-            print("\nCannot submit — metadata.yaml issues: " + "; ".join(metadata["errors"]))
-            return 1
+    if args.package:
         if not result["validated"]:
-            print("\nCannot submit — no leaderboard was validated; fix the prediction "
+            print("\nCannot package — no leaderboard was validated; fix the prediction "
                   "tables first.")
             return 1
-
-        # The local tooling drops non-submission files so the uploaded zip is clean (the
-        # server rejects a submission that still contains extra files).
-        extra = result.get("extra_files") or []
-        if args.package:
-            out = Path(args.out or f"{Path(args.pred_dir).resolve().name}.zip")
-            out.write_bytes(_zip_submission(args.pred_dir, extra))
-            endpoint = args.endpoint.rstrip("/")
-            print(f"\nCreated submission package: {out}")
-            print("Submit it with:\n")
-            print(f'  curl -F "file=@{out}" {endpoint}/submit')
-            print("or upload it at https://tabular.stanford.edu/leaderboard/submit/")
-            return 0
-
-        return 0 if _upload(_zip_submission(args.pred_dir, extra), args.endpoint) else 1
+        out = Path(args.out or f"{Path(args.pred_dir).resolve().name}.zip")
+        _package(args.pred_dir, result.get("extra_files") or [], out)
+        return 0
 
     return 0 if result["validated"] else 1
 

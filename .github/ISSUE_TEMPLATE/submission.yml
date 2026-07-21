@@ -1,0 +1,56 @@
+name: Leaderboard submission
+description: Submit prediction tables to the RelBench leaderboards.
+title: "[Submission] "
+labels: ["leaderboard-submission"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for submitting to the RelBench leaderboards! Please validate and package
+        your prediction tables locally first:
+
+        ```
+        python -m relbench.leaderboard <submission_dir> --package
+        ```
+
+        Validation runs automatically when you open (or edit) this issue and posts a
+        report as a comment. A maintainer then reviews it; on approval your entry is
+        published to the leaderboard.
+  - type: input
+    id: method-name
+    attributes:
+      label: Method name
+      description: Display name shown on the leaderboard.
+      placeholder: RelGNN
+    validations:
+      required: true
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type
+      options:
+        - fine-tuned
+        - in-context
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: URL
+      description: Paper / project / code link (optional).
+      placeholder: https://arxiv.org/abs/...
+  - type: textarea
+    id: note
+    attributes:
+      label: Note
+      description: Caveats or evaluation details, shown on hover (optional).
+  - type: textarea
+    id: files
+    attributes:
+      label: Prediction files
+      description: >
+        Drag your submission zip here (from --package). GitHub caps attachments at
+        25 MB each — if your zip is larger, attach the per-task .csv.gz files instead.
+      placeholder: Attach files by dragging them into this text area.
+    validations:
+      required: true

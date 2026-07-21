@@ -1,0 +1,88 @@
+name: Publish leaderboard entry
+
+# A maintainer approves a validated submission by adding the "approved" label (only users
+# with triage permission can label). The submission is re-validated from scratch (the
+# issue may have been edited since the last validation), the entry JSON is written to
+# leaderboard/entries/<issue>.json, leaderboard/leaderboard.json is regenerated from all
+# entries, and the issue is closed. Entries are keyed by issue number, so concurrent
+# publishes cannot conflict; the concurrency group serializes the pushes anyway.
+on:  # yamllint disable-line rule:truthy
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: leaderboard-publish
+
+jobs:
+  publish:
+    if: >
+      github.event.label.name == 'approved' &&
+      contains(github.event.issue.labels.*.name, 'leaderboard-submission')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install relbench
+        run: pip install .
+
+      - name: Cache RelBench task tables
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: relbench-leaderboard-hf-cache
+
+      - name: Write issue body to file
+        env:
+          BODY: ${{ github.event.issue.body }}
+        run: printf '%s' "$BODY" > /tmp/issue_body.md
+
+      - name: Re-validate and build entry
+        run: |
+          python .github/scripts/leaderboard_submission.py \
+            --body /tmp/issue_body.md --report /tmp/report.md \
+            --entry leaderboard/entries/${{ github.event.issue.number }}.json \
+            --aggregate leaderboard/leaderboard.json \
+            --issue ${{ github.event.issue.number }} \
+            --author "${{ github.event.issue.user.login }}"
+
+      - name: Commit entry
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add leaderboard/
+          git commit -m "Leaderboard entry from #${{ github.event.issue.number }}"
+          for i in 1 2 3; do
+            git push && break
+            git pull --rebase && sleep $i
+          done
+
+      - name: Close issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue close ${{ github.event.issue.number }} --repo ${{ github.repository }} \
+            --comment "Published to the leaderboard: https://star-project.stanford.edu/relbench/leaderboard/"
+
+      - name: Report failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue comment ${{ github.event.issue.number }} --repo ${{ github.repository }} \
+            --body-file /tmp/report.md || true
+          gh issue comment ${{ github.event.issue.number }} --repo ${{ github.repository }} \
+            --body "Publishing failed — re-validation did not pass (see the report above)." || true
+          gh issue edit ${{ github.event.issue.number }} --repo ${{ github.repository }} \
+            --remove-label approved || true

@@ -73,7 +73,7 @@ Open these directly in Google Colab — no setup required:
 RelBench has three independent leaderboards — **classification**, **regression**, and
 **recommendation** — each scored separately. A submission to one is a directory of
 **prediction-table CSVs**, one per task, each named `<dataset>__<task>.csv` (a double
-underscore between dataset and task).
+underscore between dataset and task; gzipped `.csv.gz` also works).
 
 A prediction table is a task's test table with the target column replaced by your model's
 predictions:
@@ -82,20 +82,10 @@ predictions:
 - **regression** — a numeric prediction on the original target scale;
 - **recommendation** — the top-`eval_k` predicted destination entity ids, as a JSON list per row.
 
-Alongside the CSVs, include a **`metadata.yaml`** describing the method — this is what the
-leaderboard displays. `name` and `type` are required; `url` and `note` are
-optional. The submission date is recorded automatically.
-
-```yaml
-name: RelGNN                    # required — display name
-type: fine-tuned               # required — fine-tuned | in-context
-url: https://arxiv.org/abs/... # optional — paper / project / code link
-note: caveats / eval details, shown on hover   # optional
-```
-
-A submission is just the prediction CSVs and `metadata.yaml` — the server **rejects** a
-submission that contains anything else (saved arrays, logs, subdirectories). The `--submit` /
-`--package` tooling below lists and drops such files for you, so the zip it uploads is clean.
+A submission is just the prediction CSVs — method metadata (name, type, links) is entered
+in the submission form on GitHub, not carried in the directory. The `--package` tooling
+below lists and drops any other files (saved arrays, logs, subdirectories), so the zip it
+builds is clean.
 
 Write these from code with `relbench.leaderboard.write_prediction_table(task, pred, path)`,
 and score a single task with `relbench.leaderboard.evaluate_task(task_name, csv)` (where
@@ -117,23 +107,22 @@ python -m relbench.leaderboard <submission_dir>
 
 For every task this checks coverage (a prediction for each test point), key uniqueness and
 an exact match against the ground-truth test table, and value ranges; it then prints
-per-task metrics, per-leaderboard aggregate metrics, and a verdict for each leaderboard. It
-also parses and validates `metadata.yaml`, printing the method metadata and flagging any
-missing required field or out-of-range value.
+per-task metrics, per-leaderboard aggregate metrics, and a verdict for each leaderboard.
 
-Once a leaderboard is **validated**, submit straight from the CLI:
+Once a leaderboard is **validated**, package the submission:
 
 ```bash
-python -m relbench.leaderboard <submission_dir> --submit
+python -m relbench.leaderboard <submission_dir> --package
 ```
 
-This re-validates, **prompts you for the `metadata.yaml` fields if it's missing** (and writes
-it), builds a clean zip (only the prediction CSVs + `metadata.yaml`), and uploads it. Use
-`--package` instead to only write the zip locally (e.g. to upload via the website) and print
-the submit command. The submission is re-validated server-side and, on success, opens a pull
-request for maintainer review; your entry appears on the leaderboard once it is merged. You
-can also upload a zip on the website at
-[**tabular.stanford.edu/leaderboard/submit**](https://tabular.stanford.edu/leaderboard/submit/).
+This re-validates and writes a clean zip of the prediction tables. Then [**open a
+submission issue**](https://github.com/stanford-star/relbench/issues/new?template=submission.yml)
+on this repository: fill in the method name, type, and links in the form, and drag the zip
+into it (GitHub caps attachments at 25 MB each — if your zip is larger, `--package` also
+writes per-task `.csv.gz` files to attach individually). The submission is re-validated
+automatically and the report is posted as a comment; once a maintainer approves, your
+entry is published to the
+[**leaderboard**](https://star-project.stanford.edu/relbench/leaderboard/).
 
 ## Contributing
 

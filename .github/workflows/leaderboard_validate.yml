@@ -1,0 +1,66 @@
+name: Validate leaderboard submission
+
+# Runs on every leaderboard submission issue (and whenever it is edited): downloads the
+# attached prediction tables, scores them against the test tables, and posts the report
+# as an issue comment. Only issue *data* is consumed — no submitter code ever runs.
+on:  # yamllint disable-line rule:truthy
+  issues:
+    types: [opened, edited]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  validate:
+    if: contains(github.event.issue.labels.*.name, 'leaderboard-submission')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install relbench
+        run: pip install .
+
+      - name: Cache RelBench task tables
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: relbench-leaderboard-hf-cache
+
+      - name: Write issue body to file
+        env:
+          BODY: ${{ github.event.issue.body }}
+        run: printf '%s' "$BODY" > /tmp/issue_body.md
+
+      - name: Validate submission
+        id: validate
+        run: |
+          python .github/scripts/leaderboard_submission.py \
+            --body /tmp/issue_body.md --report /tmp/report.md
+
+      - name: Post report
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue comment ${{ github.event.issue.number }} \
+            --repo ${{ github.repository }} --body-file /tmp/report.md
+
+      - name: Update labels
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ steps.validate.outcome }}" = "success" ]; then
+            gh issue edit ${{ github.event.issue.number }} --repo ${{ github.repository }} \
+              --add-label leaderboard-validated --remove-label leaderboard-invalid || true
+          else
+            gh issue edit ${{ github.event.issue.number }} --repo ${{ github.repository }} \
+              --add-label leaderboard-invalid --remove-label leaderboard-validated || true
+          fi
