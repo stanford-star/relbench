@@ -535,6 +535,13 @@ def evaluate_submission(
     if num_workers is None:
         num_workers = min(len(jobs), os.cpu_count() or 1)
 
+    if verbose:
+        print(
+            f"Evaluating {len(jobs)} prediction tables with {num_workers} workers "
+            f"(downloading task data from the Hub if not cached)...",
+            flush=True,
+        )
+
     _quiet_hf_progress()
     if num_workers <= 1:
         raw = [_evaluate_one(job) for job in jobs]
