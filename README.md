@@ -118,8 +118,7 @@ python -m relbench.leaderboard <submission_dir> --package
 This re-validates and writes a clean zip of the prediction tables. Then [**open a
 submission issue**](https://github.com/stanford-star/relbench/issues/new?template=submission.yml)
 on this repository: fill in the method name, type, and links in the form, and drag the zip
-into it (GitHub caps attachments at 25 MB each — if your zip is larger, `--package` also
-writes per-task `.csv.gz` files to attach individually). The submission is re-validated
+into it. The submission is re-validated
 automatically and the report is posted as a comment; once a maintainer approves, your
 entry is published to the
 [**leaderboard**](https://star-project.stanford.edu/relbench/leaderboard/).

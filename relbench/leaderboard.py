@@ -671,11 +671,6 @@ SUBMISSION_ISSUE_URL = (
     "https://github.com/stanford-star/relbench/issues/new?template=submission.yml"
 )
 
-# GitHub caps issue attachments at 25 MB each; above that the per-task .csv.gz files must
-# be attached individually instead of one zip.
-_ATTACHMENT_LIMIT = 25 * 1024 * 1024
-
-
 def _zip_submission(pred_dir: Union[str, os.PathLike], extra: Sequence[str]) -> bytes:
     r"""Zip the submission (prediction tables only) and return the bytes.
 
@@ -698,38 +693,13 @@ def _zip_submission(pred_dir: Union[str, os.PathLike], extra: Sequence[str]) -> 
 
 
 def _package(pred_dir: Union[str, os.PathLike], extra: Sequence[str], out: Path) -> None:
-    r"""Write the submission zip and print how to submit it.
-
-    If the zip exceeds GitHub's per-attachment limit, also write per-task ``.csv.gz``
-    files (each far smaller than the zip) to ``<out>.d/`` and point the user at those.
-    """
-    import gzip
-    import shutil
-
+    r"""Write the submission zip and print how to submit it."""
     zip_bytes = _zip_submission(pred_dir, extra)
     out.write_bytes(zip_bytes)
     print(f"\nCreated submission package: {out} ({len(zip_bytes) / 1e6:.1f} MB)")
-
-    attach = f"attach {out.name}"
-    if len(zip_bytes) > _ATTACHMENT_LIMIT:
-        gz_dir = out.with_suffix(out.suffix + ".d")
-        gz_dir.mkdir(exist_ok=True)
-        for p in sorted(Path(pred_dir).iterdir()):
-            if not (p.is_file() and _is_prediction_file(p)):
-                continue
-            gz = gz_dir / (p.name if p.name.endswith(".gz") else p.name + ".gz")
-            if p.name.endswith(".gz"):
-                shutil.copyfile(p, gz)
-            else:
-                with open(p, "rb") as f_in, gzip.open(gz, "wb") as f_out:
-                    shutil.copyfileobj(f_in, f_out)
-        print(f"The zip exceeds GitHub's 25 MB attachment limit, so the per-task "
-              f".csv.gz files were also written to {gz_dir}/")
-        attach = f"attach the .csv.gz files from {gz_dir.name}/"
-
-    print("\nSubmit by opening a submission issue and dragging the file(s) into it:")
+    print("\nSubmit by opening a submission issue and dragging the zip into it:")
     print(f"  {SUBMISSION_ISSUE_URL}")
-    print(f"  ({attach}; method name, type and links are entered in the issue form)")
+    print("  (method name, type and links are entered in the issue form)")
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:

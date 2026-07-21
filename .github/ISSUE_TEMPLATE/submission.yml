@@ -48,9 +48,7 @@ body:
     id: files
     attributes:
       label: Prediction files
-      description: >
-        Drag your submission zip here (from --package). GitHub caps attachments at
-        25 MB each — if your zip is larger, attach the per-task .csv.gz files instead.
+      description: Drag your submission zip here (from --package).
       placeholder: Attach files by dragging them into this text area.
     validations:
       required: true
