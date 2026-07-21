@@ -318,4 +318,4 @@ def test_evaluate_submission_reports_task_errors(fake_ds_dir, tmp_path, monkeypa
     assert entry["metric"] is None
     assert "missing" in entry["error"]
     assert "rel-amazon/user-churn" in result["families"]["classification"]["invalid"]
-    assert result["suitable"] == []
+    assert result["validated"] == []
