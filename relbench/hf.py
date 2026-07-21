@@ -66,11 +66,14 @@ def resolve_repo(spec: str) -> tuple[str, str]:
     return f"{parts[0]}/{parts[1]}", "/".join(parts[2:])
 
 
+@lru_cache(maxsize=None)
 def download_dataset_dir(spec: str, revision: Optional[str] = None) -> Path:
     r"""Download a dataset from the Hub and return its local directory.
 
     Only the addressed sub-path is fetched, so loading ``stanford-star/relbench/rel-f1`` does not pull
-    every dataset in ``stanford-star/relbench``.
+    every dataset in ``stanford-star/relbench``. Cached per ``(spec, revision)`` within a
+    process, so loading several tasks of one dataset hits the Hub (and prints progress
+    bars) only once.
     """
     from huggingface_hub import snapshot_download
 

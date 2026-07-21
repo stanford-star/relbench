@@ -433,6 +433,22 @@ def _task_name_from_path(path: Path) -> str:
     return f"{dataset_name}/{name}"
 
 
+def _quiet_hf_progress() -> None:
+    r"""Disable huggingface_hub progress bars.
+
+    Every task triggers a (usually fully cached) ``snapshot_download`` of its dataset, so
+    a multi-task submission would otherwise print dozens of no-op "Fetching N files" /
+    "Download complete: 0.00B" bars. Called in the parent and as the process-pool
+    initializer, since the setting is per-process.
+    """
+    try:
+        from huggingface_hub.utils import disable_progress_bars
+
+        disable_progress_bars()
+    except Exception:  # noqa: BLE001 -- cosmetic only; never fail evaluation over it
+        pass
+
+
 def _evaluate_one(job: Tuple[str, str]) -> Tuple[str, Dict[str, Any]]:
     r"""Process-pool worker: score one task, capturing success or a failure reason.
 
@@ -519,10 +535,13 @@ def evaluate_submission(
     if num_workers is None:
         num_workers = min(len(jobs), os.cpu_count() or 1)
 
+    _quiet_hf_progress()
     if num_workers <= 1:
         raw = [_evaluate_one(job) for job in jobs]
     else:
-        with ProcessPoolExecutor(max_workers=num_workers) as executor:
+        with ProcessPoolExecutor(
+            max_workers=num_workers, initializer=_quiet_hf_progress
+        ) as executor:
             raw = list(executor.map(_evaluate_one, jobs))
 
     tasks_out: Dict[str, Dict[str, Any]] = {}
