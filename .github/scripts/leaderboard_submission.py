@@ -30,13 +30,14 @@ from pathlib import Path
 
 from relbench.leaderboard import evaluate_submission
 
-# Issue-form section headings (as rendered by GitHub) -> entry fields.
+# Issue-form section headings (as rendered by GitHub) -> entry fields. The "In-context"
+# checkbox section is handled separately (rendered as a "- [x] ..." task list).
 FORM_FIELDS = {
     "Method name": "name",
-    "Type": "type",
     "URL": "url",
     "Note": "note",
 }
+IN_CONTEXT_HEADING = "In-context"
 NO_RESPONSE = "_No response_"
 
 # Leaderboard family (relbench.leaderboard) -> board key used by the website.
@@ -78,11 +79,10 @@ def form_metadata(sections: dict) -> tuple[dict, list[str]]:
         val = sections.get(heading, "").strip()
         if val and val != NO_RESPONSE:
             fields[key] = val
+    fields["in_context"] = "[x]" in sections.get(IN_CONTEXT_HEADING, "").lower()
     errors = []
     if not fields.get("name"):
         errors.append("the form is missing the method name")
-    if fields.get("type") not in ("fine-tuned", "in-context"):
-        errors.append("the form 'Type' must be 'fine-tuned' or 'in-context'")
     return fields, errors
 
 
@@ -126,7 +126,8 @@ def download_attachments(body: str, dest: Path) -> list[str]:
 def write_report(path: Path, fields: dict, problems: list, result: dict | None) -> None:
     lines = ["## RelBench leaderboard validation report", ""]
     if fields:
-        lines += [f"**{fields.get('name', '?')}** ({fields.get('type', '?')})", ""]
+        kind = "in-context" if fields.get("in_context") else "trained"
+        lines += [f"**{fields.get('name', '?')}** ({kind})", ""]
     for p in problems:
         lines.append(f"- :x: {p}")
     if problems:
@@ -170,7 +171,7 @@ def build_entry(fields: dict, result: dict, issue: int, author: str) -> dict:
         }
     return {
         "name": fields.get("name"),
-        "type": fields.get("type"),
+        "in_context": bool(fields.get("in_context")),
         "url": fields.get("url"),
         "note": fields.get("note"),
         "date": datetime.now(timezone.utc).strftime("%Y-%m"),

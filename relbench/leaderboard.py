@@ -112,7 +112,7 @@ _LINK_PAD = -1
 # Submission directory contents
 # --------------------------------------------------------------------------- #
 # A submission is just the prediction tables: one ``<dataset>__<task>.csv`` (or
-# ``.csv.gz``) per task. Method metadata (name, type, url, note) is entered in the GitHub
+# ``.csv.gz``) per task. Method metadata (name, url, note, in-context flag) is entered in the GitHub
 # submission-issue form, not carried in the directory.
 def _is_prediction_file(p: Path) -> bool:
     return p.suffix == ".csv" or p.name.endswith(".csv.gz")
@@ -699,7 +699,7 @@ def _package(pred_dir: Union[str, os.PathLike], extra: Sequence[str], out: Path)
     print(f"\nCreated submission package: {out} ({len(zip_bytes) / 1e6:.1f} MB)")
     print("\nSubmit by opening a submission issue and dragging the zip into it:")
     print(f"  {SUBMISSION_ISSUE_URL}")
-    print("  (method name, type and links are entered in the issue form)")
+    print("  (method name, links and the in-context flag are entered in the issue form)")
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:

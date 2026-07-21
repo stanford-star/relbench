@@ -82,7 +82,7 @@ predictions:
 - **regression** — a numeric prediction on the original target scale;
 - **recommendation** — the top-`eval_k` predicted destination entity ids, as a JSON list per row.
 
-A submission is just the prediction CSVs — method metadata (name, type, links) is entered
+A submission is just the prediction CSVs — method metadata (name, links, in-context flag) is entered
 in the submission form on GitHub, not carried in the directory. The `--package` tooling
 below lists and drops any other files (saved arrays, logs, subdirectories), so the zip it
 builds is clean.
@@ -117,7 +117,7 @@ python -m relbench.leaderboard <submission_dir> --package
 
 This re-validates and writes a clean zip of the prediction tables. Then [**open a
 submission issue**](https://github.com/stanford-star/relbench/issues/new?template=submission.yml)
-on this repository: fill in the method name, type, and links in the form, and drag the zip
+on this repository: fill in the method name, links, and the in-context checkbox ("no training on the target database") in the form, and drag the zip
 into it. The submission is re-validated
 automatically and the report is posted as a comment; once a maintainer approves, your
 entry is published to the

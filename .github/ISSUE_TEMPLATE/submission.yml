@@ -24,15 +24,12 @@ body:
       placeholder: RelGNN
     validations:
       required: true
-  - type: dropdown
-    id: type
+  - type: checkboxes
+    id: in-context
     attributes:
-      label: Type
+      label: In-context
       options:
-        - fine-tuned
-        - in-context
-    validations:
-      required: true
+        - label: This method is in-context — no training on the target database.
   - type: input
     id: url
     attributes:
