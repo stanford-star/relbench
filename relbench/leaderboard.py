@@ -18,8 +18,7 @@ the target column replaced by predictions:
   source row, the top-``eval_k`` predicted destination ids (same id space as the
   ground-truth destination lists), encoded as a JSON list string in the CSV cell.
 
-Prediction tables are stored as CSV (optionally gzipped, ``.csv.gz``). Their *key columns*
-(the non-prediction columns that
+Prediction tables are stored as CSV. Their *key columns* (the non-prediction columns that
 uniquely identify a test row) are ``[entity_col, time_col]`` for an EntityTask and
 ``[src_entity_col, time_col]`` for a RecommendationTask; they must form a 1:1 bijection
 with the ground-truth test table (every test row covered exactly once, no extras, no
@@ -111,11 +110,10 @@ _LINK_PAD = -1
 # --------------------------------------------------------------------------- #
 # Submission directory contents
 # --------------------------------------------------------------------------- #
-# A submission is just the prediction tables: one ``<dataset>__<task>.csv`` (or
-# ``.csv.gz``) per task. Method metadata (name, url, note, in-context flag) is entered in the GitHub
+# A submission is just the prediction tables: one ``<dataset>__<task>.csv`` per task. Method metadata (name, url, note, in-context flag) is entered in the GitHub
 # submission-issue form, not carried in the directory.
 def _is_prediction_file(p: Path) -> bool:
-    return p.suffix == ".csv" or p.name.endswith(".csv.gz")
+    return p.suffix == ".csv"
 
 
 def _extra_files(pred_dir: Union[str, os.PathLike]) -> List[str]:
@@ -423,16 +421,12 @@ def evaluate_task(
 # evaluate_submission
 # --------------------------------------------------------------------------- #
 def _task_name_from_path(path: Path) -> str:
-    r"""``<dataset>__<task>.csv[.gz]`` -> ``<dataset>/<task>``.
+    r"""``<dataset>__<task>.csv`` -> ``<dataset>/<task>``.
 
     The first double underscore separates dataset from task; task names may contain single
     hyphens (and are otherwise left untouched).
     """
-    stem = path.name
-    for suffix in (".csv.gz", ".csv"):
-        if stem.endswith(suffix):
-            stem = stem[: -len(suffix)]
-            break
+    stem = path.stem
     if "__" not in stem:
         return stem
     dataset_name, name = stem.split("__", 1)
@@ -468,7 +462,7 @@ def evaluate_submission(
 ) -> Dict[str, Any]:
     r"""Evaluate a directory of prediction CSVs as a leaderboard submission.
 
-    Discovers ``*.csv`` / ``*.csv.gz`` files in ``pred_dir`` (filename convention
+    Discovers ``*.csv`` files in ``pred_dir`` (filename convention
     ``<dataset>__<task>.csv`` -> task ``<dataset>/<task>``), scores every task in parallel,
     groups results by leaderboard family, and reports per-family suitability.
 
@@ -514,9 +508,9 @@ def evaluate_submission(
             }
     """
     pred_dir = Path(pred_dir)
-    csv_paths = sorted(list(pred_dir.glob("*.csv")) + list(pred_dir.glob("*.csv.gz")))
+    csv_paths = sorted(pred_dir.glob("*.csv"))
     if not csv_paths:
-        raise FileNotFoundError(f"no prediction CSVs (*.csv / *.csv.gz) found in {pred_dir}")
+        raise FileNotFoundError(f"no prediction CSVs (*.csv) found in {pred_dir}")
 
     jobs: List[Tuple[str, str]] = [
         (_task_name_from_path(p), str(p)) for p in csv_paths

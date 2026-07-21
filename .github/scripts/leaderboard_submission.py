@@ -2,7 +2,7 @@ r"""CI driver for GitHub-issue leaderboard submissions.
 
 A submission is an issue created from ``.github/ISSUE_TEMPLATE/submission.yml``: the form
 fields carry the method metadata (name, type, url, note) and the prediction tables are
-attached to the issue body (one zip, or per-task ``.csv.gz`` files).
+attached to the issue body as a zip.
 
 This script is run by the leaderboard workflows with the issue body in a file:
 
@@ -93,8 +93,7 @@ def download_attachments(body: str, dest: Path) -> list[str]:
     """
     urls = ATTACHMENT_RE.findall(body)
     if not urls:
-        return ["no attachments found — drag the submission zip (or the per-task "
-                ".csv.gz files) into the issue body"]
+        return ["no attachments found — drag the submission zip into the issue body"]
     problems = []
     for url in urls:
         name = url.rstrip("/").rsplit("/", 1)[-1]
@@ -112,7 +111,7 @@ def download_attachments(body: str, dest: Path) -> list[str]:
                 with zipfile.ZipFile(target) as zf:
                     for info in zf.infolist():
                         base = Path(info.filename).name  # flatten; ignore any dirs
-                        if not (base.endswith(".csv") or base.endswith(".csv.gz")):
+                        if not base.endswith(".csv"):
                             continue
                         with zf.open(info) as src, open(dest / base, "wb") as out:
                             while chunk := src.read(1 << 20):
@@ -207,7 +206,7 @@ def main() -> int:
     with tempfile.TemporaryDirectory() as tmp:
         pred_dir = Path(tmp)
         problems += download_attachments(body, pred_dir)
-        if not problems or any(pred_dir.glob("*.csv*")):
+        if not problems or any(pred_dir.glob("*.csv")):
             try:
                 result = evaluate_submission(
                     pred_dir, num_workers=args.num_workers, verbose=False

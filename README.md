@@ -73,7 +73,7 @@ Open these directly in Google Colab — no setup required:
 RelBench has three independent leaderboards — **classification**, **regression**, and
 **recommendation** — each scored separately. A submission to one is a directory of
 **prediction-table CSVs**, one per task, each named `<dataset>__<task>.csv` (a double
-underscore between dataset and task; gzipped `.csv.gz` also works).
+underscore between dataset and task).
 
 A prediction table is a task's test table with the target column replaced by your model's
 predictions:
