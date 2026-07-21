@@ -769,10 +769,26 @@ def _prompt_metadata(pred_dir: Union[str, os.PathLike]) -> None:
     print(f"  wrote {path}")
 
 
+def _clean_metadata_text(path: Path) -> str:
+    r"""Serialize ``metadata.yaml`` keeping only the recognized, non-empty fields.
+
+    Unknown fields (already reported as warnings by :func:`load_metadata`) are dropped so
+    the prepared submission carries exactly the fields the leaderboard uses.
+    """
+    raw = yaml.safe_load(path.read_text())
+    fields = {k: raw[k] for k in METADATA_FIELDS if k in raw and raw[k] not in (None, "")}
+    dropped = sorted(set(raw) - set(fields))
+    if dropped:
+        print("\nDropping unrecognized metadata field(s) from the submission: "
+              + ", ".join(dropped))
+    return yaml.safe_dump(fields, sort_keys=False)
+
+
 def _zip_submission(pred_dir: Union[str, os.PathLike], extra: Sequence[str]) -> bytes:
     r"""Zip the submission (prediction CSVs + ``metadata.yaml`` only) and return the bytes.
 
-    Anything else in the directory (``extra``) is reported and left out of the zip.
+    Anything else in the directory (``extra``) is reported and left out of the zip, and
+    ``metadata.yaml`` is rewritten with only the recognized fields.
     """
     import io
     import zipfile
@@ -785,8 +801,9 @@ def _zip_submission(pred_dir: Union[str, os.PathLike], extra: Sequence[str]) -> 
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         for p in sorted(pred_dir.iterdir()):
-            if p.is_file() and (p.suffix == ".csv" or p.name == METADATA_FILENAME):
+            if p.is_file() and p.suffix == ".csv":
                 zf.write(p, p.name)
+        zf.writestr(METADATA_FILENAME, _clean_metadata_text(pred_dir / METADATA_FILENAME))
     return buf.getvalue()
 
 
