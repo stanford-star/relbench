@@ -70,58 +70,32 @@ Open these directly in Google Colab — no setup required:
 
 ## Submitting to the leaderboard
 
-RelBench has three independent leaderboards — **classification**, **regression**, and
-**recommendation** — each scored separately. A submission to one is a directory of
-**prediction-table CSVs**, one per task, each named `<dataset>__<task>.csv` (a double
-underscore between dataset and task).
+The [**RelBench leaderboard**](https://star-project.stanford.edu/relbench/leaderboard/)
+ranks methods by their test-set performance, averaged over a fixed task set. There are
+three independent leaderboards — **classification** (12 tasks), **regression** (9), and
+**recommendation** (10); the task lists are in `relbench.leaderboard.LEADERBOARD_TASKS`.
+You can submit to any of them; each requires predictions for *all* of its tasks.
 
-A prediction table is a task's test table with the target column replaced by your model's
-predictions:
+To submit:
 
-- **binary classification** — a predicted probability in `[0, 1]`;
-- **regression** — a numeric prediction on the original target scale;
-- **recommendation** — the top-`eval_k` predicted destination entity ids, as a JSON list per row.
+1. **Write one prediction CSV per task**, named `<dataset>__<task>.csv`, into a directory:
 
-A submission is just the prediction CSVs — method metadata (name, links, in-context flag) is entered
-in the submission form on GitHub, not carried in the directory. The `--package` tooling
-below lists and drops any other files (saved arrays, logs, subdirectories), so the zip it
-builds is clean.
+   ```python
+   relbench.leaderboard.write_prediction_table(task, test_pred, "preds/rel-f1__driver-position.csv")
+   ```
 
-Write these from code with `relbench.leaderboard.write_prediction_table(task, pred, path)`,
-and score a single task with `relbench.leaderboard.evaluate_task(task_name, csv)` (where
-`task_name` is `"<dataset>/<task>"`).
+2. **Validate and package** the directory — this scores every CSV against the test tables,
+   prints a verdict per leaderboard, and writes a clean submission zip:
 
-Each leaderboard is graded over its **complete** task set — **classification** has 12 tasks,
-**regression** 9, and **recommendation** 10. The exact lists live in
-`relbench.leaderboard.LEADERBOARD_TASKS`:
+   ```bash
+   python -m relbench.leaderboard preds/ --package
+   ```
 
-- **Classification** (12): `rel-amazon/user-churn`, `rel-amazon/item-churn`, `rel-avito/user-visits`, `rel-avito/user-clicks`, `rel-event/user-repeat`, `rel-event/user-ignore`, `rel-f1/driver-dnf`, `rel-f1/driver-top3`, `rel-hm/user-churn`, `rel-stack/user-engagement`, `rel-stack/user-badge`, `rel-trial/study-outcome`
-- **Regression** (9): `rel-amazon/user-ltv`, `rel-amazon/item-ltv`, `rel-avito/ad-ctr`, `rel-event/user-attendance`, `rel-f1/driver-position`, `rel-hm/item-sales`, `rel-stack/post-votes`, `rel-trial/study-adverse`, `rel-trial/site-success`
-- **Recommendation** (10): `rel-amazon/user-item-purchase`, `rel-amazon/user-item-rate`, `rel-amazon/user-item-review`, `rel-avito/user-ad-visit`, `rel-f1/driver-circuit-compete`, `rel-hm/user-item-purchase`, `rel-stack/user-post-comment`, `rel-stack/post-post-related`, `rel-trial/condition-sponsor-run`, `rel-trial/site-sponsor-run`
+3. **[Open a submission issue](https://github.com/stanford-star/relbench/issues/new?template=submission.yml)**
+   on this repository: fill in the short form and drag the zip into it.
 
-Validate locally before sending:
-
-```bash
-python -m relbench.leaderboard <submission_dir>
-```
-
-For every task this checks coverage (a prediction for each test point), key uniqueness and
-an exact match against the ground-truth test table, and value ranges; it then prints
-per-task metrics, per-leaderboard aggregate metrics, and a verdict for each leaderboard.
-
-Once a leaderboard is **validated**, package the submission:
-
-```bash
-python -m relbench.leaderboard <submission_dir> --package
-```
-
-This re-validates and writes a clean zip of the prediction tables. Then [**open a
-submission issue**](https://github.com/stanford-star/relbench/issues/new?template=submission.yml)
-on this repository: fill in the method name, links, and the in-context checkbox ("no training on the target database") in the form, and drag the zip
-into it. The submission is re-validated
-automatically and the report is posted as a comment; once a maintainer approves, your
-entry is published to the
-[**leaderboard**](https://star-project.stanford.edu/relbench/leaderboard/).
+The submission is validated automatically and the report is posted on the issue; once a
+maintainer approves, your entry appears on the leaderboard.
 
 ## Contributing
 
