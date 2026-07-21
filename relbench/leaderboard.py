@@ -662,7 +662,7 @@ def _print_report(result: Dict[str, Any]) -> None:
 # issue on the RelBench repository, created from the submission form with the prediction
 # tables attached. CI validates it and a maintainer approval publishes the entry.
 SUBMISSION_ISSUE_URL = (
-    "https://github.com/stanford-star/relbench/issues/new?template=submission.yml"
+    "https://github.com/rishabh-ranjan/relbench/issues/new?template=submission.yml"
 )
 
 def _zip_submission(pred_dir: Union[str, os.PathLike], extra: Sequence[str]) -> bytes:
