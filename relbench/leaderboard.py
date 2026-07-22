@@ -72,19 +72,40 @@ __all__ = [
 # --------------------------------------------------------------------------- #
 LEADERBOARD_TASKS: Dict[str, List[str]] = {
     "classification": [
-        "rel-amazon/user-churn", "rel-amazon/item-churn", "rel-avito/user-visits", "rel-avito/user-clicks",
-        "rel-event/user-repeat", "rel-event/user-ignore", "rel-f1/driver-dnf", "rel-f1/driver-top3",
-        "rel-hm/user-churn", "rel-stack/user-engagement", "rel-stack/user-badge", "rel-trial/study-outcome",
+        "rel-amazon/user-churn",
+        "rel-amazon/item-churn",
+        "rel-avito/user-visits",
+        "rel-avito/user-clicks",
+        "rel-event/user-repeat",
+        "rel-event/user-ignore",
+        "rel-f1/driver-dnf",
+        "rel-f1/driver-top3",
+        "rel-hm/user-churn",
+        "rel-stack/user-engagement",
+        "rel-stack/user-badge",
+        "rel-trial/study-outcome",
     ],
     "regression": [
-        "rel-amazon/user-ltv", "rel-amazon/item-ltv", "rel-avito/ad-ctr", "rel-event/user-attendance",
-        "rel-f1/driver-position", "rel-hm/item-sales", "rel-stack/post-votes", "rel-trial/study-adverse",
+        "rel-amazon/user-ltv",
+        "rel-amazon/item-ltv",
+        "rel-avito/ad-ctr",
+        "rel-event/user-attendance",
+        "rel-f1/driver-position",
+        "rel-hm/item-sales",
+        "rel-stack/post-votes",
+        "rel-trial/study-adverse",
         "rel-trial/site-success",
     ],
     "recommendation": [
-        "rel-amazon/user-item-purchase", "rel-amazon/user-item-rate", "rel-amazon/user-item-review",
-        "rel-avito/user-ad-visit", "rel-f1/driver-circuit-compete", "rel-hm/user-item-purchase",
-        "rel-stack/user-post-comment", "rel-stack/post-post-related", "rel-trial/condition-sponsor-run",
+        "rel-amazon/user-item-purchase",
+        "rel-amazon/user-item-rate",
+        "rel-amazon/user-item-review",
+        "rel-avito/user-ad-visit",
+        "rel-f1/driver-circuit-compete",
+        "rel-hm/user-item-purchase",
+        "rel-stack/user-post-comment",
+        "rel-stack/post-post-related",
+        "rel-trial/condition-sponsor-run",
         "rel-trial/site-sponsor-run",
     ],
 }
@@ -226,7 +247,9 @@ def write_prediction_table(
 # --------------------------------------------------------------------------- #
 # Validation + alignment
 # --------------------------------------------------------------------------- #
-def _coerce_keys(pred_df: pd.DataFrame, gt_df: pd.DataFrame, key_cols: Sequence[str]) -> pd.DataFrame:
+def _coerce_keys(
+    pred_df: pd.DataFrame, gt_df: pd.DataFrame, key_cols: Sequence[str]
+) -> pd.DataFrame:
     r"""Coerce ``pred_df`` key columns to the ground-truth dtypes so joins/compares line
     up (CSV reads timestamps as strings, etc.)."""
     pred_df = pred_df.copy()
@@ -324,7 +347,9 @@ def _aligned_to_gt(
     return merged[value_col]
 
 
-def _build_pred_array(task: Any, gt_df: pd.DataFrame, pred_df: pd.DataFrame) -> np.ndarray:
+def _build_pred_array(
+    task: Any, gt_df: pd.DataFrame, pred_df: pd.DataFrame
+) -> np.ndarray:
     r"""Validate ``pred_df`` against ``gt_df`` and return predictions aligned to GT order
     in the exact shape ``task.evaluate`` expects.
 
@@ -528,17 +553,15 @@ def evaluate_submission(
     if not csv_paths:
         raise FileNotFoundError(f"no prediction CSVs (*.csv) found in {pred_dir}")
 
-    jobs: List[Tuple[str, str]] = [
-        (_task_name_from_path(p), str(p)) for p in csv_paths
-    ]
+    jobs: List[Tuple[str, str]] = [(_task_name_from_path(p), str(p)) for p in csv_paths]
 
     if num_workers is None:
         num_workers = min(len(jobs), os.cpu_count() or 1)
 
     if verbose:
         print(
-            f"Evaluating {len(jobs)} prediction tables with {num_workers} workers "
-            f"(downloading task data from the Hub if not cached)...",
+            f"Evaluating {len(jobs)} prediction tables with {num_workers} workers.\n"
+            f"(Downloads test sets from HuggingFace if not cached)",
             flush=True,
         )
 
@@ -643,7 +666,9 @@ def _print_report(result: Dict[str, Any]) -> None:
     metric_w = max(
         [len("metric")] + [len(e["metric_name"] or "") for e in tasks.values()]
     )
-    header = f"  {'task'.ljust(name_w)}  {'metric'.ljust(metric_w)}  {'value':>12}  status"
+    header = (
+        f"  {'task'.ljust(name_w)}  {'metric'.ljust(metric_w)}  {'value':>12}  status"
+    )
     print(header)
     print("  " + "-" * (len(header) - 2))
     for task_name in sorted(tasks):
@@ -691,6 +716,7 @@ SUBMISSION_ISSUE_URL = (
     "https://github.com/rishabh-ranjan/relbench/issues/new?template=submission.yml"
 )
 
+
 def _zip_submission(pred_dir: Union[str, os.PathLike], extra: Sequence[str]) -> bytes:
     r"""Zip the submission (prediction tables only) and return the bytes.
 
@@ -712,14 +738,18 @@ def _zip_submission(pred_dir: Union[str, os.PathLike], extra: Sequence[str]) -> 
     return buf.getvalue()
 
 
-def _package(pred_dir: Union[str, os.PathLike], extra: Sequence[str], out: Path) -> None:
+def _package(
+    pred_dir: Union[str, os.PathLike], extra: Sequence[str], out: Path
+) -> None:
     r"""Write the submission zip and print how to submit it."""
     zip_bytes = _zip_submission(pred_dir, extra)
     out.write_bytes(zip_bytes)
     print(f"\nCreated submission package: {out} ({len(zip_bytes) / 1e6:.1f} MB)")
     print("\nSubmit by opening a submission issue and dragging the zip into it:")
     print(f"  {SUBMISSION_ISSUE_URL}")
-    print("  (method name, links and the in-context flag are entered in the issue form)")
+    print(
+        "  (method name, links and the in-context flag are entered in the issue form)"
+    )
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
@@ -732,19 +762,23 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             "(all of its tasks present and valid), non-zero otherwise."
         ),
     )
-    parser.add_argument("pred_dir", help="directory of <dataset>__<task>.csv prediction files")
+    parser.add_argument(
+        "pred_dir", help="directory of <dataset>__<task>.csv prediction files"
+    )
     parser.add_argument(
         "--num-workers",
         type=int,
         default=None,
         help="process-pool size (default: min(num_tasks, cpu_count); 1 runs in-process)",
     )
-    parser.add_argument("--quiet", action="store_true", help="suppress the printed report")
+    parser.add_argument(
+        "--quiet", action="store_true", help="suppress the printed report"
+    )
     parser.add_argument(
         "--package",
         action="store_true",
         help="after validating, write a clean submission zip (prediction tables only) and "
-             "print how to submit it as a GitHub issue",
+        "print how to submit it as a GitHub issue",
     )
     parser.add_argument(
         "--out",
@@ -759,8 +793,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     if args.package:
         if not result["validated"]:
-            print("\nCannot package — no leaderboard was validated; fix the prediction "
-                  "tables first.")
+            print(
+                "\nCannot package — no leaderboard was validated; fix the prediction "
+                "tables first."
+            )
             return 1
         out = Path(args.out or f"{Path(args.pred_dir).resolve().name}.zip")
         _package(args.pred_dir, result.get("extra_files") or [], out)
