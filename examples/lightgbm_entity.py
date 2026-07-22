@@ -18,7 +18,7 @@ from tqdm import tqdm
 
 from relbench import load_dataset, load_task
 from relbench.base import Dataset, EntityTask, TaskType
-from relbench.leaderboard import write_prediction_table, evaluate_task
+from relbench.leaderboard import evaluate_task, write_prediction_table
 from relbench.modeling.utils import get_stype_proposal, remove_pkey_fkey
 
 parser = argparse.ArgumentParser()

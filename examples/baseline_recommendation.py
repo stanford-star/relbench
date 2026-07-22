@@ -7,9 +7,9 @@ import numpy as np
 import pandas as pd
 from torch_geometric.seed import seed_everything
 
-from relbench.base import Dataset, RecommendationTask, Table
 from relbench import load_dataset, load_task
-from relbench.leaderboard import write_prediction_table, evaluate_task
+from relbench.base import Dataset, RecommendationTask, Table
+from relbench.leaderboard import evaluate_task, write_prediction_table
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stack")

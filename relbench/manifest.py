@@ -29,9 +29,13 @@ import yaml
 MANIFEST_VERSION = 1
 
 # Task ``kind`` -- how labels are produced.
-KIND_FORECAST = "forecast"  # temporal-aggregation labels regenerated via a duckdb SQL query
+KIND_FORECAST = (
+    "forecast"  # temporal-aggregation labels regenerated via a duckdb SQL query
+)
 KIND_AUTOCOMPLETE = "autocomplete"  # generic column-prediction generator
-KIND_EXTERNAL = "external"  # labels sourced/built externally, served as-is (TGB / dbinfer)
+KIND_EXTERNAL = (
+    "external"  # labels sourced/built externally, served as-is (TGB / dbinfer)
+)
 KINDS = (KIND_FORECAST, KIND_AUTOCOMPLETE, KIND_EXTERNAL)
 
 
@@ -51,8 +55,15 @@ _Dumper.add_representer(str, _represent_str)
 def _dump_yaml(d: dict, path: Union[str, Path]) -> None:
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w") as f:
-        yaml.dump(d, f, Dumper=_Dumper, sort_keys=False, default_flow_style=False,
-                  allow_unicode=True, width=4096)
+        yaml.dump(
+            d,
+            f,
+            Dumper=_Dumper,
+            sort_keys=False,
+            default_flow_style=False,
+            allow_unicode=True,
+            width=4096,
+        )
 
 
 def _load_yaml(path: Union[str, Path]) -> dict:
@@ -70,8 +81,11 @@ class TableSpec:
 
     @classmethod
     def from_dict(cls, d: dict) -> "TableSpec":
-        return cls(pkey=d.get("pkey"), time_col=d.get("time_col"),
-                   fkeys=dict(d.get("fkeys", {})))
+        return cls(
+            pkey=d.get("pkey"),
+            time_col=d.get("time_col"),
+            fkeys=dict(d.get("fkeys", {})),
+        )
 
     def to_dict(self) -> dict:
         return {"pkey": self.pkey, "time_col": self.time_col, "fkeys": self.fkeys}
@@ -172,9 +186,19 @@ class TaskManifest:
         out = {"name": self.name, "kind": self.kind, "task_type": self.task_type}
         if self.description:
             out["description"] = self.description
-        for k in ["entity_table", "entity_col", "target_col", "time_col",
-                  "src_entity_table", "src_entity_col", "dst_entity_table",
-                  "dst_entity_col", "eval_k", "timedelta", "evaluator"]:
+        for k in [
+            "entity_table",
+            "entity_col",
+            "target_col",
+            "time_col",
+            "src_entity_table",
+            "src_entity_col",
+            "dst_entity_table",
+            "dst_entity_col",
+            "eval_k",
+            "timedelta",
+            "evaluator",
+        ]:
             v = getattr(self, k)
             if v is not None:
                 out[k] = v
@@ -200,17 +224,30 @@ class TaskManifest:
         if self.kind not in KINDS:
             raise ValueError(f"task '{self.name}': kind must be one of {KINDS}")
         if self.kind == KIND_FORECAST and not self.sql:
-            raise ValueError(f"task '{self.name}': kind='forecast' requires a 'sql' field")
+            raise ValueError(
+                f"task '{self.name}': kind='forecast' requires a 'sql' field"
+            )
         if self.task_type == "link_prediction" and self.kind == KIND_FORECAST:
-            missing = [k for k in ("src_entity_table", "src_entity_col",
-                                   "dst_entity_table", "dst_entity_col", "eval_k")
-                       if getattr(self, k) is None]
+            missing = [
+                k
+                for k in (
+                    "src_entity_table",
+                    "src_entity_col",
+                    "dst_entity_table",
+                    "dst_entity_col",
+                    "eval_k",
+                )
+                if getattr(self, k) is None
+            ]
             if missing:
                 raise ValueError(f"task '{self.name}': link task missing {missing}")
 
 
-def validate_dataset_manifest(manifest: DatasetManifest, db_dir: Union[str, Path]) -> None:
-    r"""Check the manifest is consistent with the parquet files in ``db_dir`` (schema only)."""
+def validate_dataset_manifest(
+    manifest: DatasetManifest, db_dir: Union[str, Path]
+) -> None:
+    r"""Check the manifest is consistent with the parquet files in ``db_dir`` (schema
+    only)."""
     import pyarrow.parquet as pq
 
     db_dir = Path(db_dir)

@@ -28,8 +28,8 @@ REGRESSION_STDS_FILE = "regression_stds.json"
 
 @lru_cache(maxsize=None)
 def load_core_regression_stds(revision: Optional[str] = None) -> dict[str, float]:
-    r"""Fetch the hosted ``stanford-star/relbench`` regression-std table as ``{"<dataset>/<task>":
-    std}``.
+    r"""Fetch the hosted ``stanford-star/relbench`` regression-std table as
+    ``{"<dataset>/<task>": std}``.
 
     Uses ``hf_hub_download``, so if the file is already in the local HF cache (e.g. the user
     has it from a prior call) it is read from disk without a network round-trip.

@@ -157,15 +157,30 @@ GROUP BY t.timestamp, r.customer_id
 """.strip()
 
 _CHURN = TaskManifest(
-    name="churn", kind="forecast", task_type="binary_classification",
-    entity_table="customer", entity_col="customer_id", target_col="churn",
-    time_col="timestamp", timedelta="100 days", num_eval_timestamps=1, sql=_CHURN_SQL,
+    name="churn",
+    kind="forecast",
+    task_type="binary_classification",
+    entity_table="customer",
+    entity_col="customer_id",
+    target_col="churn",
+    time_col="timestamp",
+    timedelta="100 days",
+    num_eval_timestamps=1,
+    sql=_CHURN_SQL,
 )
 _PURCHASE = TaskManifest(
-    name="purchase", kind="forecast", task_type="link_prediction",
-    src_entity_table="customer", src_entity_col="customer_id",
-    dst_entity_table="product", dst_entity_col="product_id", target_col="product_id",
-    time_col="timestamp", timedelta="100 days", eval_k=10, num_eval_timestamps=1,
+    name="purchase",
+    kind="forecast",
+    task_type="link_prediction",
+    src_entity_table="customer",
+    src_entity_col="customer_id",
+    dst_entity_table="product",
+    dst_entity_col="product_id",
+    target_col="product_id",
+    time_col="timestamp",
+    timedelta="100 days",
+    eval_k=10,
+    num_eval_timestamps=1,
     sql=_PURCHASE_SQL,
 )
 

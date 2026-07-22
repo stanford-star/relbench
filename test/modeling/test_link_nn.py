@@ -21,7 +21,9 @@ from relbench.modeling.utils import get_stype_proposal, to_unix_time
     "share_same_time",
     [True, False],
 )
-def test_link_train_fake_product_dataset(tmp_path, share_same_time, make_purchase_task, fake_dataset):
+def test_link_train_fake_product_dataset(
+    tmp_path, share_same_time, make_purchase_task, fake_dataset
+):
     dataset = fake_dataset()
 
     data, col_stats_dict = make_pkey_fkey_graph(

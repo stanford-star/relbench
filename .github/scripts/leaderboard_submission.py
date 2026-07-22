@@ -148,11 +148,16 @@ def write_report(path: Path, fields: dict, problems: list, result: dict | None) 
             )
         lines.append("")
         if result["validated"]:
-            lines.append("Validated leaderboard(s): " + ", ".join(result["validated"])
-                         + ". A maintainer will review this submission.")
+            lines.append(
+                "Validated leaderboard(s): "
+                + ", ".join(result["validated"])
+                + ". A maintainer will review this submission."
+            )
         else:
-            lines.append("No leaderboard was validated. Edit the issue (fix the "
-                         "attachments or form) to re-run validation.")
+            lines.append(
+                "No leaderboard was validated. Edit the issue (fix the "
+                "attachments or form) to re-run validation."
+            )
     path.write_text("\n".join(lines) + "\n")
 
 
@@ -193,7 +198,9 @@ def main() -> int:
     ap.add_argument("--body", required=True, help="file holding the issue body")
     ap.add_argument("--report", required=True, help="output markdown report path")
     ap.add_argument("--entry", help="publish mode: write entries/<issue>.json here")
-    ap.add_argument("--aggregate", help="publish mode: regenerate this leaderboard.json")
+    ap.add_argument(
+        "--aggregate", help="publish mode: regenerate this leaderboard.json"
+    )
     ap.add_argument("--issue", type=int, default=0, help="issue number (publish mode)")
     ap.add_argument("--author", default="", help="issue author login (publish mode)")
     ap.add_argument("--num-workers", type=int, default=None)

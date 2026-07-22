@@ -141,8 +141,8 @@ def _extra_files(pred_dir: Union[str, os.PathLike]) -> List[str]:
     r"""Names of entries in ``pred_dir`` that are not prediction tables.
 
     A submission must contain **only** the prediction-table CSVs — anything else (other
-    file types, stray artifacts, subdirectories) is reported so it can be removed. Hidden
-    dotfiles are ignored.
+    file types, stray artifacts, subdirectories) is reported so it can be removed.
+    Hidden dotfiles are ignored.
     """
     extra: List[str] = []
     for p in sorted(Path(pred_dir).iterdir()):
@@ -338,7 +338,8 @@ def _validate_keys(
 def _aligned_to_gt(
     pred_df: pd.DataFrame, gt_df: pd.DataFrame, key_cols: Sequence[str], value_col: str
 ) -> pd.Series:
-    r"""Left-join ``pred_df`` onto the GT key frame, returning ``value_col`` in GT order."""
+    r"""Left-join ``pred_df`` onto the GT key frame, returning ``value_col`` in GT
+    order."""
     order = gt_df[list(key_cols)].copy()
     order["__order__"] = np.arange(len(order))
     merged = order.merge(
@@ -448,8 +449,8 @@ def evaluate_task(
 def _task_name_from_path(path: Path) -> str:
     r"""``<dataset>__<task>.csv`` -> ``<dataset>/<task>``.
 
-    The first double underscore separates dataset from task; task names may contain single
-    hyphens (and are otherwise left untouched).
+    The first double underscore separates dataset from task; task names may contain
+    single hyphens (and are otherwise left untouched).
     """
     stem = path.stem
     if "__" not in stem:
@@ -753,7 +754,10 @@ def _package(
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
-    r"""CLI entry point. Returns the process exit code (0 if any family is validated)."""
+    r"""CLI entry point.
+
+    Returns the process exit code (0 if any family is validated).
+    """
     parser = argparse.ArgumentParser(
         prog="python -m relbench.leaderboard",
         description=(

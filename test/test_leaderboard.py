@@ -13,7 +13,6 @@ import random
 import numpy as np
 import pandas as pd
 import pytest
-
 from conftest import _CHURN, _PURCHASE, FakeDataset
 
 from relbench.base import TaskType
@@ -43,9 +42,16 @@ GROUP BY t.timestamp, past.customer_id
 """.strip()
 
 _LTV = TaskManifest(
-    name="ltv", kind="forecast", task_type="regression",
-    entity_table="customer", entity_col="customer_id", target_col="ltv",
-    time_col="timestamp", timedelta="100 days", num_eval_timestamps=1, sql=_LTV_SQL,
+    name="ltv",
+    kind="forecast",
+    task_type="regression",
+    entity_table="customer",
+    entity_col="customer_id",
+    target_col="ltv",
+    time_col="timestamp",
+    timedelta="100 days",
+    num_eval_timestamps=1,
+    sql=_LTV_SQL,
 )
 
 
@@ -55,9 +61,7 @@ _LTV = TaskManifest(
 @pytest.fixture(autouse=True)
 def _no_core_std_network(monkeypatch):
     r"""Keep regression NMAE std resolution offline (fall back to train-split std)."""
-    monkeypatch.setattr(
-        "relbench.hf.load_core_regression_stds", lambda *a, **k: {}
-    )
+    monkeypatch.setattr("relbench.hf.load_core_regression_stds", lambda *a, **k: {})
 
 
 def _write_fake_dataset(root):
@@ -100,8 +104,9 @@ def fake_ds_dir(tmp_path_factory):
 
 
 def _entity_pred(df, task, scale=1.0):
-    r"""Deterministic per-entity prediction (the test split has a single timestamp, so the
-    entity id alone is the key); order-independent, so write- and direct-eval paths agree."""
+    r"""Deterministic per-entity prediction (the test split has a single timestamp, so
+    the entity id alone is the key); order-independent, so write- and direct-eval paths
+    agree."""
     ent = df[task.entity_col].astype("int64").to_numpy()
     return (((ent * 2654435761) % 997) / 997.0) * scale
 
@@ -306,7 +311,9 @@ def test_evaluate_submission_reports_task_errors(fake_ds_dir, tmp_path, monkeypa
     churn = load_task(str(fake_ds_dir), "user-churn")
     csv = pred_dir / "rel-amazon__user-churn.csv"
     write_prediction_table(
-        churn, _entity_pred(churn.get_table("test", mask_input_cols=True).df, churn), csv
+        churn,
+        _entity_pred(churn.get_table("test", mask_input_cols=True).df, churn),
+        csv,
     )
     # Corrupt: drop a row so validation fails and the task is recorded as an error.
     df = pd.read_csv(csv)

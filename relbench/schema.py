@@ -20,25 +20,25 @@ from typing import Callable, Iterable, Optional, Tuple, Union
 from relbench.manifest import DatasetManifest, TaskManifest
 
 # Palette (chosen to read on both light and dark Hub themes).
-_HEADER = "#5273A6"   # medium blue header, white text
+_HEADER = "#5273A6"  # medium blue header, white text
 _HTXT = "white"
 _COUNT = "#FFFFFF"
-_PKBG = "#FCEFC7"     # primary key row (warm yellow)
-_TIMEBG = "#DFF1E1"   # time column row (green)
-_FKBG = "#DEE8F6"     # foreign key row (light blue)
-_FEATBG = "#EDEFF2"   # feature column row (light gray)
+_PKBG = "#FCEFC7"  # primary key row (warm yellow)
+_TIMEBG = "#DFF1E1"  # time column row (green)
+_FKBG = "#DEE8F6"  # foreign key row (light blue)
+_FEATBG = "#EDEFF2"  # feature column row (light gray)
 _BORDER = "#D3D9E2"
 _EDGE = "#9AA7B8"
 _PKTAG = "#B0791A"
 _FKTAG = "#5273A6"
 _TTAG = "#3B9B5B"
-_TYPE = "#6B7686"     # dtype text
+_TYPE = "#6B7686"  # dtype text
 
-_FS = 11              # base font size
-_BADGE = 10           # PK/FK/TIME badge size
-_RH = 22             # uniform non-header row height
+_FS = 11  # base font size
+_BADGE = 10  # PK/FK/TIME badge size
+_RH = 22  # uniform non-header row height
 _HH = int(1.2 * _RH)  # header height = 1.2x a normal row
-_NAME_CAP = 20        # cap longest name used for the (uniform) table width
+_NAME_CAP = 20  # cap longest name used for the (uniform) table width
 _DTYPE_RANK = {"float": 3, "int": 4, "str": 5}
 
 # A reader returns ``(columns, num_rows)`` for a table, or ``(None, None)`` if unavailable.
@@ -122,7 +122,9 @@ def render_schema_svg(
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     if reader is None:
-        reader = _parquet_reader(Path(db_dir) if db_dir is not None else path.parent / "db")
+        reader = _parquet_reader(
+            Path(db_dir) if db_dir is not None else path.parent / "db"
+        )
 
     tables = manifest.tables
     pkey_of = {t: s.pkey for t, s in tables.items()}
@@ -154,21 +156,27 @@ def render_schema_svg(
         rmax = max(rmax, len(_rows_word(count)))
         for cname, ctype in cols:
             right = (
-                "PK" if cname == pkey
-                else "FK" if cname in fkeys
-                else "TIME" if cname == tcol
-                else ctype
+                "PK"
+                if cname == pkey
+                else "FK" if cname in fkeys else "TIME" if cname == tcol else ctype
             )
             lmax = max(lmax, len(cname))
             rmax = max(rmax, len(right))
 
     wl = int(min(lmax, _NAME_CAP) * 6.6) + 12  # left column (names), capped
-    wr = int(min(rmax, 11) * 6.5) + 12         # right column (badges/dtypes/count)
+    wr = int(min(rmax, 11) * 6.5) + 12  # right column (badges/dtypes/count)
 
     # pass 2: emit nodes (one HTML-table card per table) + base edges (FK -> PK).
     g = graphviz.Digraph("schema", engine="dot")
-    g.attr(rankdir="LR", bgcolor="transparent", splines="line", nodesep="0.45",
-           ranksep="1.1", pad="0.3", fontname="Helvetica")
+    g.attr(
+        rankdir="LR",
+        bgcolor="transparent",
+        splines="line",
+        nodesep="0.45",
+        ranksep="1.1",
+        pad="0.3",
+        fontname="Helvetica",
+    )
     g.attr("node", shape="plaintext", fontname="Helvetica")
     g.attr("edge", color=_EDGE, penwidth="1.3", dir="none")  # ER symbols added in post
 
@@ -176,20 +184,25 @@ def render_schema_svg(
         cols, count = collected[tname]
         pkey, tcol, fkeys = spec.pkey, spec.time_col, spec.fkeys
         cnt_txt = _esc(_rows_word(count))
-        cnt_html = (f'<FONT COLOR="{_COUNT}" POINT-SIZE="{_FS}"><I>{cnt_txt}</I></FONT>'
-                    if cnt_txt else "")
+        cnt_html = (
+            f'<FONT COLOR="{_COUNT}" POINT-SIZE="{_FS}"><I>{cnt_txt}</I></FONT>'
+            if cnt_txt
+            else ""
+        )
         rows = [
-            f'<TR>'
+            f"<TR>"
             f'<TD WIDTH="{wl}" HEIGHT="{_HH}" BGCOLOR="{_HEADER}" PORT="__t" ALIGN="LEFT">'
             f'<FONT COLOR="{_HTXT}" POINT-SIZE="{_FS}"><B>{_esc(tname)}</B></FONT></TD>'
             f'<TD WIDTH="{wr}" HEIGHT="{_HH}" BGCOLOR="{_HEADER}" ALIGN="RIGHT">{cnt_html}</TD>'
-            f'</TR>'
+            f"</TR>"
         ]
         for cname, ctype in cols:
             is_pk = cname == pkey
             is_fk = cname in fkeys
             is_t = cname == tcol
-            bg = _PKBG if is_pk else (_TIMEBG if is_t else (_FKBG if is_fk else _FEATBG))
+            bg = (
+                _PKBG if is_pk else (_TIMEBG if is_t else (_FKBG if is_fk else _FEATBG))
+            )
             nm = f"<I>{_esc(cname)}</I>" if (is_pk or is_fk) else _esc(cname)
             if is_pk:
                 right = _badge("PK", _PKTAG)
@@ -207,9 +220,14 @@ def render_schema_svg(
                 f'<FONT POINT-SIZE="{_FS}">{nm}</FONT></TD>'
                 f'<TD WIDTH="{wr}" HEIGHT="{_RH}" BGCOLOR="{bg}" PORT="{_esc(cname)}_r" ALIGN="RIGHT">{right}</TD></TR>'
             )
-        g.node(tname, color=_BORDER, label=(
-            f'<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" '
-            f'STYLE="rounded">{"".join(rows)}</TABLE>>'))
+        g.node(
+            tname,
+            color=_BORDER,
+            label=(
+                f'<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" '
+                f'STYLE="rounded">{"".join(rows)}</TABLE>>'
+            ),
+        )
 
     for tname, spec in tables.items():
         for fcol, parent in spec.fkeys.items():
@@ -262,10 +280,10 @@ def _postprocess_svg(svgpath: Path) -> None:
             el.set("fill", "none")
 
         ax, bx = x0 + L, x1 - L
-        seg(x0, y0, ax, y0)              # FK horizontal stub
-        seg(ax, y0, bx, y1)             # straight middle
-        seg(bx, y1, x1, y1)             # PK horizontal stub
-        seg(ax, y0, x0, y0 - FH)        # crow's foot (many) at FK
+        seg(x0, y0, ax, y0)  # FK horizontal stub
+        seg(ax, y0, bx, y1)  # straight middle
+        seg(bx, y1, x1, y1)  # PK horizontal stub
+        seg(ax, y0, x0, y0 - FH)  # crow's foot (many) at FK
         seg(ax, y0, x0, y0 + FH)
         seg(x1 - TGAP, y1 - TICK, x1 - TGAP, y1 + TICK)  # single bar (one) at PK
 
@@ -281,7 +299,10 @@ def _postprocess_svg(svgpath: Path) -> None:
         xs = [float(a) for a, _ in pts]
         ys = [float(b) for _, b in pts]
         x0p, x1p, y0p, y1p = min(xs), max(xs), min(ys), max(ys)
-        poly.set("points", f"{x0p - ex},{y0p} {x1p + ex},{y0p} {x1p + ex},{y1p} {x0p - ex},{y1p}")
+        poly.set(
+            "points",
+            f"{x0p - ex},{y0p} {x1p + ex},{y0p} {x1p + ex},{y1p} {x0p - ex},{y1p}",
+        )
 
     # paint edges behind the table boxes: SVG paints in document order, so move edge groups
     # ahead of node groups (after the background) -> connectors pass behind the cards.
@@ -330,7 +351,12 @@ def dataset_card(
     parts += ["## Schema", "", "![schema diagram](schema.svg)", ""]
     tasks = list(tasks or [])
     if tasks:
-        parts += ["## Tasks", "", "| task | kind | type | description |", "|---|---|---|---|"]
+        parts += [
+            "## Tasks",
+            "",
+            "| task | kind | type | description |",
+            "|---|---|---|---|",
+        ]
         for t in tasks:
             parts.append(
                 f"| `{t.name}` | {t.kind} | {t.task_type} | {(t.description or '').strip()} |"

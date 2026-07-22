@@ -22,7 +22,7 @@ from huggingface_hub import HfApi
 
 import relbench
 from relbench.base import TaskType
-from relbench.hf import RELBENCH_HF, REGRESSION_STDS_FILE
+from relbench.hf import REGRESSION_STDS_FILE, RELBENCH_HF
 
 
 def main() -> None:

@@ -19,7 +19,7 @@ from torch_geometric.seed import seed_everything
 
 from relbench import load_task
 from relbench.base import EntityTask, TaskType
-from relbench.leaderboard import write_prediction_table, evaluate_task
+from relbench.leaderboard import evaluate_task, write_prediction_table
 from relbench.modeling.utils import get_stype_proposal, remove_pkey_fkey
 
 parser = argparse.ArgumentParser()
