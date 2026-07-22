@@ -408,6 +408,30 @@ def _split_task_name(task_name: str) -> Tuple[str, str]:
     return dataset_name, name
 
 
+def _fetch_eval_files(dataset_name: str, task_names: Sequence[str]) -> Path:
+    r"""Download only the files evaluation needs for ``dataset_name`` and return the
+    local dataset directory.
+
+    Evaluation reads just the dataset manifest plus each task's manifest and hosted
+    ``test.parquet`` (never the database or train/val splits), so the snapshot is
+    restricted to those files.
+    """
+    from huggingface_hub import snapshot_download
+
+    from relbench.hf import resolve_repo
+
+    repo_id, subdir = resolve_repo(f"{RELBENCH_HF}/{dataset_name}")
+    prefix = f"{subdir}/" if subdir else ""
+    patterns = [f"{prefix}manifest.yaml"]
+    for name in task_names:
+        patterns.append(f"{prefix}tasks/{name}/manifest.yaml")
+        patterns.append(f"{prefix}tasks/{name}/test.parquet")
+    local = Path(
+        snapshot_download(repo_id=repo_id, repo_type="dataset", allow_patterns=patterns)
+    )
+    return local / subdir if subdir else local
+
+
 def evaluate_task(
     task_name: str,
     csv_path: Union[str, os.PathLike],
@@ -433,7 +457,11 @@ def evaluate_task(
             probabilities, undecodable link lists, ...).
     """
     dataset_name, name = _split_task_name(task_name)
-    dataset_arg = dataset if dataset is not None else f"{RELBENCH_HF}/{dataset_name}"
+    # Default path: fetch only the evaluation files (manifests + hosted test.parquet),
+    # not the full dataset snapshot.
+    dataset_arg = (
+        dataset if dataset is not None else _fetch_eval_files(dataset_name, [name])
+    )
     task = load_task(dataset_arg, name)
     _supported(task)
 
@@ -485,7 +513,7 @@ def _prefetch_hf_data(task_names: Sequence[str], verbose: bool) -> None:
     the cache).
     """
     try:
-        from huggingface_hub import hf_hub_download, snapshot_download
+        from huggingface_hub import hf_hub_download
         from huggingface_hub.utils import LocalEntryNotFoundError
     except Exception:  # noqa: BLE001 -- fall back to downloading in the workers
         return
@@ -493,31 +521,30 @@ def _prefetch_hf_data(task_names: Sequence[str], verbose: bool) -> None:
 
     from tqdm.auto import tqdm
 
-    from relbench.hf import REGRESSION_STDS_FILE, resolve_repo
+    from relbench.hf import REGRESSION_STDS_FILE
 
     _quiet_hf_progress()
     logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
 
     st = _Style(_use_color() and verbose)
-    datasets = sorted({t.split("/", 1)[0] for t in task_names if "/" in t})
+    by_dataset: Dict[str, List[str]] = {}
+    for t in task_names:
+        if "/" in t:
+            dataset_name, name = t.split("/", 1)
+            by_dataset.setdefault(dataset_name, []).append(name)
 
     bar = tqdm(
-        total=len(datasets),
+        total=len(by_dataset),
         desc="Fetching test data",
         unit="dataset",
         disable=not verbose,
         leave=False,
     )
     try:
-        for dataset_name in datasets:
+        for dataset_name in sorted(by_dataset):
             bar.set_postfix_str(dataset_name)
-            repo_id, subdir = resolve_repo(f"{RELBENCH_HF}/{dataset_name}")
             try:
-                snapshot_download(
-                    repo_id=repo_id,
-                    repo_type="dataset",
-                    allow_patterns=[f"{subdir}/*"] if subdir else None,
-                )
+                _fetch_eval_files(dataset_name, by_dataset[dataset_name])
             except (
                 Exception
             ) as exc:  # noqa: BLE001 -- surfaced per-task at scoring time
