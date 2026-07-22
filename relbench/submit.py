@@ -834,7 +834,7 @@ def _print_report(result: Dict[str, Any]) -> None:
             if entry["status"] == "ok":
                 mark = st.green("✓")
                 value = _format_value(entry["metric_name"], entry["metric"])
-                print(f"  {mark} {task_name.ljust(name_w)}  {st.bold(value.rjust(7))}")
+                print(f"  {mark} {task_name.ljust(name_w)}  {value.rjust(7)}")
             else:
                 mark = st.red("✗")
                 print(f"  {mark} {task_name.ljust(name_w)}  {st.red('failed')}")
@@ -857,10 +857,10 @@ def _print_report(result: Dict[str, Any]) -> None:
         fam = families[family]
         counts = f"{fam['num_valid']}/{fam['num_total']} tasks valid"
         if fam["complete"]:
-            badge = st.bold_green("OK      ")
+            badge = st.bold_green("OK  ")
             print(f"  {badge}  {family:<16} {counts}")
         else:
-            badge = st.bold_red("rejected")
+            badge = st.bold_red("FAIL")
             print(f"  {badge}  {family:<16} {counts}")
             problems = []
             if fam["missing"]:
@@ -868,7 +868,7 @@ def _print_report(result: Dict[str, Any]) -> None:
             if fam["invalid"]:
                 problems.append(f"invalid: {', '.join(fam['invalid'])}")
             for problem in problems:
-                for line in _wrap_text(problem, indent=12):
+                for line in _wrap_text(problem, indent=8):
                     print(st.dim(line))
     print()
 
