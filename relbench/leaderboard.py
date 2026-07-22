@@ -648,63 +648,184 @@ def evaluate_submission(
 # --------------------------------------------------------------------------- #
 # Reporting
 # --------------------------------------------------------------------------- #
+_WIDTH = 80  # nominal terminal width the report is formatted for
+
+
+def _use_color() -> bool:
+    r"""Colorize only when writing to a real terminal and NO_COLOR is unset."""
+    if os.environ.get("NO_COLOR"):
+        return False
+    if os.environ.get("FORCE_COLOR"):
+        return True
+    try:
+        return os.isatty(1)
+    except OSError:
+        return False
+
+
+class _Style:
+    r"""Tiny ANSI styler; every method degrades to the identity without a TTY."""
+
+    def __init__(self, enabled: bool):
+        self.enabled = enabled
+
+    def _wrap(self, code: str, s: str) -> str:
+        return f"\033[{code}m{s}\033[0m" if self.enabled else s
+
+    def bold(self, s: str) -> str:
+        return self._wrap("1", s)
+
+    def dim(self, s: str) -> str:
+        return self._wrap("2", s)
+
+    def italic(self, s: str) -> str:
+        return self._wrap("3", s)
+
+    def green(self, s: str) -> str:
+        return self._wrap("32", s)
+
+    def red(self, s: str) -> str:
+        return self._wrap("31", s)
+
+    def yellow(self, s: str) -> str:
+        return self._wrap("33", s)
+
+    def cyan(self, s: str) -> str:
+        return self._wrap("36", s)
+
+    def bold_green(self, s: str) -> str:
+        return self._wrap("1;32", s)
+
+    def bold_red(self, s: str) -> str:
+        return self._wrap("1;31", s)
+
+    def dim_italic(self, s: str) -> str:
+        return self._wrap("2;3", s)
+
+
+# Display names and value formatting for metrics in the printed report (raw metric
+# names/values in the returned dict are unchanged).
+_METRIC_DISPLAY: Dict[str, str] = {
+    "roc_auc": "auroc",
+    "link_prediction_map": "map",
+}
+_PERCENT_METRICS = {"roc_auc", "nmae", "link_prediction_map"}
+
+
+def _metric_display(name: Optional[str]) -> str:
+    return _METRIC_DISPLAY.get(name or "", name or "metric")
+
+
+def _format_value(metric_name: Optional[str], value: Optional[float]) -> str:
+    if value is None:
+        return "-"
+    if metric_name in _PERCENT_METRICS:
+        return f"{100.0 * value:.2f}%"
+    return f"{value:.6f}"
+
+
+def _wrap_text(text: str, indent: int, width: int = _WIDTH) -> List[str]:
+    r"""Simple word-wrap of ``text`` to ``width`` columns with a fixed indent."""
+    import textwrap
+
+    return textwrap.wrap(
+        text,
+        width=width,
+        initial_indent=" " * indent,
+        subsequent_indent=" " * indent,
+        break_long_words=False,
+        break_on_hyphens=False,
+    ) or [" " * indent + text]
+
+
 def _print_report(result: Dict[str, Any]) -> None:
     tasks = result["tasks"]
     families = result["families"]
+    st = _Style(_use_color())
 
-    print("=" * 80)
-    print("RelBench leaderboard submission report")
-    print("=" * 80)
+    print()
+    print(st.bold("RelBench leaderboard submission report"))
+    print(st.dim("─" * _WIDTH))
 
     extra = result.get("extra_files") or []
     if extra:
-        print("Not part of a submission (--package drops these when building the zip):")
+        print(st.yellow("Ignored (not prediction tables; --package drops them):"))
         for name in extra:
-            print(f"  - {name}")
+            print(f"  {st.dim('-')} {name}")
         print()
 
-    name_w = max([len("task")] + [len(t) for t in tasks]) if tasks else len("task")
-    metric_w = max(
-        [len("metric")] + [len(e["metric_name"] or "") for e in tasks.values()]
+    # Per-task results, grouped by leaderboard family. Tasks that don't belong to
+    # any canonical family are listed at the end under "other".
+    name_w = max(
+        [len(t) for t in tasks]
+        + [len(t) for names in LEADERBOARD_TASKS.values() for t in names]
     )
-    header = (
-        f"  {'task'.ljust(name_w)}  {'metric'.ljust(metric_w)}  {'value':>12}  status"
-    )
-    print(header)
-    print("  " + "-" * (len(header) - 2))
-    for task_name in sorted(tasks):
-        entry = tasks[task_name]
-        metric_name = entry["metric_name"] or "-"
-        if entry["metric"] is not None:
-            value = f"{entry['metric']:.6f}"
-        else:
-            value = "-"
-        status = entry["status"]
-        if status != "ok" and entry["error"]:
-            status = f"error ({entry['error']})"
-        print(
-            f"  {task_name.ljust(name_w)}  {metric_name.ljust(metric_w)}  "
-            f"{value:>12}  {status}"
-        )
+    groups: List[Tuple[str, List[str]]] = [
+        (family, [t for t in canonical if t in tasks])
+        for family, canonical in LEADERBOARD_TASKS.items()
+    ]
+    other = sorted(t for t in tasks if _TASK_TO_FAMILY.get(t) is None)
+    if other:
+        groups.append(("other", other))
 
-    print()
-    print("Per-family verdicts:")
-    print("  " + "-" * 78)
+    for family, group_tasks in groups:
+        if not group_tasks:
+            continue
+        fam = families.get(family)
+        metric_name = fam["metric_name"] if fam else "metric"
+        print(
+            f"{st.bold(family.capitalize())} "
+            f"{st.dim_italic(f'({_metric_display(metric_name)})')}"
+        )
+        for task_name in group_tasks:
+            entry = tasks[task_name]
+            if entry["status"] == "ok":
+                mark = st.green("✓")
+                value = _format_value(entry["metric_name"], entry["metric"])
+                print(f"  {mark} {task_name.ljust(name_w)}  {st.bold(value.rjust(7))}")
+            else:
+                mark = st.red("✗")
+                print(f"  {mark} {task_name.ljust(name_w)}  {st.red('failed')}")
+                for line in _wrap_text(entry["error"] or "unknown error", indent=6):
+                    print(st.dim(line))
+        if fam is not None and fam["missing"]:
+            for task_name in fam["missing"]:
+                print(
+                    f"  {st.yellow('·')} {task_name.ljust(name_w)}  "
+                    + st.dim("missing")
+                )
+        print()
+
+    # Per-family verdicts.
+    print(st.bold("Leaderboard verdicts"))
     for family in LEADERBOARD_TASKS:
         fam = families[family]
-        mark = "[validated] " if fam["complete"] else "[rejected]  "
-        agg = "n/a" if fam["aggregate"] is None else f"{fam['aggregate']:.6f}"
-        print(
-            f"  {mark}{family:<16} valid={fam['num_valid']}/{fam['num_total']}  "
-            f"metric={fam['metric_name']}  aggregate={agg}"
-        )
-        print(f"        {fam['verdict']}")
-    print()
+        counts = f"{fam['num_valid']}/{fam['num_total']} tasks valid"
+        if fam["complete"]:
+            badge = st.bold_green("VALIDATED")
+            agg = _format_value(fam["metric_name"], fam["aggregate"])
+            print(
+                f"  {badge}  {family:<16} {counts}, "
+                f"mean {_metric_display(fam['metric_name'])} = {st.bold(agg)}"
+            )
+        else:
+            badge = st.bold_red("rejected ")
+            print(f"  {badge}  {family:<16} {counts}")
+            problems = []
+            if fam["missing"]:
+                problems.append(f"missing: {', '.join(fam['missing'])}")
+            if fam["invalid"]:
+                problems.append(f"invalid: {', '.join(fam['invalid'])}")
+            for problem in problems:
+                for line in _wrap_text(problem, indent=13):
+                    print(st.dim(line))
+
+    print(st.dim("─" * _WIDTH))
     if result["validated"]:
-        print(f"Validated leaderboard(s): {', '.join(result['validated'])}")
+        print(st.bold_green("Validated for: " + ", ".join(result["validated"])))
     else:
-        print("Validated leaderboard(s): none")
-    print("=" * 80)
+        print(st.bold_red("Validated for: none"))
+    print()
 
 
 # --------------------------------------------------------------------------- #
