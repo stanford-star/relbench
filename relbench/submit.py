@@ -478,10 +478,10 @@ def _quiet_hf_progress() -> None:
 def _prefetch_hf_data(task_names: Sequence[str], verbose: bool) -> None:
     r"""Download all Hub data the evaluation needs, before scoring starts.
 
-    Downloads run here in the parent process with huggingface_hub's own progress bars
-    (only shown when something is actually fetched); already-cached datasets print a
-    one-line "cached" note instead. This keeps the parallel workers download-free (their
-    per-task ``snapshot_download`` calls all hit the cache).
+    Downloads run here in the parent process with huggingface_hub's own progress bars;
+    already-cached datasets are silent (nothing to fetch). This keeps the parallel
+    workers download-free (their per-task ``snapshot_download`` calls all hit the
+    cache).
     """
     try:
         from huggingface_hub import hf_hub_download, snapshot_download
@@ -492,8 +492,6 @@ def _prefetch_hf_data(task_names: Sequence[str], verbose: bool) -> None:
 
     st = _Style(_use_color() and verbose)
     datasets = sorted({t.split("/", 1)[0] for t in task_names if "/" in t})
-    if verbose:
-        print(st.bold("Test data") + " " + st.dim_italic("(from HuggingFace)"))
 
     for dataset_name in datasets:
         repo_id, subdir = resolve_repo(f"{RELBENCH_HF}/{dataset_name}")
@@ -505,11 +503,9 @@ def _prefetch_hf_data(task_names: Sequence[str], verbose: bool) -> None:
         try:
             # Resolves purely from the local cache; raises if anything is missing.
             snapshot_download(local_files_only=True, **kwargs)
-            if verbose:
-                print(f"  {st.green('✓')} {dataset_name.ljust(12)}  {st.dim('cached')}")
         except LocalEntryNotFoundError:
             if verbose:
-                print(f"  {st.cyan('↓')} {dataset_name.ljust(12)}  downloading...")
+                print(f"Downloading {dataset_name} test data from HuggingFace...")
             try:
                 snapshot_download(**kwargs)  # progress bars still enabled here
             except (
@@ -532,8 +528,6 @@ def _prefetch_hf_data(task_names: Sequence[str], verbose: bool) -> None:
             )
         except Exception:  # noqa: BLE001 -- surfaced per-task at scoring time
             pass
-    if verbose:
-        print()
 
 
 def _evaluate_one(job: Tuple[str, str]) -> Tuple[str, Dict[str, Any]]:
@@ -621,12 +615,6 @@ def evaluate_submission(
         num_workers = min(len(jobs), os.cpu_count() or 1)
 
     _prefetch_hf_data([name for name, _ in jobs], verbose)
-
-    if verbose:
-        print(
-            f"Evaluating {len(jobs)} prediction tables with {num_workers} workers...",
-            flush=True,
-        )
 
     _quiet_hf_progress()
     if num_workers <= 1:
@@ -768,21 +756,27 @@ class _Style:
 # Display names and value formatting for metrics in the printed report (raw metric
 # names/values in the returned dict are unchanged).
 _METRIC_DISPLAY: Dict[str, str] = {
-    "roc_auc": "auroc",
-    "link_prediction_map": "map",
+    "roc_auc": "AUROC",
+    "nmae": "nMAE",
+    "link_prediction_map": "mAP",
 }
 _PERCENT_METRICS = {"roc_auc", "nmae", "link_prediction_map"}
 
 
 def _metric_display(name: Optional[str]) -> str:
-    return _METRIC_DISPLAY.get(name or "", name or "metric")
+    r"""Display name for a metric; percent-scaled metrics carry a '%' suffix (the values
+    themselves are printed without the sign)."""
+    display = _METRIC_DISPLAY.get(name or "", name or "metric")
+    if name in _PERCENT_METRICS:
+        display += " %"
+    return display
 
 
 def _format_value(metric_name: Optional[str], value: Optional[float]) -> str:
     if value is None:
         return "-"
     if metric_name in _PERCENT_METRICS:
-        return f"{100.0 * value:.2f}%"
+        return f"{100.0 * value:.2f}"
     return f"{value:.6f}"
 
 
@@ -804,10 +798,6 @@ def _print_report(result: Dict[str, Any]) -> None:
     tasks = result["tasks"]
     families = result["families"]
     st = _Style(_use_color())
-
-    print()
-    print(st.bold("RelBench leaderboard submission report"))
-    print(st.dim("─" * _WIDTH))
 
     extra = result.get("extra_files") or []
     if extra:
@@ -856,22 +846,21 @@ def _print_report(result: Dict[str, Any]) -> None:
                     f"  {st.yellow('·')} {task_name.ljust(name_w)}  "
                     + st.dim("missing")
                 )
+        if fam is not None and fam["aggregate"] is not None:
+            agg = _format_value(fam["metric_name"], fam["aggregate"])
+            print(f"    {'mean'.ljust(name_w)}  {st.bold(agg.rjust(7))}")
         print()
 
     # Per-family verdicts.
-    print(st.bold("Leaderboard verdicts"))
+    print(st.bold("Leaderboard submission integrity"))
     for family in LEADERBOARD_TASKS:
         fam = families[family]
         counts = f"{fam['num_valid']}/{fam['num_total']} tasks valid"
         if fam["complete"]:
-            badge = st.bold_green("VALIDATED")
-            agg = _format_value(fam["metric_name"], fam["aggregate"])
-            print(
-                f"  {badge}  {family:<16} {counts}, "
-                f"mean {_metric_display(fam['metric_name'])} = {st.bold(agg)}"
-            )
+            badge = st.bold_green("OK      ")
+            print(f"  {badge}  {family:<16} {counts}")
         else:
-            badge = st.bold_red("rejected ")
+            badge = st.bold_red("rejected")
             print(f"  {badge}  {family:<16} {counts}")
             problems = []
             if fam["missing"]:
@@ -879,14 +868,8 @@ def _print_report(result: Dict[str, Any]) -> None:
             if fam["invalid"]:
                 problems.append(f"invalid: {', '.join(fam['invalid'])}")
             for problem in problems:
-                for line in _wrap_text(problem, indent=13):
+                for line in _wrap_text(problem, indent=12):
                     print(st.dim(line))
-
-    print(st.dim("─" * _WIDTH))
-    if result["validated"]:
-        print(st.bold_green("Validated for: " + ", ".join(result["validated"])))
-    else:
-        print(st.bold_red("Validated for: none"))
     print()
 
 
