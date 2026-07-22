@@ -551,6 +551,49 @@ def _evaluate_one(job: Tuple[str, str]) -> Tuple[str, Dict[str, Any]]:
         }
 
 
+def _score_jobs(
+    jobs: List[Tuple[str, str]], num_workers: int, verbose: bool
+) -> List[Tuple[str, Dict[str, Any]]]:
+    r"""Score all jobs, with a tqdm progress bar over tasks when ``verbose``.
+
+    The bar ticks as each task finishes and shows the most recently completed task, so a
+    long-running evaluation is visibly alive.
+    """
+    from tqdm.auto import tqdm
+
+    bar = tqdm(
+        total=len(jobs),
+        desc="Scoring tasks",
+        unit="task",
+        disable=not verbose,
+        leave=False,
+    )
+    raw: List[Tuple[str, Dict[str, Any]]] = []
+    try:
+        if num_workers <= 1:
+            for job in jobs:
+                bar.set_postfix_str(job[0])
+                raw.append(_evaluate_one(job))
+                bar.update(1)
+        else:
+            from concurrent.futures import as_completed
+
+            with ProcessPoolExecutor(
+                max_workers=num_workers, initializer=_quiet_hf_progress
+            ) as executor:
+                futures = {executor.submit(_evaluate_one, job): job for job in jobs}
+                order = {job[0]: i for i, job in enumerate(jobs)}
+                for future in as_completed(futures):
+                    task_name, res = future.result()
+                    bar.set_postfix_str(task_name)
+                    bar.update(1)
+                    raw.append((task_name, res))
+                raw.sort(key=lambda item: order[item[0]])
+    finally:
+        bar.close()
+    return raw
+
+
 def evaluate_submission(
     pred_dir: Union[str, os.PathLike],
     *,
@@ -617,13 +660,7 @@ def evaluate_submission(
     _prefetch_hf_data([name for name, _ in jobs], verbose)
 
     _quiet_hf_progress()
-    if num_workers <= 1:
-        raw = [_evaluate_one(job) for job in jobs]
-    else:
-        with ProcessPoolExecutor(
-            max_workers=num_workers, initializer=_quiet_hf_progress
-        ) as executor:
-            raw = list(executor.map(_evaluate_one, jobs))
+    raw = _score_jobs(jobs, num_workers, verbose)
 
     tasks_out: Dict[str, Dict[str, Any]] = {}
     for task_name, res in raw:
