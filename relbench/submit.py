@@ -563,7 +563,7 @@ def _score_jobs(
 
     bar = tqdm(
         total=len(jobs),
-        desc="Scoring tasks",
+        desc=f"Scoring tasks with {num_workers} worker{'s' if num_workers != 1 else ''}",
         unit="task",
         disable=not verbose,
         leave=False,
@@ -659,7 +659,7 @@ def evaluate_submission(
 
     _prefetch_hf_data([name for name, _ in jobs], verbose)
 
-    _quiet_hf_progress()
+    # _quiet_hf_progress()
     raw = _score_jobs(jobs, num_workers, verbose)
 
     tasks_out: Dict[str, Dict[str, Any]] = {}
@@ -889,7 +889,7 @@ def _print_report(result: Dict[str, Any]) -> None:
         print()
 
     # Per-family verdicts.
-    print(st.bold("Leaderboard submission integrity"))
+    print(st.bold("Integrity"))
     for family in LEADERBOARD_TASKS:
         fam = families[family]
         counts = f"{fam['num_valid']}/{fam['num_total']} tasks valid"
@@ -948,24 +948,18 @@ def _package(
     pred_dir: Union[str, os.PathLike], extra: Sequence[str], out: Path
 ) -> None:
     r"""Write the submission zip and print how to submit it."""
+    print("Packaging...", end="", flush=True)
     st = _Style(_use_color())
     zip_bytes = _zip_submission(pred_dir, extra)
     out.write_bytes(zip_bytes)
-    print(st.bold("Submission package"))
+    print("\r", end="", flush=True)
+    print(st.bold("Next step"))
     print(
-        f"  {st.green('✓')} {st.bold(str(out))} "
-        + st.dim(f"({len(zip_bytes) / 1e6:.1f} MB)")
+        f"  Use this link to upload {st.bold(str(out))} "
+        + st.italic(f"({len(zip_bytes) / 1e6:.1f} MB)")
+        + ":"
     )
-    print()
-    print(st.bold("Next step") + " " + st.dim_italic("(submit to the leaderboard)"))
-    print("  Open a submission issue and drag the zip into it:")
     print(f"  {st.cyan(SUBMISSION_ISSUE_URL)}")
-    print(
-        st.dim(
-            "  (method name, links and the in-context flag are entered in the "
-            "issue form)"
-        )
-    )
     print()
 
 
