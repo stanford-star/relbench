@@ -479,9 +479,10 @@ def _prefetch_hf_data(task_names: Sequence[str], verbose: bool) -> None:
     r"""Download all Hub data the evaluation needs, before scoring starts.
 
     huggingface_hub's own progress bars and logging are suppressed; instead a single
-    tqdm bar ticks once per dataset snapshot that actually needs downloading
-    (fully-cached datasets stay silent). This keeps the parallel workers download-free
-    (their per-task ``snapshot_download`` calls all hit the cache).
+    tqdm bar ticks once per dataset snapshot as it is fetched (or verified against the
+    local cache -- fully-cached datasets tick through instantly). This keeps the
+    parallel workers download-free (their per-task ``snapshot_download`` calls all hit
+    the cache).
     """
     try:
         from huggingface_hub import hf_hub_download, snapshot_download
@@ -500,51 +501,34 @@ def _prefetch_hf_data(task_names: Sequence[str], verbose: bool) -> None:
     st = _Style(_use_color() and verbose)
     datasets = sorted({t.split("/", 1)[0] for t in task_names if "/" in t})
 
-    missing: List[Tuple[str, Dict[str, Any]]] = []
-    for dataset_name in datasets:
-        repo_id, subdir = resolve_repo(f"{RELBENCH_HF}/{dataset_name}")
-        kwargs: Dict[str, Any] = dict(
-            repo_id=repo_id,
-            repo_type="dataset",
-            allow_patterns=[f"{subdir}/*"] if subdir else None,
-        )
-        try:
-            # Resolves purely from the local cache; raises if the revision is missing.
-            # Note: this does NOT verify that files under ``allow_patterns`` exist (the
-            # revision may be cached from fetching an unrelated file in the same repo),
-            # so also check that the dataset's subdir is materialized and non-empty.
-            local = Path(snapshot_download(local_files_only=True, **kwargs))
-            local_dir = local / subdir if subdir else local
-            if not any(local_dir.rglob("*")):
-                missing.append((dataset_name, kwargs))
-        except LocalEntryNotFoundError:
-            missing.append((dataset_name, kwargs))
-
-    if missing:
-        bar = tqdm(
-            total=len(missing),
-            desc="Downloading test data",
-            unit="dataset",
-            disable=not verbose,
-            leave=False,
-        )
-        try:
-            for dataset_name, kwargs in missing:
-                bar.set_postfix_str(dataset_name)
-                try:
-                    snapshot_download(**kwargs)
-                except (
-                    Exception
-                ) as exc:  # noqa: BLE001 -- surfaced per-task at scoring time
-                    bar.write(
-                        st.red(
-                            f"{dataset_name} download failed: "
-                            f"{type(exc).__name__}: {exc}"
-                        )
+    bar = tqdm(
+        total=len(datasets),
+        desc="Fetching test data",
+        unit="dataset",
+        disable=not verbose,
+        leave=False,
+    )
+    try:
+        for dataset_name in datasets:
+            bar.set_postfix_str(dataset_name)
+            repo_id, subdir = resolve_repo(f"{RELBENCH_HF}/{dataset_name}")
+            try:
+                snapshot_download(
+                    repo_id=repo_id,
+                    repo_type="dataset",
+                    allow_patterns=[f"{subdir}/*"] if subdir else None,
+                )
+            except (
+                Exception
+            ) as exc:  # noqa: BLE001 -- surfaced per-task at scoring time
+                bar.write(
+                    st.red(
+                        f"{dataset_name} download failed: {type(exc).__name__}: {exc}"
                     )
-                bar.update(1)
-        finally:
-            bar.close()
+                )
+            bar.update(1)
+    finally:
+        bar.close()
 
     try:
         hf_hub_download(
