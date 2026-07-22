@@ -673,7 +673,7 @@ def evaluate_submission(
     if num_workers is None:
         num_workers = min(len(jobs), os.cpu_count() or 1)
 
-    _prefetch_hf_data([name for name, _ in jobs], verbose=False)
+    _prefetch_hf_data([name for name, _ in jobs], verbose=verbose)
 
     _quiet_hf_progress()
     raw = _score_jobs(jobs, num_workers, verbose)
