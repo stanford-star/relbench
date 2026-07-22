@@ -227,12 +227,6 @@ class _HostedLabelsMixin:
 
     _task_dir: Optional[Path] = None
     _regenerate: bool = False
-    # Splits for which hosted parquet labels are honored. Autocomplete tasks
-    # override this to ("test",): their labels are a deterministic function of
-    # the database (a time-window join against the removed column), so hosting
-    # train/val would be redundant weight -- only the canonical test labels are
-    # hosted, for the database-free leaderboard-evaluation path.
-    _hosted_splits: tuple[str, ...] = ("train", "val", "test")
 
     def _label_fkeys(self) -> dict[str, str]:
         if isinstance(self, RecommendationTask):
@@ -248,11 +242,7 @@ class _HostedLabelsMixin:
             mask_input_cols = split == "test"
 
         path = None
-        if (
-            self._task_dir is not None
-            and not self._regenerate
-            and split in self._hosted_splits
-        ):
+        if self._task_dir is not None and not self._regenerate:
             candidate = Path(self._task_dir) / f"{split}.parquet"
             if candidate.exists():
                 path = candidate
@@ -338,8 +328,6 @@ class _ForecastRecommendationTask(_HostedLabelsMixin, RecommendationTask):
 
 
 class _AutoCompleteTask(_HostedLabelsMixin, AutoCompleteTask):
-    _hosted_splits = ("test",)
-
     def __init__(
         self, dataset: Dataset, tm: TaskManifest, task_dir=None, regenerate=False
     ):
