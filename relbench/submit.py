@@ -509,8 +509,14 @@ def _prefetch_hf_data(task_names: Sequence[str], verbose: bool) -> None:
             allow_patterns=[f"{subdir}/*"] if subdir else None,
         )
         try:
-            # Resolves purely from the local cache; raises if anything is missing.
-            snapshot_download(local_files_only=True, **kwargs)
+            # Resolves purely from the local cache; raises if the revision is missing.
+            # Note: this does NOT verify that files under ``allow_patterns`` exist (the
+            # revision may be cached from fetching an unrelated file in the same repo),
+            # so also check that the dataset's subdir is materialized and non-empty.
+            local = Path(snapshot_download(local_files_only=True, **kwargs))
+            local_dir = local / subdir if subdir else local
+            if not any(local_dir.rglob("*")):
+                missing.append((dataset_name, kwargs))
         except LocalEntryNotFoundError:
             missing.append((dataset_name, kwargs))
 
