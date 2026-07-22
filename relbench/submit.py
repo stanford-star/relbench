@@ -478,21 +478,29 @@ def _quiet_hf_progress() -> None:
 def _prefetch_hf_data(task_names: Sequence[str], verbose: bool) -> None:
     r"""Download all Hub data the evaluation needs, before scoring starts.
 
-    Downloads run here in the parent process with huggingface_hub's own progress bars;
-    already-cached datasets are silent (nothing to fetch). This keeps the parallel
-    workers download-free (their per-task ``snapshot_download`` calls all hit the
-    cache).
+    huggingface_hub's own progress bars and logging are suppressed; instead a single
+    tqdm bar ticks once per dataset snapshot that actually needs downloading
+    (fully-cached datasets stay silent). This keeps the parallel workers download-free
+    (their per-task ``snapshot_download`` calls all hit the cache).
     """
     try:
         from huggingface_hub import hf_hub_download, snapshot_download
         from huggingface_hub.utils import LocalEntryNotFoundError
     except Exception:  # noqa: BLE001 -- fall back to downloading in the workers
         return
+    import logging
+
+    from tqdm.auto import tqdm
+
     from relbench.hf import REGRESSION_STDS_FILE, resolve_repo
+
+    _quiet_hf_progress()
+    logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
 
     st = _Style(_use_color() and verbose)
     datasets = sorted({t.split("/", 1)[0] for t in task_names if "/" in t})
 
+    missing: List[Tuple[str, Dict[str, Any]]] = []
     for dataset_name in datasets:
         repo_id, subdir = resolve_repo(f"{RELBENCH_HF}/{dataset_name}")
         kwargs: Dict[str, Any] = dict(
@@ -504,15 +512,33 @@ def _prefetch_hf_data(task_names: Sequence[str], verbose: bool) -> None:
             # Resolves purely from the local cache; raises if anything is missing.
             snapshot_download(local_files_only=True, **kwargs)
         except LocalEntryNotFoundError:
-            if verbose:
-                print(f"Downloading {dataset_name} test data from HuggingFace...")
-            try:
-                snapshot_download(**kwargs)  # progress bars still enabled here
-            except (
-                Exception
-            ) as exc:  # noqa: BLE001 -- surfaced per-task at scoring time
-                if verbose:
-                    print(st.red(f"    download failed: {type(exc).__name__}: {exc}"))
+            missing.append((dataset_name, kwargs))
+
+    if missing:
+        bar = tqdm(
+            total=len(missing),
+            desc="Downloading test data",
+            unit="dataset",
+            disable=not verbose,
+            leave=False,
+        )
+        try:
+            for dataset_name, kwargs in missing:
+                bar.set_postfix_str(dataset_name)
+                try:
+                    snapshot_download(**kwargs)
+                except (
+                    Exception
+                ) as exc:  # noqa: BLE001 -- surfaced per-task at scoring time
+                    bar.write(
+                        st.red(
+                            f"{dataset_name} download failed: "
+                            f"{type(exc).__name__}: {exc}"
+                        )
+                    )
+                bar.update(1)
+        finally:
+            bar.close()
 
     try:
         hf_hub_download(
@@ -657,9 +683,9 @@ def evaluate_submission(
     if num_workers is None:
         num_workers = min(len(jobs), os.cpu_count() or 1)
 
-    _prefetch_hf_data([name for name, _ in jobs], verbose)
+    _prefetch_hf_data([name for name, _ in jobs], verbose=False)
 
-    # _quiet_hf_progress()
+    _quiet_hf_progress()
     raw = _score_jobs(jobs, num_workers, verbose)
 
     tasks_out: Dict[str, Dict[str, Any]] = {}
