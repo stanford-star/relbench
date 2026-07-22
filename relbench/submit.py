@@ -475,6 +475,67 @@ def _quiet_hf_progress() -> None:
         pass
 
 
+def _prefetch_hf_data(task_names: Sequence[str], verbose: bool) -> None:
+    r"""Download all Hub data the evaluation needs, before scoring starts.
+
+    Downloads run here in the parent process with huggingface_hub's own progress bars
+    (only shown when something is actually fetched); already-cached datasets print a
+    one-line "cached" note instead. This keeps the parallel workers download-free (their
+    per-task ``snapshot_download`` calls all hit the cache).
+    """
+    try:
+        from huggingface_hub import hf_hub_download, snapshot_download
+        from huggingface_hub.utils import LocalEntryNotFoundError
+    except Exception:  # noqa: BLE001 -- fall back to downloading in the workers
+        return
+    from relbench.hf import REGRESSION_STDS_FILE, resolve_repo
+
+    st = _Style(_use_color() and verbose)
+    datasets = sorted({t.split("/", 1)[0] for t in task_names if "/" in t})
+    if verbose:
+        print(st.bold("Test data") + " " + st.dim_italic("(from HuggingFace)"))
+
+    for dataset_name in datasets:
+        repo_id, subdir = resolve_repo(f"{RELBENCH_HF}/{dataset_name}")
+        kwargs: Dict[str, Any] = dict(
+            repo_id=repo_id,
+            repo_type="dataset",
+            allow_patterns=[f"{subdir}/*"] if subdir else None,
+        )
+        try:
+            # Resolves purely from the local cache; raises if anything is missing.
+            snapshot_download(local_files_only=True, **kwargs)
+            if verbose:
+                print(f"  {st.green('✓')} {dataset_name.ljust(12)}  {st.dim('cached')}")
+        except LocalEntryNotFoundError:
+            if verbose:
+                print(f"  {st.cyan('↓')} {dataset_name.ljust(12)}  downloading...")
+            try:
+                snapshot_download(**kwargs)  # progress bars still enabled here
+            except (
+                Exception
+            ) as exc:  # noqa: BLE001 -- surfaced per-task at scoring time
+                if verbose:
+                    print(st.red(f"    download failed: {type(exc).__name__}: {exc}"))
+
+    try:
+        hf_hub_download(
+            repo_id=RELBENCH_HF,
+            filename=REGRESSION_STDS_FILE,
+            repo_type="dataset",
+            local_files_only=True,
+        )
+    except LocalEntryNotFoundError:
+        try:
+            hf_hub_download(
+                repo_id=RELBENCH_HF, filename=REGRESSION_STDS_FILE, repo_type="dataset"
+            )
+        except Exception:  # noqa: BLE001 -- surfaced per-task at scoring time
+            pass
+    if verbose:
+        print()
+
+
 def _evaluate_one(job: Tuple[str, str]) -> Tuple[str, Dict[str, Any]]:
     r"""Process-pool worker: score one task, capturing success or a failure reason.
 
@@ -559,10 +620,11 @@ def evaluate_submission(
     if num_workers is None:
         num_workers = min(len(jobs), os.cpu_count() or 1)
 
+    _prefetch_hf_data([name for name, _ in jobs], verbose)
+
     if verbose:
         print(
-            f"Evaluating {len(jobs)} prediction tables with {num_workers} workers.\n"
-            f"(Downloads test sets from HuggingFace if not cached)",
+            f"Evaluating {len(jobs)} prediction tables with {num_workers} workers...",
             flush=True,
         )
 
@@ -848,10 +910,12 @@ def _zip_submission(pred_dir: Union[str, os.PathLike], extra: Sequence[str]) -> 
     import zipfile
 
     pred_dir = Path(pred_dir)
+    st = _Style(_use_color())
     if extra:
-        print("\nExcluding files that aren't part of a submission:")
+        print(st.yellow("Excluding files that aren't part of a submission:"))
         for name in extra:
-            print(f"  - {name}")
+            print(f"  {st.dim('-')} {name}")
+        print()
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         for p in sorted(pred_dir.iterdir()):
@@ -864,14 +928,25 @@ def _package(
     pred_dir: Union[str, os.PathLike], extra: Sequence[str], out: Path
 ) -> None:
     r"""Write the submission zip and print how to submit it."""
+    st = _Style(_use_color())
     zip_bytes = _zip_submission(pred_dir, extra)
     out.write_bytes(zip_bytes)
-    print(f"\nCreated submission package: {out} ({len(zip_bytes) / 1e6:.1f} MB)")
-    print("\nSubmit by opening a submission issue and dragging the zip into it:")
-    print(f"  {SUBMISSION_ISSUE_URL}")
+    print(st.bold("Submission package"))
     print(
-        "  (method name, links and the in-context flag are entered in the issue form)"
+        f"  {st.green('✓')} {st.bold(str(out))} "
+        + st.dim(f"({len(zip_bytes) / 1e6:.1f} MB)")
     )
+    print()
+    print(st.bold("Next step") + " " + st.dim_italic("(submit to the leaderboard)"))
+    print("  Open a submission issue and drag the zip into it:")
+    print(f"  {st.cyan(SUBMISSION_ISSUE_URL)}")
+    print(
+        st.dim(
+            "  (method name, links and the in-context flag are entered in the "
+            "issue form)"
+        )
+    )
+    print()
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
@@ -907,10 +982,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     result = evaluate_submission(args.pred_dir, num_workers=args.num_workers)
 
     if not result["validated"]:
+        st = _Style(_use_color())
         print(
-            "\nCannot package — no leaderboard was validated; fix the prediction "
-            "tables first."
+            st.bold_red("Cannot package")
+            + " — no leaderboard was validated; fix the prediction tables first."
         )
+        print()
         return 1
     out = Path(args.out or f"{Path(args.pred_dir).resolve().name}.zip")
     _package(args.pred_dir, result.get("extra_files") or [], out)
