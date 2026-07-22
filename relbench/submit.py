@@ -780,6 +780,9 @@ class _Style:
     def cyan(self, s: str) -> str:
         return self._wrap("36", s)
 
+    def underline_cyan(self, s: str) -> str:
+        return self._wrap("4;36", s)
+
     def bold_green(self, s: str) -> str:
         return self._wrap("1;32", s)
 
@@ -953,13 +956,13 @@ def _package(
     zip_bytes = _zip_submission(pred_dir, extra)
     out.write_bytes(zip_bytes)
     print("\r", end="", flush=True)
-    print(st.bold("Next step"))
+    print(st.bold("Next step     "))
     print(
         f"  Use this link to upload {st.bold(str(out))} "
         + st.italic(f"({len(zip_bytes) / 1e6:.1f} MB)")
         + ":"
     )
-    print(f"  {st.cyan(SUBMISSION_ISSUE_URL)}")
+    print(f"  {st.underline_cyan(SUBMISSION_ISSUE_URL)}")
     print()
 
 
