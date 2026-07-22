@@ -21,9 +21,9 @@ from tqdm import tqdm
 
 from relbench import load_dataset, load_task
 from relbench.base import Dataset, EntityTask, TaskType
-from relbench.leaderboard import evaluate_task, write_prediction_table
 from relbench.modeling.graph import get_node_train_table_input, make_pkey_fkey_graph
 from relbench.modeling.utils import get_stype_proposal
+from relbench.submit import evaluate_task, write_prediction_table
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stack")

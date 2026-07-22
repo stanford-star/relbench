@@ -7,7 +7,7 @@ attached to the issue body as a zip.
 This script is run by the leaderboard workflows with the issue body in a file:
 
 * validate mode (default): parse the form, download the attachments, score them with
-  ``relbench.leaderboard.evaluate_submission``, and write a markdown report (posted back
+  ``relbench.submit.evaluate_submission``, and write a markdown report (posted back
   to the issue as a comment). Exit 0 iff at least one leaderboard family is validated.
 * publish mode (``--entry``): additionally write the leaderboard entry JSON for the issue
   and regenerate the aggregate ``leaderboard.json`` from all entry files.
@@ -28,7 +28,7 @@ import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 
-from relbench.leaderboard import evaluate_submission
+from relbench.submit import evaluate_submission
 
 # Issue-form section headings (as rendered by GitHub) -> entry fields. The "In-context"
 # checkbox section is handled separately (rendered as a "- [x] ..." task list).
@@ -40,7 +40,7 @@ FORM_FIELDS = {
 IN_CONTEXT_HEADING = "In-context"
 NO_RESPONSE = "_No response_"
 
-# Leaderboard family (relbench.leaderboard) -> board key used by the website.
+# Leaderboard family (relbench.submit) -> board key used by the website.
 FAMILY_TO_BOARD = {
     "classification": "binary_classification",
     "regression": "regression",

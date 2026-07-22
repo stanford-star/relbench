@@ -10,7 +10,7 @@ body:
         your prediction tables locally first:
 
         ```
-        python -m relbench.leaderboard <submission_dir> --package
+        python -m relbench.submit <submission_dir>
         ```
 
         Validation runs automatically when you open (or edit) this issue and posts a
@@ -45,7 +45,7 @@ body:
     id: files
     attributes:
       label: Prediction files
-      description: Drag your submission zip here (from --package).
+      description: Drag your submission zip here (written by `python -m relbench.submit`).
       placeholder: Attach files by dragging them into this text area.
     validations:
       required: true

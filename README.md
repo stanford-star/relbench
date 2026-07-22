@@ -73,7 +73,7 @@ Open these directly in Google Colab — no setup required:
 The [**RelBench leaderboard**](https://star-project.stanford.edu/relbench/leaderboard/)
 ranks methods by their test-set performance, averaged over a fixed task set. There are
 three independent leaderboards — **classification** (12 tasks), **regression** (9), and
-**recommendation** (10); the task lists are in `relbench.leaderboard.LEADERBOARD_TASKS`.
+**recommendation** (10); the task lists are in `relbench.submit.LEADERBOARD_TASKS`.
 You can submit to any of them; each requires predictions for *all* of its tasks.
 
 To submit:
@@ -81,14 +81,14 @@ To submit:
 1. **Write one prediction CSV per task**, named `<dataset>__<task>.csv`, into a directory:
 
    ```python
-   relbench.leaderboard.write_prediction_table(task, test_pred, "preds/rel-f1__driver-position.csv")
+   relbench.submit.write_prediction_table(task, test_pred, "preds/rel-f1__driver-position.csv")
    ```
 
 2. **Validate and package** the directory — this scores every CSV against the test tables,
    prints a verdict per leaderboard, and writes a clean submission zip:
 
    ```bash
-   python -m relbench.leaderboard preds/ --package
+   python -m relbench.submit preds/
    ```
 
 3. **[Open a submission issue](https://github.com/rishabh-ranjan/relbench/issues/new?template=submission.yml)**

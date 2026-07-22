@@ -19,8 +19,8 @@ from torch_geometric.seed import seed_everything
 
 from relbench import load_dataset, load_task
 from relbench.base import Dataset, RecommendationTask, Table
-from relbench.leaderboard import evaluate_task, write_prediction_table
 from relbench.modeling.utils import get_stype_proposal, remove_pkey_fkey
+from relbench.submit import evaluate_task, write_prediction_table
 
 LINK_PRED_BASELINE_TARGET_COL_NAME = "link_pred_baseline_target_column_name"
 PRED_SCORE_COL_NAME = "pred_score_col_name"

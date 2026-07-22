@@ -34,11 +34,11 @@ Public API
 
 CLI
 ===
-``python -m relbench.leaderboard <pred_dir> [--num-workers N] [--quiet]`` runs
-:func:`evaluate_submission` and prints the report. It exits ``0`` if *at least one*
-leaderboard family is validated (complete and fully valid), and non-zero otherwise.
-``--package`` additionally writes a clean submission zip to attach to a leaderboard
-submission issue on GitHub (method metadata is entered in the issue form itself).
+``python -m relbench.submit <pred_dir> [--num-workers N] [--out PATH]`` runs
+:func:`evaluate_submission`, prints the report, and — if *at least one* leaderboard
+family is validated (complete and fully valid) — writes a clean submission zip to
+attach to a leaderboard submission issue on GitHub (method metadata is entered in the
+issue form itself). It exits ``0`` on success and non-zero otherwise.
 """
 
 from __future__ import annotations
@@ -749,7 +749,7 @@ def _print_report(result: Dict[str, Any]) -> None:
 
     extra = result.get("extra_files") or []
     if extra:
-        print(st.yellow("Ignored (not prediction tables; --package drops them):"))
+        print(st.yellow("Ignored (not prediction tables; left out of the zip):"))
         for name in extra:
             print(f"  {st.dim('-')} {name}")
         print()
@@ -880,11 +880,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     Returns the process exit code (0 if any family is validated).
     """
     parser = argparse.ArgumentParser(
-        prog="python -m relbench.leaderboard",
+        prog="python -m relbench.submit",
         description=(
             "Evaluate a directory of RelBench prediction CSVs as a leaderboard "
-            "submission. Exit code 0 if at least one leaderboard family is validated "
-            "(all of its tasks present and valid), non-zero otherwise."
+            "submission and, if at least one leaderboard family is validated (all of "
+            "its tasks present and valid), write a clean submission zip to attach to "
+            "a submission issue on GitHub. Exit code 0 on success."
         ),
     )
     parser.add_argument(
@@ -897,37 +898,23 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         help="process-pool size (default: min(num_tasks, cpu_count); 1 runs in-process)",
     )
     parser.add_argument(
-        "--quiet", action="store_true", help="suppress the printed report"
-    )
-    parser.add_argument(
-        "--package",
-        action="store_true",
-        help="after validating, write a clean submission zip (prediction tables only) and "
-        "print how to submit it as a GitHub issue",
-    )
-    parser.add_argument(
         "--out",
         default=None,
-        help="output zip path for --package (default: <dir-name>.zip in the cwd)",
+        help="output zip path (default: <dir-name>.zip in the cwd)",
     )
     args = parser.parse_args(argv)
 
-    result = evaluate_submission(
-        args.pred_dir, num_workers=args.num_workers, verbose=not args.quiet
-    )
+    result = evaluate_submission(args.pred_dir, num_workers=args.num_workers)
 
-    if args.package:
-        if not result["validated"]:
-            print(
-                "\nCannot package — no leaderboard was validated; fix the prediction "
-                "tables first."
-            )
-            return 1
-        out = Path(args.out or f"{Path(args.pred_dir).resolve().name}.zip")
-        _package(args.pred_dir, result.get("extra_files") or [], out)
-        return 0
-
-    return 0 if result["validated"] else 1
+    if not result["validated"]:
+        print(
+            "\nCannot package — no leaderboard was validated; fix the prediction "
+            "tables first."
+        )
+        return 1
+    out = Path(args.out or f"{Path(args.pred_dir).resolve().name}.zip")
+    _package(args.pred_dir, result.get("extra_files") or [], out)
+    return 0
 
 
 if __name__ == "__main__":

@@ -16,14 +16,14 @@ import pytest
 from conftest import _CHURN, _PURCHASE, FakeDataset
 
 from relbench.base import TaskType
-from relbench.leaderboard import (
+from relbench.load import load_task
+from relbench.manifest import DatasetManifest, TableSpec, TaskManifest
+from relbench.submit import (
     LEADERBOARD_TASKS,
     evaluate_submission,
     evaluate_task,
     write_prediction_table,
 )
-from relbench.load import load_task
-from relbench.manifest import DatasetManifest, TableSpec, TaskManifest
 
 # A regression task over the fake schema: future-review count per customer (numeric target).
 _LTV_SQL = """

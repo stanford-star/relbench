@@ -19,8 +19,8 @@ from torch_geometric.seed import seed_everything
 
 from relbench import load_task
 from relbench.base import EntityTask, TaskType
-from relbench.leaderboard import evaluate_task, write_prediction_table
 from relbench.modeling.utils import get_stype_proposal, remove_pkey_fkey
+from relbench.submit import evaluate_task, write_prediction_table
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-f1")
