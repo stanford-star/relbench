@@ -14,7 +14,7 @@ permissions:
 jobs:
   validate:
     # Runs when a submission issue is opened/edited, or when the "submit" label is
-    # added after the fact. Other label additions (ok / invalid / accept) must not
+    # added after the fact. Other label additions (ok / reject / accept) must not
     # re-trigger validation.
     if: >
       contains(github.event.issue.labels.*.name, 'submit') &&
@@ -64,8 +64,8 @@ jobs:
         run: |
           if [ "${{ steps.validate.outcome }}" = "success" ]; then
             gh issue edit ${{ github.event.issue.number }} --repo ${{ github.repository }} \
-              --add-label ok --remove-label invalid || true
+              --add-label ok --remove-label reject || true
           else
             gh issue edit ${{ github.event.issue.number }} --repo ${{ github.repository }} \
-              --add-label invalid --remove-label ok || true
+              --add-label reject --remove-label ok || true
           fi

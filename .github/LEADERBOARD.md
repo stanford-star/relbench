@@ -13,7 +13,7 @@ How a submission flows from issue to leaderboard, and what the maintainer must d
    `submit`-labeled issue. It downloads the attachments, re-scores them with
    `relbench.submit.evaluate_submission` (no submitter code ever runs — attachments
    are only parsed as CSV), posts the report as an issue comment, and labels the
-   issue `ok` or `invalid`.
+   issue `ok` or `reject`.
 4. **Maintainer action — this is the manual step:** review an `ok` issue (sanity of
    scores, method name/URL, in-context claim) and add the **`accept`** label.
    Only users with triage permission can label, so `accept` is the approval gate.
@@ -28,7 +28,7 @@ How a submission flows from issue to leaderboard, and what the maintainer must d
 |-----------|------------------------------------------------------|------------|
 | `submit`  | Leaderboard submission issue (workflow trigger gate) | issue form |
 | `ok`      | Passed validation                                    | CI         |
-| `invalid` | Failed validation                                    | CI         |
+| `reject`  | Failed validation                                    | CI         |
 | `accept`  | Maintainer approval — publishes the entry            | maintainer |
 
 ## Notes
