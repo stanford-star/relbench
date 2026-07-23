@@ -6,10 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for your interest in RelBench!
-        Please see
-        [the README](https://github.com/rishabh-ranjan/relbench#submitting-to-the-leaderboard)
-        for how to prepare and validate your submission zip.
+        Thanks for your interest in RelBench! Please see [the README](https://github.com/rishabh-ranjan/relbench#submitting-to-the-leaderboard) for how to prepare and validate your submission zip.
   - type: input
     id: method-name
     attributes:
