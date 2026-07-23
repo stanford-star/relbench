@@ -33,7 +33,7 @@ from relbench.submit import evaluate_submission
 # Issue-form section headings (as rendered by GitHub) -> entry fields. The "In-context"
 # checkbox section is handled separately (rendered as a "- [x] ..." task list).
 FORM_FIELDS = {
-    "Method name": "name",
+    "Name": "name",
     "URL": "url",
     "Note": "note",
 }
@@ -63,7 +63,8 @@ def parse_form(body: str) -> dict:
         if line.startswith("### "):
             if current is not None:
                 sections[current] = "\n".join(lines).strip()
-            current = line[4:].strip()
+            # issue-form labels may carry a parenthetical hint, e.g. "Name (shown on ...)"
+            current = line[4:].split(" (")[0].strip()
             lines = []
         else:
             lines.append(line)
