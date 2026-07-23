@@ -20,7 +20,7 @@ body:
     attributes:
       label: In-context
       options:
-        - label: I confirm that my method was not trained on the target **database** in any form (leave unchecked if not).
+        - label: I confirm that my method did NOT train on the target **database** in any form (leave unchecked if not).
   - type: input
     id: url
     attributes:
