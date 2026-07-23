@@ -178,7 +178,7 @@ def build_entry(fields: dict, result: dict, issue: int, author: str) -> dict:
         "in_context": bool(fields.get("in_context")),
         "url": fields.get("url"),
         "note": fields.get("note"),
-        "date": datetime.now(timezone.utc).strftime("%Y-%m"),
+        "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         "author": author,
         "issue": issue,
         "boards": boards,
