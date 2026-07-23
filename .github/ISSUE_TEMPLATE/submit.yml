@@ -1,12 +1,12 @@
 name: Submit to the RelBench leaderboard
 description: Submit your method to the RelBench leaderboard by uploading test set predictions.
-title: "[submit] "
+title: "Leaderboard submission"
 labels: ["submit"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for your interest in RelBench! Please see [the README](https://github.com/rishabh-ranjan/relbench#submitting-to-the-leaderboard) for how to prepare and validate your submission zip.
+        Thanks for your interest in RelBench! Please see [this](https://github.com/rishabh-ranjan/relbench#submitting-to-the-leaderboard) for how to prepare and validate your submission zip.
   - type: input
     id: method-name
     attributes:
