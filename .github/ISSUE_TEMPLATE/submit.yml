@@ -10,16 +10,14 @@ body:
   - type: input
     id: method-name
     attributes:
-      label: Name
-      description: Display name shown on the leaderboard.
+      label: Name (display name shown on the leaderboard)
       placeholder: My awesome method
     validations:
       required: true
   - type: textarea
     id: note
     attributes:
-      label: Note
-      description: Anything you'd like to add, shown on hover (optional).
+      label: Note (anything you'd like to add, shown on hover, optional).
   - type: checkboxes
     id: in-context
     attributes:
@@ -29,16 +27,14 @@ body:
   - type: input
     id: url
     attributes:
-      label: URL
-      description: Project / code / paper link.
+      label: URL (Project / code / paper link)
       placeholder: https://github.com/...
     validations:
       required: true
   - type: textarea
     id: files
     attributes:
-      label: File(s)
-      description: Upload the zip file(s) written by `python -m relbench.submit` here.
+      label: File(s) (as written by `python -m relbench.submit`)
       placeholder: See attach button below to add files.
     validations:
       required: true
