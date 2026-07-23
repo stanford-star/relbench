@@ -1,7 +1,7 @@
 name: Submit to the RelBench leaderboard
 description: Submit your method to the RelBench leaderboard by uploading test set predictions.
 title: "Leaderboard submission"
-labels: ["submit"]
+labels: ["leaderboard-submission"]
 body:
   - type: markdown
     attributes:
