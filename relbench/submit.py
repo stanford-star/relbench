@@ -1039,7 +1039,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     )
     args = parser.parse_args(argv)
     if args.out is not None and not args.out.endswith(".zip"):
-        parser.error(f"--out must end with .zip, got: {args.out}")
+        args.out += ".zip"
 
     result = evaluate_submission(args.pred_dir, num_workers=args.num_workers)
 
