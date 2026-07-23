@@ -3,25 +3,21 @@ name: Validate leaderboard submission
 # Runs on every leaderboard submission issue (and whenever it is edited): downloads the
 # attached prediction tables, scores them against the test tables, and posts the report
 # as an issue comment. Only issue *data* is consumed — no submitter code ever runs.
+# No "opened" trigger: the issue template auto-applies the submit label, so a new
+# submission already fires "labeled"; listening to both would run validation twice.
 on:  # yamllint disable-line rule:truthy
   issues:
-    types: [opened, edited, labeled]
+    types: [edited, labeled]
 
 permissions:
   contents: read
   issues: write
 
-# Opening a submission issue fires both "opened" and "labeled" (the template
-# auto-applies the submit label); keep only one run per issue.
-concurrency:
-  group: leaderboard-validate-${{ github.event.issue.number }}
-  cancel-in-progress: true
-
 jobs:
   validate:
-    # Runs when a submission issue is opened/edited, or when the "submit" label is
-    # added after the fact. Other label additions (ok / fail / accept) must not
-    # re-trigger validation.
+    # Runs when the "submit" label is added (which includes issue creation, via the
+    # template) or a submission issue is edited. Other label additions (ok / fail /
+    # accept) must not re-trigger validation.
     if: >
       contains(github.event.issue.labels.*.name, 'submit') &&
       (github.event.action != 'labeled' || github.event.label.name == 'submit')
