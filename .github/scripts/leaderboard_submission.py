@@ -36,7 +36,7 @@ os.environ.setdefault("NO_COLOR", "1")  # the report is captured as plain text
 from relbench.submit import _print_report, evaluate_submission  # noqa: E402
 
 # Issue-form section headings (as rendered by GitHub) -> entry fields. The "In-context"
-# checkbox section is handled separately (rendered as a "- [x] ..." task list).
+# dropdown section is handled separately (rendered as a "Yes"/"No" line).
 FORM_FIELDS = {
     "Name": "name",
     "URL": "url",
@@ -89,7 +89,7 @@ def form_metadata(sections: dict) -> tuple[dict, list[str]]:
         val = sections.get(heading, "").strip()
         if val and val != NO_RESPONSE:
             fields[key] = val
-    fields["in_context"] = "[x]" in sections.get(IN_CONTEXT_HEADING, "").lower()
+    fields["in_context"] = sections.get(IN_CONTEXT_HEADING, "").strip().lower() == "yes"
     errors = []
     if not fields.get("name"):
         errors.append("the form is missing the method name")

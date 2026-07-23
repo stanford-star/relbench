@@ -18,12 +18,15 @@ body:
     id: note
     attributes:
       label: Note (anything you'd like to add, shown on hover, optional).
-  - type: checkboxes
+  - type: dropdown
     id: in-context
     attributes:
-      label: In-context
+      label: In-context? (the method did NOT train on the target DATABASE in any form)
       options:
-        - label: I confirm that my method did NOT train on the target **database** in any form (leave unchecked otherwise).
+        - "No"
+        - "Yes"
+    validations:
+      required: true
   - type: input
     id: url
     attributes:
