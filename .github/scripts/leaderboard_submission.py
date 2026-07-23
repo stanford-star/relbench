@@ -161,7 +161,9 @@ def write_report(path: Path, fields: dict, problems: list, result: dict | None) 
     path.write_text("\n".join(lines) + "\n")
 
 
-def build_entry(fields: dict, result: dict, issue: int, author: str) -> dict:
+def build_entry(
+    fields: dict, result: dict, issue: int, author: str, created_at: str = ""
+) -> dict:
     boards = {}
     for family, board_key in FAMILY_TO_BOARD.items():
         fam = result["families"][family]
@@ -178,7 +180,8 @@ def build_entry(fields: dict, result: dict, issue: int, author: str) -> dict:
         "in_context": bool(fields.get("in_context")),
         "url": fields.get("url"),
         "note": fields.get("note"),
-        "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+        "date": created_at
+        or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "author": author,
         "issue": issue,
         "boards": boards,
@@ -203,6 +206,11 @@ def main() -> int:
     )
     ap.add_argument("--issue", type=int, default=0, help="issue number (publish mode)")
     ap.add_argument("--author", default="", help="issue author login (publish mode)")
+    ap.add_argument(
+        "--created-at",
+        default="",
+        help="issue creation time, ISO 8601 UTC (publish mode)",
+    )
     ap.add_argument("--num-workers", type=int, default=None)
     args = ap.parse_args()
 
@@ -232,7 +240,7 @@ def main() -> int:
     if args.entry:
         entry_path = Path(args.entry)
         entry_path.parent.mkdir(parents=True, exist_ok=True)
-        entry = build_entry(fields, result, args.issue, args.author)
+        entry = build_entry(fields, result, args.issue, args.author, args.created_at)
         entry_path.write_text(json.dumps(entry, indent=1) + "\n")
         if args.aggregate:
             rebuild_aggregate(entry_path.parent, Path(args.aggregate))

@@ -55,7 +55,8 @@ jobs:
             --entry leaderboard/entries/${{ github.event.issue.number }}.json \
             --aggregate leaderboard/leaderboard.json \
             --issue ${{ github.event.issue.number }} \
-            --author "${{ github.event.issue.user.login }}"
+            --author "${{ github.event.issue.user.login }}" \
+            --created-at "${{ github.event.issue.created_at }}"
 
       - name: Commit entry
         run: |
