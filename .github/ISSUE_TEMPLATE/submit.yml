@@ -1,21 +1,14 @@
-name: Leaderboard submission
-description: Submit prediction tables to the RelBench leaderboards.
-title: "[Submission] "
-labels: ["leaderboard-submission"]
+name: Submit to the RelBench leaderboard
+description: Submit your method to the RelBench leaderboard by uploading test set predictions.
+title: "[submit] "
+labels: ["submit"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for submitting to the RelBench leaderboards! Please validate and package
-        your prediction tables locally first:
-
-        ```
-        python -m relbench.submit <submission_dir>
-        ```
-
-        Validation runs automatically when you open (or edit) this issue and posts a
-        report as a comment. A maintainer then reviews it; on approval your entry is
-        published to the leaderboard.
+        Thanks for submitting to the RelBench leaderboards! See the
+        [submission instructions](https://github.com/rishabh-ranjan/relbench#submitting-to-the-leaderboard)
+        in the README for how to prepare and validate your submission zip.
   - type: input
     id: method-name
     attributes:
