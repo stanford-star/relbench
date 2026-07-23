@@ -40,8 +40,8 @@ body:
   - type: textarea
     id: files
     attributes:
-      label: Submission zip
-      description: Upload the zip file written by `python -m relbench.submit` here.
+      label: File(s)
+      description: Upload the zip file(s) written by `python -m relbench.submit` here.
       placeholder: Paste, drop, or click to add files.
     validations:
       required: true

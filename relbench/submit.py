@@ -1011,10 +1011,9 @@ def _package(
         outputs.append((fam_out, len(zip_bytes)))
     print("\r", end="", flush=True)
     print(st.bold("Next step     "))
-    print("  Use this link to upload:")
+    print(f"  Upload these files at {st.underline_cyan(SUBMISSION_ISSUE_URL)}:")
     for fam_out, size in outputs:
         print(f"    {st.bold(str(fam_out))} " + st.italic(f"({size / 1e6:.1f} MB)"))
-    print(f"  {st.underline_cyan(SUBMISSION_ISSUE_URL)}")
     print()
 
 
