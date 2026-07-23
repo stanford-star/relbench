@@ -2,7 +2,7 @@
 authors = ["Rishabh Ranjan <rishabhranjan0207@gmail.com>"]
 channels = ["conda-forge"]
 name = "relbench"
-platforms = ["linux-64"]
+platforms = ["linux-64", "osx-arm64"]
 version = "0.1.0"
 
 [tasks]
@@ -25,6 +25,9 @@ find-links = [{ url = "https://data.pyg.org/whl/torch-2.9.0+cpu.html" }]
 [feature.cpu.pypi-dependencies]
 torch = { version = "==2.9.1", index = "https://download.pytorch.org/whl/cpu" }
 pyg-lib = "*"
+
+[feature.gpu]
+platforms = ["linux-64"]
 
 [feature.gpu.pypi-options]
 find-links = [{ url = "https://data.pyg.org/whl/torch-2.9.0+cu128.html" }]
