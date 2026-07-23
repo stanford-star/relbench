@@ -19,8 +19,6 @@ and the attachments are only ever parsed as CSV.
 from __future__ import annotations
 
 import argparse
-import contextlib
-import io
 import json
 import os
 import re
@@ -31,12 +29,7 @@ import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 
-# Force ANSI styling from relbench.submit's report renderer even though stdout is
-# not a TTY; ansi_to_diff() below maps the colors onto ```diff highlighting (GitHub
-# does not render raw ANSI codes in issue comments).
-os.environ.setdefault("FORCE_COLOR", "1")
-
-from relbench.submit import _print_report, evaluate_submission  # noqa: E402
+from relbench.submit import _markdown_report, evaluate_submission  # noqa: E402
 
 # Issue-form section headings (as rendered by GitHub) -> entry fields. The "In-context"
 # dropdown section is handled separately (rendered as a "Yes"/"No" line).
@@ -135,32 +128,6 @@ def download_attachments(body: str, dest: Path) -> list[str]:
     return problems
 
 
-ANSI_RE = re.compile(r"\033\[[0-9;]*m")
-
-
-def ansi_to_diff(text: str) -> str:
-    r"""Recolor an ANSI terminal report for a GitHub ```diff code block.
-
-    Lines colored green become ``+`` lines and red ones ``-`` lines (the only two
-    colors diff highlighting offers); all escape codes are stripped. The sign
-    replaces the first character of the line's indent so columns stay aligned.
-    """
-    out = []
-    for line in text.splitlines():
-        plain = ANSI_RE.sub("", line)
-        sign = None
-        if "\033[32m" in line or "\033[1;32m" in line:
-            sign = "+"
-        elif "\033[31m" in line or "\033[1;31m" in line:
-            sign = "-"
-        if sign and plain.startswith(" "):
-            plain = sign + plain[1:]
-        elif sign:
-            plain = sign + plain
-        out.append(plain)
-    return "\n".join(out)
-
-
 def write_report(path: Path, problems: list, result: dict | None) -> None:
     lines = ["## RelBench leaderboard validation report", ""]
     for p in problems:
@@ -168,12 +135,7 @@ def write_report(path: Path, problems: list, result: dict | None) -> None:
     if problems:
         lines.append("")
     if result is not None:
-        # Reuse relbench.submit's own report renderer so the issue comment matches
-        # what `python -m relbench.submit` printed locally, character for character.
-        buf = io.StringIO()
-        with contextlib.redirect_stdout(buf):
-            _print_report(result)
-        lines += ["```diff", ansi_to_diff(buf.getvalue().rstrip()), "```", ""]
+        lines += [_markdown_report(result)]
         if result["validated"]:
             lines.append(
                 f"@{MAINTAINER} please review and either add the `accept` label "

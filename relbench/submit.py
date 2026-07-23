@@ -877,6 +877,19 @@ def _wrap_text(text: str, indent: int, width: int = _WIDTH) -> List[str]:
     ) or [" " * indent + text]
 
 
+def _task_groups(tasks: Dict[str, Any]) -> List[Tuple[str, List[str]]]:
+    r"""Report ordering: tasks grouped by leaderboard family (canonical order), with
+    tasks that don't belong to any canonical family listed at the end under "other"."""
+    groups: List[Tuple[str, List[str]]] = [
+        (family, [t for t in canonical if t in tasks])
+        for family, canonical in LEADERBOARD_TASKS.items()
+    ]
+    other = sorted(t for t in tasks if _TASK_TO_FAMILY.get(t) is None)
+    if other:
+        groups.append(("other", other))
+    return groups
+
+
 def _print_report(result: Dict[str, Any]) -> None:
     tasks = result["tasks"]
     families = result["families"]
@@ -889,19 +902,11 @@ def _print_report(result: Dict[str, Any]) -> None:
             print(f"  {st.dim('-')} {name}")
         print()
 
-    # Per-task results, grouped by leaderboard family. Tasks that don't belong to
-    # any canonical family are listed at the end under "other".
     name_w = max(
         [len(t) for t in tasks]
         + [len(t) for names in LEADERBOARD_TASKS.values() for t in names]
     )
-    groups: List[Tuple[str, List[str]]] = [
-        (family, [t for t in canonical if t in tasks])
-        for family, canonical in LEADERBOARD_TASKS.items()
-    ]
-    other = sorted(t for t in tasks if _TASK_TO_FAMILY.get(t) is None)
-    if other:
-        groups.append(("other", other))
+    groups = _task_groups(tasks)
 
     for family, group_tasks in groups:
         if not group_tasks:
@@ -954,6 +959,67 @@ def _print_report(result: Dict[str, Any]) -> None:
                 for line in _wrap_text(problem, indent=8):
                     print(st.dim(line))
     print()
+
+
+def _markdown_report(result: Dict[str, Any]) -> str:
+    r"""The validation report as GitHub-flavored markdown (same content and structure
+    as :func:`_print_report`, styled with markdown instead of ANSI codes)."""
+    tasks = result["tasks"]
+    families = result["families"]
+    lines: List[str] = []
+
+    extra = result.get("extra_files") or []
+    if extra:
+        lines.append("Ignored (not prediction tables; left out of the zip):")
+        lines += [f"- `{name}`" for name in extra]
+        lines.append("")
+
+    for family, group_tasks in _task_groups(tasks):
+        if not group_tasks:
+            continue
+        fam = families.get(family)
+        metric_name = fam["metric_name"] if fam else "metric"
+        lines += [
+            f"**{family.capitalize()}** ({_metric_display(metric_name)})",
+            "",
+            "| | task | value |",
+            "|---|---|---:|",
+        ]
+        for task_name in group_tasks:
+            entry = tasks[task_name]
+            if entry["status"] == "ok":
+                value = _format_value(entry["metric_name"], entry["metric"])
+                lines.append(f"| ✅ | `{task_name}` | {value} |")
+            else:
+                error = entry["error"] or "unknown error"
+                lines.append(f"| ❌ | `{task_name}` | failed: {error} |")
+        if fam is not None:
+            for task_name in fam["missing"]:
+                lines.append(f"| ⚪ | `{task_name}` | missing |")
+            if fam["aggregate"] is not None:
+                agg = _format_value(fam["metric_name"], fam["aggregate"])
+                lines.append(f"| | **mean** | **{agg}** |")
+        lines.append("")
+
+    lines += [
+        "**Integrity**",
+        "",
+        "| | leaderboard | valid tasks | |",
+        "|---|---|---|---|",
+    ]
+    for family in LEADERBOARD_TASKS:
+        fam = families[family]
+        counts = f"{fam['num_valid']}/{fam['num_total']}"
+        problems = []
+        if not fam["complete"]:
+            if fam["missing"]:
+                problems.append("missing: " + ", ".join(f"`{t}`" for t in fam["missing"]))
+            if fam["invalid"]:
+                problems.append("invalid: " + ", ".join(f"`{t}`" for t in fam["invalid"]))
+        badge = "✅ OK" if fam["complete"] else "❌ FAIL"
+        lines.append(f"| {badge} | {family} | {counts} | {'; '.join(problems)} |")
+    lines.append("")
+    return "\n".join(lines)
 
 
 # --------------------------------------------------------------------------- #
