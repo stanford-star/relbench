@@ -36,8 +36,8 @@ CLI
 ===
 ``python -m relbench.submit <pred_dir> [--num-workers N] [--out PATH]`` runs
 :func:`evaluate_submission`, prints the report, and — if *at least one* leaderboard
-family is validated (complete and fully valid) — writes a clean submission zip to
-attach to a leaderboard submission issue on GitHub (method metadata is entered in the
+family is validated (complete and fully valid) — writes one submission zip per
+validated family to attach to a leaderboard submission issue on GitHub (method metadata is entered in the
 issue form itself). It exits ``0`` on success and non-zero otherwise.
 """
 
@@ -967,44 +967,53 @@ SUBMISSION_ISSUE_URL = (
 )
 
 
-def _zip_submission(pred_dir: Union[str, os.PathLike], extra: Sequence[str]) -> bytes:
-    r"""Zip the submission (prediction tables only) and return the bytes.
-
-    Anything else in the directory (``extra``) is reported and left out of the zip.
-    """
+def _zip_files(pred_dir: Path, filenames: Sequence[str]) -> bytes:
+    r"""Zip the given prediction-table files from ``pred_dir`` and return the bytes."""
     import io
     import zipfile
 
-    pred_dir = Path(pred_dir)
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for name in filenames:
+            zf.write(pred_dir / name, name)
+    return buf.getvalue()
+
+
+def _package(
+    pred_dir: Union[str, os.PathLike],
+    families: Dict[str, Any],
+    validated: Sequence[str],
+    extra: Sequence[str],
+    out: Path,
+) -> None:
+    r"""Write one submission zip per validated family and print how to submit them.
+
+    A single all-in-one zip easily exceeds GitHub's issue-attachment size limit; the
+    three leaderboard families are independent, so each gets its own zip named
+    ``<out-stem>-<family>.zip``.
+    """
+    print("Packaging...", end="", flush=True)
     st = _Style(_use_color())
     if extra:
         print(st.yellow("Excluding files that aren't part of a submission:"))
         for name in extra:
             print(f"  {st.dim('-')} {name}")
         print()
-    buf = io.BytesIO()
-    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
-        for p in sorted(pred_dir.iterdir()):
-            if p.is_file() and _is_prediction_file(p):
-                zf.write(p, p.name)
-    return buf.getvalue()
-
-
-def _package(
-    pred_dir: Union[str, os.PathLike], extra: Sequence[str], out: Path
-) -> None:
-    r"""Write the submission zip and print how to submit it."""
-    print("Packaging...", end="", flush=True)
-    st = _Style(_use_color())
-    zip_bytes = _zip_submission(pred_dir, extra)
-    out.write_bytes(zip_bytes)
+    pred_dir = Path(pred_dir)
+    outputs: List[Tuple[Path, int]] = []
+    for family in validated:
+        filenames = [
+            t.replace("/", "__") + ".csv" for t in families[family]["valid"]
+        ]
+        zip_bytes = _zip_files(pred_dir, filenames)
+        fam_out = out.with_name(f"{out.stem}-{family}.zip")
+        fam_out.write_bytes(zip_bytes)
+        outputs.append((fam_out, len(zip_bytes)))
     print("\r", end="", flush=True)
     print(st.bold("Next step     "))
-    print(
-        f"  Use this link to upload {st.bold(str(out))} "
-        + st.italic(f"({len(zip_bytes) / 1e6:.1f} MB)")
-        + ":"
-    )
+    print("  Use this link to upload:")
+    for fam_out, size in outputs:
+        print(f"    {st.bold(str(fam_out))} " + st.italic(f"({size / 1e6:.1f} MB)"))
     print(f"  {st.underline_cyan(SUBMISSION_ISSUE_URL)}")
     print()
 
@@ -1019,8 +1028,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         description=(
             "Evaluate a directory of RelBench prediction CSVs as a leaderboard "
             "submission and, if at least one leaderboard family is validated (all of "
-            "its tasks present and valid), write a clean submission zip to attach to "
-            "a submission issue on GitHub. Exit code 0 on success."
+            "its tasks present and valid), write one submission zip per validated "
+            "family to attach to a submission issue on GitHub. Exit code 0 on success."
         ),
     )
     parser.add_argument(
@@ -1035,7 +1044,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     parser.add_argument(
         "--out",
         default=None,
-        help="output zip path (default: <dir-name>.zip in the cwd)",
+        help=(
+            "base output zip path; per-family zips are written as "
+            "<base>-<family>.zip (default base: <dir-name>.zip in the cwd)"
+        ),
     )
     args = parser.parse_args(argv)
     if args.out is not None and not args.out.endswith(".zip"):
@@ -1052,7 +1064,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         print()
         return 1
     out = Path(args.out or f"{Path(args.pred_dir).resolve().name}.zip")
-    _package(args.pred_dir, result.get("extra_files") or [], out)
+    _package(
+        args.pred_dir,
+        result["families"],
+        result["validated"],
+        result.get("extra_files") or [],
+        out,
+    )
     return 0
 
 
