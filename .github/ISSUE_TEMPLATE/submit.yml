@@ -39,6 +39,6 @@ body:
     attributes:
       label: File(s)
       description: Upload the zip file(s) written by `python -m relbench.submit` here.
-      placeholder: Paste, drop, or click to add files.
+      placeholder: See attach button below to add files.
     validations:
       required: true
