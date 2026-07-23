@@ -1,6 +1,6 @@
 r"""CI driver for GitHub-issue leaderboard submissions.
 
-A submission is an issue created from ``.github/ISSUE_TEMPLATE/submission.yml``: the form
+A submission is an issue created from ``.github/ISSUE_TEMPLATE/submit.yml``: the form
 fields carry the method metadata (name, type, url, note) and the prediction tables are
 attached to the issue body as a zip.
 

@@ -91,7 +91,7 @@ To submit:
    python -m relbench.submit preds/
    ```
 
-3. **[Open a submission issue](https://github.com/rishabh-ranjan/relbench/issues/new?template=submission.yml)**
+3. **[Open a submission issue](https://github.com/rishabh-ranjan/relbench/issues/new?template=submit.yml)**
    on this repository: fill in the short form and drag the zip into it.
 
 The submission is validated automatically and the report is posted on the issue; once a
