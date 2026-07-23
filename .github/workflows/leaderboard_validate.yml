@@ -45,6 +45,8 @@ jobs:
 
       - name: Validate submission
         id: validate
+        env:
+          LEADERBOARD_MAINTAINER: ${{ vars.LEADERBOARD_MAINTAINER || github.repository_owner }}
         run: |
           python .github/scripts/leaderboard_submission.py \
             --body /tmp/issue_body.md --report /tmp/report.md

@@ -45,6 +45,10 @@ FORM_FIELDS = {
 IN_CONTEXT_HEADING = "In-context"
 NO_RESPONSE = "_No response_"
 
+# GitHub handle pinged in the validation report to review the submission. Set via the
+# LEADERBOARD_MAINTAINER repository variable; the workflow falls back to the repo owner.
+MAINTAINER = os.environ.get("LEADERBOARD_MAINTAINER") or "maintainer"
+
 # Leaderboard family (relbench.submit) -> board key used by the website.
 FAMILY_TO_BOARD = {
     "classification": "binary_classification",
@@ -148,7 +152,7 @@ def write_report(path: Path, fields: dict, problems: list, result: dict | None) 
             lines.append(
                 "Validated leaderboard(s): "
                 + ", ".join(result["validated"])
-                + ".\n\n@rishabh-ranjan please review and add the `accept`/`reject` "
+                + f".\n\n@{MAINTAINER} please review and add the `accept`/`reject` "
                 "label to this issue."
             )
         else:
