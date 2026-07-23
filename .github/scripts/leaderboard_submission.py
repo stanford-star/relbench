@@ -148,8 +148,8 @@ def write_report(path: Path, fields: dict, problems: list, result: dict | None) 
             lines.append(
                 "Validated leaderboard(s): "
                 + ", ".join(result["validated"])
-                + ". A maintainer publishes this entry by adding the `accept` label "
-                "(see `.github/LEADERBOARD.md`)."
+                + ".\n\n@rishabh-ranjan please review and add the `accept`/`reject` "
+                "label to this issue."
             )
         else:
             lines.append(
