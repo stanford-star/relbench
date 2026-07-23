@@ -31,7 +31,9 @@ import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 
-os.environ.setdefault("NO_COLOR", "1")  # the report is captured as plain text
+# The report is embedded in an ```ansi fenced block, which GitHub renders with
+# colors, so force the terminal styling even though stdout is not a TTY.
+os.environ.setdefault("FORCE_COLOR", "1")
 
 from relbench.submit import _print_report, evaluate_submission  # noqa: E402
 
@@ -147,12 +149,10 @@ def write_report(path: Path, fields: dict, problems: list, result: dict | None) 
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
             _print_report(result)
-        lines += ["```", buf.getvalue().rstrip(), "```", ""]
+        lines += ["```ansi", buf.getvalue().rstrip(), "```", ""]
         if result["validated"]:
             lines.append(
-                "Validated leaderboard(s): "
-                + ", ".join(result["validated"])
-                + f".\n\n@{MAINTAINER} please review and add the `accept`/`reject` "
+                f"@{MAINTAINER} please review and add the `accept`/`reject` "
                 "label to this issue."
             )
         else:
