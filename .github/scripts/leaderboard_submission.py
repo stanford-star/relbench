@@ -149,8 +149,8 @@ def write_report(path: Path, problems: list, result: dict | None) -> None:
         lines += ["```ansi", buf.getvalue().rstrip(), "```", ""]
         if result["validated"]:
             lines.append(
-                f"@{MAINTAINER} please review and add the `accept`/`reject` "
-                "label to this issue."
+                f"@{MAINTAINER} please review and either add the `accept` label "
+                "or close this issue."
             )
         else:
             lines.append(
