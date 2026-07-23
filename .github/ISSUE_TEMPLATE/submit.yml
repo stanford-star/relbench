@@ -6,15 +6,16 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for submitting to the RelBench leaderboards! See the
-        [submission instructions](https://github.com/rishabh-ranjan/relbench#submitting-to-the-leaderboard)
-        in the README for how to prepare and validate your submission zip.
+        Thanks for your interest in RelBench!
+        Please see
+        [the README](https://github.com/rishabh-ranjan/relbench#submitting-to-the-leaderboard)
+        for how to prepare and validate your submission zip.
   - type: input
     id: method-name
     attributes:
-      label: Method name
+      label: Name
       description: Display name shown on the leaderboard.
-      placeholder: RelGNN
+      placeholder: My awesome method
     validations:
       required: true
   - type: checkboxes
@@ -22,13 +23,15 @@ body:
     attributes:
       label: In-context
       options:
-        - label: This method is in-context — no training on the target database.
+        - label: I confirm that my method was not trained on the target **database** in any form (leave unchecked if not).
   - type: input
     id: url
     attributes:
       label: URL
-      description: Paper / project / code link (optional).
+      description: Paper / project / code link.
       placeholder: https://arxiv.org/abs/...
+    validations:
+      required: true
   - type: textarea
     id: note
     attributes:
