@@ -15,6 +15,11 @@ body:
       placeholder: My awesome method
     validations:
       required: true
+  - type: textarea
+    id: note
+    attributes:
+      label: Note
+      description: Anything you'd like to add, shown on hover (optional).
   - type: checkboxes
     id: in-context
     attributes:
@@ -29,11 +34,6 @@ body:
       placeholder: https://arxiv.org/abs/...
     validations:
       required: true
-  - type: textarea
-    id: note
-    attributes:
-      label: Note
-      description: Anything you'd like to add, shown on hover (optional).
   - type: textarea
     id: files
     attributes:
