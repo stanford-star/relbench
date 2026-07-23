@@ -31,9 +31,9 @@ import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 
-# The report is embedded in an ```ansi fenced block, which GitHub renders with
-# colors, so force the terminal styling even though stdout is not a TTY.
-os.environ.setdefault("FORCE_COLOR", "1")
+# GitHub does not render ANSI colors in issue comments, so keep the report plain;
+# the terminal layout (alignment, marks) survives in the code block as-is.
+os.environ.setdefault("NO_COLOR", "1")
 
 from relbench.submit import _print_report, evaluate_submission  # noqa: E402
 
@@ -146,7 +146,7 @@ def write_report(path: Path, problems: list, result: dict | None) -> None:
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
             _print_report(result)
-        lines += ["```ansi", buf.getvalue().rstrip(), "```", ""]
+        lines += ["```", buf.getvalue().rstrip(), "```", ""]
         if result["validated"]:
             lines.append(
                 f"@{MAINTAINER} please review and either add the `accept` label "
