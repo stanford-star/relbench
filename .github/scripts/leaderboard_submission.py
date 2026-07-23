@@ -19,7 +19,10 @@ and the attachments are only ever parsed as CSV.
 from __future__ import annotations
 
 import argparse
+import contextlib
+import io
 import json
+import os
 import re
 import sys
 import tempfile
@@ -28,7 +31,9 @@ import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 
-from relbench.submit import evaluate_submission
+os.environ.setdefault("NO_COLOR", "1")  # the report is captured as plain text
+
+from relbench.submit import _print_report, evaluate_submission  # noqa: E402
 
 # Issue-form section headings (as rendered by GitHub) -> entry fields. The "In-context"
 # checkbox section is handled separately (rendered as a "- [x] ..." task list).
@@ -133,26 +138,18 @@ def write_report(path: Path, fields: dict, problems: list, result: dict | None) 
     if problems:
         lines.append("")
     if result is not None:
-        lines += ["| Task | Metric | Value | Status |", "|---|---|---:|---|"]
-        for task in sorted(result["tasks"]):
-            e = result["tasks"][task]
-            val = "–" if e["metric"] is None else f"{e['metric']:.6f}"
-            status = "ok" if e["status"] == "ok" else f"error: {e['error']}"
-            lines.append(f"| {task} | {e['metric_name'] or '–'} | {val} | {status} |")
-        lines.append("")
-        for family, fam in result["families"].items():
-            mark = ":white_check_mark: validated" if fam["complete"] else ":x: rejected"
-            agg = "n/a" if fam["aggregate"] is None else f"{fam['aggregate']:.6f}"
-            lines.append(
-                f"- **{family}** — {mark} ({fam['num_valid']}/{fam['num_total']} tasks, "
-                f"mean {fam['metric_name']} = {agg})"
-            )
-        lines.append("")
+        # Reuse relbench.submit's own report renderer so the issue comment matches
+        # what `python -m relbench.submit` printed locally, character for character.
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            _print_report(result)
+        lines += ["```", buf.getvalue().rstrip(), "```", ""]
         if result["validated"]:
             lines.append(
                 "Validated leaderboard(s): "
                 + ", ".join(result["validated"])
-                + ". A maintainer will review this submission."
+                + ". A maintainer publishes this entry by adding the `accept` label "
+                "(see `.github/LEADERBOARD.md`)."
             )
         else:
             lines.append(

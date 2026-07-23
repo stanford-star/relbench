@@ -1,6 +1,6 @@
 name: Publish leaderboard entry
 
-# A maintainer approves a validated submission by adding the "approved" label (only users
+# A maintainer approves a validated submission by adding the "accept" label (only users
 # with triage permission can label). The submission is re-validated from scratch (the
 # issue may have been edited since the last validation), the entry JSON is written to
 # leaderboard/entries/<issue>.json, leaderboard/leaderboard.json is regenerated from all
@@ -20,8 +20,8 @@ concurrency:
 jobs:
   publish:
     if: >
-      github.event.label.name == 'approved' &&
-      contains(github.event.issue.labels.*.name, 'leaderboard-submission')
+      github.event.label.name == 'accept' &&
+      contains(github.event.issue.labels.*.name, 'submit')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -86,4 +86,4 @@ jobs:
           gh issue comment ${{ github.event.issue.number }} --repo ${{ github.repository }} \
             --body "Publishing failed — re-validation did not pass (see the report above)." || true
           gh issue edit ${{ github.event.issue.number }} --repo ${{ github.repository }} \
-            --remove-label approved || true
+            --remove-label accept || true

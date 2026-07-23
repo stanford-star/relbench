@@ -13,7 +13,12 @@ permissions:
 
 jobs:
   validate:
-    if: contains(github.event.issue.labels.*.name, 'leaderboard-submission')
+    # Runs when a submission issue is opened/edited, or when the "submit" label is
+    # added after the fact. Other label additions (ok / invalid / accept) must not
+    # re-trigger validation.
+    if: >
+      contains(github.event.issue.labels.*.name, 'submit') &&
+      (github.event.action != 'labeled' || github.event.label.name == 'submit')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -59,8 +64,8 @@ jobs:
         run: |
           if [ "${{ steps.validate.outcome }}" = "success" ]; then
             gh issue edit ${{ github.event.issue.number }} --repo ${{ github.repository }} \
-              --add-label leaderboard-validated --remove-label leaderboard-invalid || true
+              --add-label ok --remove-label invalid || true
           else
             gh issue edit ${{ github.event.issue.number }} --repo ${{ github.repository }} \
-              --add-label leaderboard-invalid --remove-label leaderboard-validated || true
+              --add-label invalid --remove-label ok || true
           fi
