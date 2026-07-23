@@ -11,7 +11,7 @@
 <p align="center">
   <a href="https://relbench.stanford.edu"><b>Website</b></a> ·
   <a href="#get-started"><b>Get Started</b></a> ·
-  <a href="https://relbench.stanford.edu/leaderboard/"><b>Leaderboard</b></a> ·
+  <a href="https://star-project.stanford.edu/relbench/leaderboard/"><b>Leaderboard</b></a> ·
   <a href="https://relbench.stanford.edu/papers/"><b>Papers</b></a> ·
   <a href="https://huggingface.co/relbench"><b>Hugging Face</b></a> ·
   <a href="#contributing"><b>Contributing</b></a>
