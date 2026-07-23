@@ -30,8 +30,8 @@ body:
     id: url
     attributes:
       label: URL
-      description: Paper / project / code link.
-      placeholder: https://arxiv.org/abs/...
+      description: Project / code / paper link.
+      placeholder: https://github.com/...
     validations:
       required: true
   - type: textarea
