@@ -134,11 +134,8 @@ def download_attachments(body: str, dest: Path) -> list[str]:
     return problems
 
 
-def write_report(path: Path, fields: dict, problems: list, result: dict | None) -> None:
+def write_report(path: Path, problems: list, result: dict | None) -> None:
     lines = ["## RelBench leaderboard validation report", ""]
-    if fields:
-        kind = "in-context" if fields.get("in_context") else "trained"
-        lines += [f"**{fields.get('name', '?')}** ({kind})", ""]
     for p in problems:
         lines.append(f"- :x: {p}")
     if problems:
@@ -231,7 +228,7 @@ def main() -> int:
             except Exception as exc:  # noqa: BLE001 -- surfaced in the report
                 problems.append(f"could not evaluate the submission: {exc}")
 
-    write_report(Path(args.report), fields, problems, result)
+    write_report(Path(args.report), problems, result)
 
     ok = bool(result and result["validated"]) and not any(
         p.startswith("the form") for p in problems
