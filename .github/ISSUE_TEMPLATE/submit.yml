@@ -36,12 +36,12 @@ body:
     id: note
     attributes:
       label: Note
-      description: Caveats or evaluation details, shown on hover (optional).
+      description: Anything you'd like to add, shown on hover (optional).
   - type: textarea
     id: files
     attributes:
-      label: Prediction files
-      description: Drag your submission zip here (written by `python -m relbench.submit`).
-      placeholder: Attach files by dragging them into this text area.
+      label: Submission zip
+      description: Upload the zip file written by `python -m relbench.submit` here.
+      placeholder: Paste, drop, or click to add files.
     validations:
       required: true
