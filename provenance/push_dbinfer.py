@@ -3,6 +3,7 @@ r"""Publish a locally generated ``dbinfer`` collection to its Hugging Face repo.
     python provenance/push_dbinfer.py BUILD_DIR                 # dry run: show the plan
     python provenance/push_dbinfer.py BUILD_DIR --push          # upload
     python provenance/push_dbinfer.py BUILD_DIR --push --repo stanford-star/dbinfer
+    python provenance/push_dbinfer.py BUILD_DIR --push --cards-only  # just the READMEs
 
 ``BUILD_DIR`` is the output of ``provenance/dbinfer.py --all`` (a directory of
 ``dbinfer-<name>/`` folders), optionally also holding the repo-level ``README.md`` and a
@@ -12,6 +13,9 @@ The upload is a single commit that **replaces** every ``dbinfer-*`` path, so tab
 diagrams that no longer exist are removed rather than left behind. ``STATS/`` and the
 repo ``README.md`` are overwritten when present in ``BUILD_DIR`` and left untouched
 otherwise.
+
+``--cards-only`` uploads just the dataset cards and the repo card, with no deletions --
+for refreshing prose without re-pushing gigabytes of unchanged parquet.
 """
 
 from __future__ import annotations
@@ -35,6 +39,7 @@ def main(argv: list) -> int:
         sys.exit(__doc__)
     build = Path(argv[0])
     do_push = "--push" in argv
+    cards_only = "--cards-only" in argv
     repo = DEFAULT_REPO
     if "--repo" in argv:
         repo = argv[argv.index("--repo") + 1]
@@ -42,14 +47,22 @@ def main(argv: list) -> int:
     datasets, extras = plan(build)
     total = 0
     print(f"repo: {repo}\nbuild: {build}\n")
-    for d in datasets:
-        files = [p for p in d.rglob("*") if p.is_file()]
-        size = sum(p.stat().st_size for p in files)
-        total += size
-        print(f"  {d.name:26} {len(files):>4} files  {size / 2**30:>8.3f} GiB")
-    for p in extras:
-        print(f"  {p.name:26} {'(dir)' if p.is_dir() else '(file)'}")
-    print(f"\n  total {total / 2**30:.3f} GiB")
+    if cards_only:
+        cards = [d / "README.md" for d in datasets if (d / "README.md").exists()]
+        if (build / "README.md").exists():
+            cards.append(build / "README.md")
+        for p in cards:
+            print(f"  {p.relative_to(build)}")
+        print(f"\n  {len(cards)} card(s), no deletions")
+    else:
+        for d in datasets:
+            files = [p for p in d.rglob("*") if p.is_file()]
+            size = sum(p.stat().st_size for p in files)
+            total += size
+            print(f"  {d.name:26} {len(files):>4} files  {size / 2**30:>8.3f} GiB")
+        for p in extras:
+            print(f"  {p.name:26} {'(dir)' if p.is_dir() else '(file)'}")
+        print(f"\n  total {total / 2**30:.3f} GiB")
 
     if not do_push:
         print("\ndry run -- pass --push to upload")
@@ -58,6 +71,16 @@ def main(argv: list) -> int:
     from huggingface_hub import HfApi
 
     api = HfApi()
+    if cards_only:
+        api.upload_folder(
+            repo_id=repo,
+            repo_type="dataset",
+            folder_path=str(build),
+            allow_patterns=["dbinfer-*/README.md", "README.md"],
+            commit_message="Refresh dataset cards",
+        )
+        print(f"\npushed cards to https://huggingface.co/datasets/{repo}")
+        return 0
     api.upload_folder(
         repo_id=repo,
         repo_type="dataset",

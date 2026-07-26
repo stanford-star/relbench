@@ -792,9 +792,43 @@ def build(root: Path, name: str, out: Path) -> dict:
     print(f"  val_timestamp={val}  test_timestamp={test}", flush=True)
 
     # --- card + diagram -----------------------------------------------------------------
-    from relbench.schema import dataset_card, render_schema_svg
+    from relbench.schema import render_schema_svg
 
     render_schema_svg(dm, out / "schema.svg", db_dir=out / "db")
+    write_card(out, name, dm, manifests, implicit=[t for t in specs if t not in tables])
+
+    return {"tables": len(specs), "tasks": len(manifests), "val": val, "test": test}
+
+
+def write_card(out: Path, name: str, dm=None, manifests=None, implicit=None) -> None:
+    r"""Write one dataset's ``README.md``.
+
+    Called by :func:`build`, and re-runnable on an already-built directory (it reads the
+    manifests back from disk when they are not passed) so the prose can be refreshed
+    without regenerating 10 GiB of parquet.
+    """
+    from relbench.schema import dataset_card
+
+    out = Path(out)
+    if dm is None:
+        dm = DatasetManifest.load(out / "manifest.yaml")
+    if manifests is None:
+        manifests = [
+            TaskManifest.load(p)
+            for p in sorted((out / "tasks").glob("*/manifest.yaml"))
+        ]
+    if implicit is None:
+        # A materialized key domain is a single-column table whose one column is its pkey.
+        implicit = [
+            t
+            for t, spec in dm.tables.items()
+            if spec.pkey
+            and not spec.fkeys
+            and spec.time_col is None
+            and len(pds.dataset(out / "db" / f"{t}.parquet").schema.names) == 1
+        ]
+    dropped = DROPPED_UNDECLARED.get(name, {})
+
     card = dataset_card(
         dm,
         tasks=manifests,
@@ -810,12 +844,11 @@ def build(root: Path, name: str, out: Path) -> dict:
         "same mapping.",
         "",
     ]
-    implicit_names = [t for t in specs if t not in tables]
-    if implicit_names:
+    if implicit:
         note += [
             "4DBInfer links some foreign keys to key domains that have no payload table "
             "of their own; those are materialized here as single-column key tables: "
-            + ", ".join(f"`{t}`" for t in sorted(implicit_names))
+            + ", ".join(f"`{t}`" for t in sorted(implicit))
             + ".",
             "",
         ]
@@ -830,28 +863,23 @@ def build(root: Path, name: str, out: Path) -> dict:
             "### Label columns in the database",
             "",
             "4DBInfer derives some labels from a column that is itself part of the "
-            "database, so a model reading that row can read its own label:",
+            "database, so a model reading that row could read its own label:",
             "",
         ]
         note += [f"* `{tk}` -> `{tbl}.{col}`" for tk, (tbl, col) in leaky]
         note += [
             "",
             "Each such task declares `remove_columns`, and the column is left in `db/` so "
-            "the database stays faithful to the source. Note that RelBench's loader "
-            "currently applies `remove_columns` only to `kind: autocomplete` tasks "
-            "(`Dataset.get_db` calls `get_modified_db` only when `target_col` is set), so "
-            "for these `external` tasks **drop the column yourself** before training. "
-            "Because `get_db(upto_test_timestamp=True)` trims the database at "
-            "`test_timestamp`, test labels are outside the visible database either way -- "
-            "the exposure is on the train and val rows.",
+            "the database stays faithful to the source. `Dataset.get_db` drops the declared "
+            "pairs, so `relbench.load_task(...)` hands you a graph without them -- for "
+            "every task `kind`, not just autocomplete. If you read the parquet directly, "
+            "drop them yourself.",
             "",
         ]
     if name in UPSTREAM_DEFECTS:
         note += ["### Known upstream defects", "", UPSTREAM_DEFECTS[name], ""]
     card = card.replace("\n## Loading\n", "\n".join(note) + "\n## Loading\n", 1)
     (out / "README.md").write_text(card)
-
-    return {"tables": len(specs), "tasks": len(manifests), "val": val, "test": test}
 
 
 def main(dataset: str, out=None) -> None:
@@ -928,9 +956,9 @@ Several tasks derive their label from a column that is also in the database
 (`retailrocket/cvr` <- `View.added_to_cart`, `seznam/charge` <- `Dobito.sluzba`,
 `seznam/prepay` <- `Probehnuto.sluzba`, `outbrain-small/ctr` <- `Click.clicked`,
 `amazon/rating` <- `Review.rating`). Each such task declares `remove_columns`; the column is
-kept in `db/` so the database stays faithful to 4DBInfer. RelBench's loader currently
-honours `remove_columns` only for `kind: autocomplete` tasks, so drop it yourself for these
-`external` ones. Test labels are outside `get_db(upto_test_timestamp=True)` regardless.
+kept in `db/` so the database stays faithful to 4DBInfer, and `Dataset.get_db` drops it, so
+`relbench.load_task(...)` hands you a graph without it. If you read the parquet directly,
+drop it yourself.
 
 ## Loading
 
