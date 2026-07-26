@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import tarfile
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -50,8 +51,8 @@ def clean_datetime(df, col: str):
 
 
 def fetch(url: str, sha256: Optional[str] = None) -> Path:
-    r"""Download ``url`` (cached), verify ``sha256``, unzip if a ``.zip``; return the
-    path."""
+    r"""Download ``url`` (cached), verify ``sha256``, unpack if a ``.zip`` / ``.tar``;
+    return the path."""
     CACHE.mkdir(parents=True, exist_ok=True)
     name = url.split("?")[0].rstrip("/").split("/")[-1]
     # Key the cache by the full URL so different sources sharing a filename
@@ -67,11 +68,17 @@ def fetch(url: str, sha256: Optional[str] = None) -> Path:
             raise ValueError(
                 f"sha256 mismatch for {url}:\n  got {got}\n  want {sha256}"
             )
-    if blob.suffix == ".zip":
+    if blob.suffix in (".zip", ".tar"):
         out = CACHE / f"{key}-{name}.extracted"
         if not out.exists():
-            with zipfile.ZipFile(blob) as z:
-                z.extractall(out)
+            tmp = CACHE / f"{key}-{name}.extracting"
+            if blob.suffix == ".zip":
+                with zipfile.ZipFile(blob) as z:
+                    z.extractall(tmp)
+            else:
+                with tarfile.open(blob) as t:
+                    t.extractall(tmp)
+            tmp.rename(out)  # atomic: a half-extracted dir never looks cached
         return out
     return blob
 
