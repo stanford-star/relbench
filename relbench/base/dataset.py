@@ -124,17 +124,21 @@ class Dataset:
 
         self.validate_and_correct_db(db)
 
-        if self.target_col:
+        if self.target_col or self.remove_columns:
             # Get the modified db with the target column removed
             db = self.get_modified_db(db)
 
         return db
 
     def get_modified_db(self, db) -> Database:
-        r"""Get the modified db with the target column removed.
+        r"""Get the modified db with the target column and any ``remove_columns``
+        dropped.
 
-        The target columns is saved to `db.table_dict[table_name].removed_cols`
-        and the column is dropped from the table.
+        The target column is saved to `db.table_dict[table_name].removed_cols`
+        and the column is dropped from the table. Only autocomplete tasks set
+        ``target_col`` here (their label *is* a column of the entity table);
+        ``remove_columns`` applies to every task kind and is handled below,
+        independently.
         Args:
             db: The database object.
 
@@ -144,7 +148,6 @@ class Dataset:
 
         # Remove the target column from the source entity table
         # Ensure the entity table has a primary key if not add one
-        # Remove any other columns marked for removal
         if self.target_col:
             table_name = self.entity_table
             col = self.target_col
@@ -187,17 +190,26 @@ class Dataset:
                 columns=[col]
             )
 
-            for table, remove_col in self.remove_columns:
-                if remove_col in db.table_dict[table].df.columns:
-                    # If the column is in the table, remove it
-                    db.table_dict[table].df = db.table_dict[table].df.drop(
-                        columns=[remove_col]
-                    )
-                else:
-                    print(
-                        f"Column {remove_col} not found in table {table}. "
-                        "Skipping removal from this table."
-                    )
+        # Remove any other columns marked for removal. Deliberately outside the
+        # `target_col` branch: a forecast or external task also has to hide a column its
+        # label was derived from, and it has no `target_col` on the dataset to gate on.
+        for table, remove_col in self.remove_columns:
+            if table not in db.table_dict:
+                print(
+                    f"Table {table} not in the database. "
+                    "Skipping removal of column {remove_col}."
+                )
+                continue
+            if remove_col in db.table_dict[table].df.columns:
+                # If the column is in the table, remove it
+                db.table_dict[table].df = db.table_dict[table].df.drop(
+                    columns=[remove_col]
+                )
+            else:
+                print(
+                    f"Column {remove_col} not found in table {table}. "
+                    "Skipping removal from this table."
+                )
 
         return db
 

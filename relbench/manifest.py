@@ -139,6 +139,11 @@ class TaskManifest:
     timestamps), every db table as a view by name, and ``{timedelta}`` substituted as a
     duckdb INTERVAL string. Its SELECT must output the declared entity/target/time cols.
 
+    ``remove_columns`` names the database columns the task must not see. It is honored for
+    every ``kind`` -- an autocomplete task's label *is* a database column, but a forecast or
+    external task's label is often *derived from* one, and that leaks identically.
+    ``Dataset.get_db`` drops the named columns from the graph.
+
     Metrics are not stored here -- they default from ``task_type`` (see relbench.load).
     """
 
@@ -164,7 +169,11 @@ class TaskManifest:
     timedelta: Optional[str] = None  # pandas-parseable, e.g. "60 days"
     num_eval_timestamps: int = 1
 
-    # Autocomplete tasks: feature columns to drop from the graph.
+    # Database columns this task must not see, as [table, col] pairs -- the columns its
+    # label is derived from or trivially implied by. Applies to *every* kind, not just
+    # autocomplete: a forecast or external task whose label comes from a database column
+    # (dbinfer's `cvr` <- `View.added_to_cart`) leaks exactly the same way. `Dataset.get_db`
+    # drops each pair from the graph.
     remove_columns: list = field(default_factory=list)  # list of [table, col]
 
     # Label generation (kind="forecast").

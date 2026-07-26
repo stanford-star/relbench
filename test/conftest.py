@@ -7,6 +7,7 @@ task over the fake schema (customer / product / review) give the modeling tests 
 link task tables.
 """
 
+import dataclasses
 import random
 import string
 
@@ -201,3 +202,20 @@ def make_churn_task():
 def make_purchase_task():
     r"""Return a builder: dataset -> forecast link-prediction (purchase) task."""
     return lambda dataset: build_task(dataset, _PURCHASE)
+
+
+@pytest.fixture
+def churn_manifest():
+    r"""The churn task manifest itself, for tests that vary one field.
+
+    Use ``dataclasses.replace(churn_manifest, ...)`` -- the fixture hands out a copy, so a
+    test cannot perturb another's manifest.
+    """
+    return dataclasses.replace(_CHURN)
+
+
+@pytest.fixture
+def purchase_manifest():
+    r"""The purchase (link-prediction) task manifest itself, for tests that vary one
+    field."""
+    return dataclasses.replace(_PURCHASE)

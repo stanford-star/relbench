@@ -178,7 +178,9 @@ class RelBenchDataset(Dataset):
         if upto_test_timestamp:
             db = db.upto(self.test_timestamp)
         self.validate_and_correct_db(db)
-        if self.target_col:
+        # `remove_columns` applies to every task kind, and only autocomplete tasks set
+        # `target_col` on the dataset -- so gate on either.
+        if self.target_col or self.remove_columns:
             db = self.get_modified_db(db)
         return db
 
@@ -437,14 +439,23 @@ def build_task(
     tm.validate()
     is_link = TaskType(tm.task_type) == TaskType.LINK_PREDICTION
     if tm.kind == KIND_AUTOCOMPLETE:
+        # AutoCompleteTask.__init__ installs remove_columns on the dataset itself,
+        # together with the target column it also has to hide.
         return _AutoCompleteTask(dataset, tm, task_dir=task_dir, regenerate=regenerate)
     if tm.kind == KIND_FORECAST:
         cls = _ForecastRecommendationTask if is_link else _ForecastEntityTask
-        return cls(dataset, tm, task_dir=task_dir, regenerate=regenerate)
-    if tm.kind == KIND_EXTERNAL:
+    elif tm.kind == KIND_EXTERNAL:
         cls = _ExternalRecommendationTask if is_link else _ExternalEntityTask
-        return cls(dataset, tm, task_dir=task_dir, regenerate=regenerate)
-    raise ValueError(f"unknown task kind: {tm.kind!r}")
+    else:
+        raise ValueError(f"unknown task kind: {tm.kind!r}")
+    # `remove_columns` is not an autocomplete-only field: a forecast or external task
+    # whose label is derived from a database column has to hide that column too (dbinfer's
+    # `cvr` is `View.added_to_cart`, `charge` is `Dobito.sluzba`). Install it the way
+    # AutoCompleteTask does -- on the dataset, since `get_db` is what applies it -- and
+    # drop the memoized database so a task loaded after another sees its own removals.
+    dataset.remove_columns = [tuple(pair) for pair in tm.remove_columns]
+    dataset.get_db.cache_clear()
+    return cls(dataset, tm, task_dir=task_dir, regenerate=regenerate)
 
 
 # --------------------------------------------------------------------------- #
