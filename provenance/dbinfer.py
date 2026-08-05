@@ -98,6 +98,7 @@ import pyarrow.parquet as pq
 import yaml
 from _lib import fetch
 
+from relbench.base.task_base import sort_labels
 from relbench.manifest import DatasetManifest, TableSpec, TaskManifest
 
 # 4DBInfer's own download source and data version (``dbinfer_bench/download_config.yaml``).
@@ -715,6 +716,8 @@ def build(root: Path, name: str, out: Path) -> dict:
                 elif set(map(str, pd.unique(s.dropna()))) <= {"t", "f"}:
                     df[target] = (s.astype("string") == "t").astype("int8")
                 n_classes = max(n_classes or 0, int(pd.unique(s.dropna()).size))
+            # Canonical label order, applied at write time (loading does not sort).
+            df = sort_labels(df, [time_col, *fk, *pkey_cols])
             df.to_parquet(tdir / f"{split}.parquet", index=False)
             wrote[split] = len(df)
             if time_col and time_col in df.columns and len(df):

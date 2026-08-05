@@ -38,7 +38,6 @@ from relbench.base import (
     Table,
     TaskType,
 )
-from relbench.base.task_base import _sort_deterministically
 from relbench.manifest import (
     KIND_AUTOCOMPLETE,
     KIND_EXTERNAL,
@@ -294,16 +293,14 @@ class _HostedLabelsMixin:
                 path = candidate
 
         if path is not None:
+            # Hosted labels are written in canonical order (see
+            # `relbench.base.task_base.sort_labels`); no re-sorting on read.
             df = _coerce_string_dtype(pd.read_parquet(path))
-            # Canonical order, same as regeneration: the hosted parquet carries
-            # whatever order it was written in, which need not match.
-            table = _sort_deterministically(
-                Table(
-                    df=df,
-                    fkey_col_to_pkey_table=self._label_fkeys(),
-                    pkey_col=None,
-                    time_col=self.time_col,
-                )
+            table = Table(
+                df=df,
+                fkey_col_to_pkey_table=self._label_fkeys(),
+                pkey_col=None,
+                time_col=self.time_col,
             )
         else:
             table = self._get_table(split, db)  # regenerate (already filters dangling)

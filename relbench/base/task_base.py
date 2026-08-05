@@ -10,30 +10,50 @@ from .dataset import Dataset, drop_columns
 from .table import Table
 
 
-def _sort_deterministically(table: Table) -> Table:
-    r"""Order a label table by its key columns.
+def sort_labels(df: pd.DataFrame, sort_cols) -> pd.DataFrame:
+    r"""Order a label frame by ``sort_cols``, ignoring unorderable columns.
 
-    ``make_table`` explicitly does not promise an order, and the duckdb queries behind
-    it return the same rows in a different order on every run. Without a canonical
-    order, two calls for the same split disagree -- which silently mis-pairs
-    predictions with targets when they come from different calls. Sorting here makes
-    label generation reproducible instead of relying on the result being memoized.
+    This is the canonical order of a label table, and it is applied **when labels are
+    written**: a hosted ``train/val/test.parquet`` is expected to already be in this
+    order, so loading one does not re-sort it. Generators must call this before
+    writing.
+
+    ``make_table`` does not promise an order, and the duckdb queries behind it return
+    the same rows in a different order on every run -- so regeneration sorts too, and
+    the two agree.
     """
 
-    def _sortable(col: str) -> bool:
+    def _sortable(col) -> bool:
         # A link task's destination column holds lists, which are unorderable (and are
         # not part of the row's identity anyway -- the (time, source) pair is).
         return (
             col is not None
-            and col in table.df.columns
-            and not table.df[col].map(lambda v: isinstance(v, (list, np.ndarray))).any()
+            and col in df.columns
+            and not df[col].map(lambda v: isinstance(v, (list, np.ndarray))).any()
         )
 
-    sort_cols = [
-        col for col in [table.time_col, *table.fkey_col_to_pkey_table] if _sortable(col)
-    ]
-    if sort_cols:
-        table.df = table.df.sort_values(sort_cols, kind="stable").reset_index(drop=True)
+    # A link task's destination lists are sets as far as evaluation is concerned
+    # (`np.isin`), and duckdb aggregates them in a different order every run -- so
+    # order them too, or the same labels still differ cell by cell.
+    for col in df.columns:
+        if df[col].map(lambda v: isinstance(v, (list, np.ndarray))).any():
+            df[col] = df[col].map(
+                lambda v: (
+                    type(v)(sorted(v))
+                    if isinstance(v, list)
+                    else np.sort(v) if isinstance(v, np.ndarray) else v
+                )
+            )
+
+    cols = [col for col in sort_cols if _sortable(col)]
+    if not cols:
+        return df
+    return df.sort_values(cols, kind="stable").reset_index(drop=True)
+
+
+def _sort_deterministically(table: Table) -> Table:
+    r"""Apply :func:`sort_labels` to a freshly generated label table."""
+    table.df = sort_labels(table.df, [table.time_col, *table.fkey_col_to_pkey_table])
     return table
 
 
