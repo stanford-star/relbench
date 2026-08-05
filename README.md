@@ -17,19 +17,6 @@
   <a href="#contributing"><b>Contributing</b></a>
 </p>
 
-## What is RelBench?
-
-Most real-world data lives in a **relational database**: many tables linked by foreign keys
-— customers, orders, products, events — not one flat spreadsheet. Getting that into a
-machine-learning model normally means slow, manual feature engineering to flatten it down.
-
-**RelBench is a benchmark for skipping that step and learning directly from the raw linked
-tables with deep learning.** Each dataset is a real relational database paired with
-predictive **tasks** — *"will this driver finish on the podium in their next race?"*,
-*"how much will this user spend next month?"* — each with temporal train/val/test splits and
-a standard metric, so results are comparable. Datasets and tasks load straight from the
-[Hugging Face Hub](https://huggingface.co/relbench).
-
 ## Get Started
 
 ```bash
@@ -42,10 +29,10 @@ Load a dataset and a task — both come straight from the Hub, with **no per-dat
 ```python
 import relbench
 
-dataset = relbench.load_dataset("relbench/core/rel-f1")   # a Hub 'org/repo[/subdir]', or a local path
-db = dataset.get_db()                  # a Database: tables linked by a foreign-key graph
+dataset = relbench.load_dataset("stanford-star/relbench/rel-f1")   # a Hub 'org/repo[/subdir]', or a local path
+db = dataset.get_db()                  # rows after test_timestamp are hidden
 
-task = relbench.load_task("relbench/core/rel-f1", "driver-position")
+task = relbench.load_task("stanford-star/relbench/rel-f1", "driver-position")
 train_table = task.get_table("train")  # train / val / test label tables
 test_table  = task.get_table("test")   # the target column is hidden on test
 
@@ -65,8 +52,8 @@ Open these directly in Google Colab — no setup required:
 
 | Tutorial | What it covers | |
 |---|---|---|
-| [**Quickstart**](https://colab.research.google.com/github/snap-stanford/relbench/blob/relbench-hf/tutorials/quickstart.ipynb) | Load a dataset/task, explore the schema, run a baseline | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/snap-stanford/relbench/blob/relbench-hf/tutorials/quickstart.ipynb) |
-| [**Training a GNN**](https://colab.research.google.com/github/snap-stanford/relbench/blob/relbench-hf/tutorials/gnn.ipynb) | A GNN baseline for an entity task (PyG + PyTorch Frame) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/snap-stanford/relbench/blob/relbench-hf/tutorials/gnn.ipynb) (needs a GPU) |
+| [**Quickstart**](https://colab.research.google.com/github/rishabh-ranjan/relbench/blob/main/tutorials/quickstart.ipynb) | Load a dataset/task, explore the schema, run a baseline | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/rishabh-ranjan/relbench/blob/main/tutorials/quickstart.ipynb) |
+| [**Training a GNN**](https://colab.research.google.com/github/rishabh-ranjan/relbench/blob/main/tutorials/gnn.ipynb) | A GNN baseline for an entity task (PyG + PyTorch Frame) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/rishabh-ranjan/relbench/blob/main/tutorials/gnn.ipynb) (needs a GPU) |
 
 ## Submitting to the leaderboard
 

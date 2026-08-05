@@ -5,8 +5,8 @@ required (the first cell installs RelBench).
 
 | Notebook | What it shows | |
 |---|---|---|
-| [`quickstart.ipynb`](quickstart.ipynb) | Load a dataset/task from the Hub, explore the FK graph, build a task table, run a baseline | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/snap-stanford/relbench/blob/relbench-hf/tutorials/quickstart.ipynb) |
-| [`gnn.ipynb`](gnn.ipynb) | Train a GNN on an entity task (PyG + PyTorch Frame); needs `torch` and ideally a GPU | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/snap-stanford/relbench/blob/relbench-hf/tutorials/gnn.ipynb) |
+| [`quickstart.ipynb`](quickstart.ipynb) | Load a dataset/task from the Hub, explore the FK graph, build a task table, run a baseline | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/rishabh-ranjan/relbench/blob/main/tutorials/quickstart.ipynb) |
+| [`gnn.ipynb`](gnn.ipynb) | Train a GNN on an entity task (PyG + PyTorch Frame); needs `torch` and ideally a GPU | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/rishabh-ranjan/relbench/blob/main/tutorials/gnn.ipynb) |
 
 ## Run locally
 
