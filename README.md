@@ -2,9 +2,11 @@
 
 <p align="center">
   <a href="https://pypi.org/project/relbench/"><img src="https://img.shields.io/pypi/v/relbench?color=3f9e78" alt="PyPI" /></a>
-  <a href="https://pypi.org/project/relbench/"><img src="https://img.shields.io/pypi/pyversions/relbench?color=3f9e78" alt="Python" /></a>
+  <a href="https://pypi.org/project/relbench/"><img src="https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-3f9e78" alt="Python" /></a>
   <a href="https://github.com/snap-stanford/relbench/actions/workflows/testing.yml"><img src="https://github.com/snap-stanford/relbench/actions/workflows/testing.yml/badge.svg" alt="Tests" /></a>
-  <a href="https://arxiv.org/abs/2602.12606"><img src="https://img.shields.io/badge/arXiv-2602.12606-b31b1b.svg" alt="arXiv" /></a>
+  <a href="https://arxiv.org/abs/2312.04615"><img src="https://img.shields.io/badge/arXiv-2312.04615%20(RDL)-b31b1b.svg" alt="arXiv: Relational Deep Learning" /></a>
+  <a href="https://arxiv.org/abs/2407.20060"><img src="https://img.shields.io/badge/arXiv-2407.20060%20(RelBench)-b31b1b.svg" alt="arXiv: RelBench" /></a>
+  <a href="https://arxiv.org/abs/2602.12606"><img src="https://img.shields.io/badge/arXiv-2602.12606%20(RelBench%20v2)-b31b1b.svg" alt="arXiv: RelBench v2" /></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-3f9e78.svg" alt="License: MIT" /></a>
 </p>
 
