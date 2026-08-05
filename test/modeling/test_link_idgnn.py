@@ -10,7 +10,11 @@ from torch_geometric.nn import MLP
 from torch_geometric.typing import NodeType
 
 from relbench.base.task_base import TaskType
-from relbench.modeling.graph import get_link_train_table_input, make_pkey_fkey_graph
+from relbench.modeling.graph import (
+    get_link_train_table_input,
+    make_pkey_fkey_graph,
+    num_dst_nodes,
+)
 from relbench.modeling.loader import SparseTensor
 from relbench.modeling.nn import HeteroEncoder, HeteroGraphSAGE
 from relbench.modeling.utils import get_stype_proposal
@@ -38,6 +42,7 @@ def test_link_train_fake_product_dataset(tmp_path, make_purchase_task, fake_data
 
     # Ensure that neighbor loading works on train/val/test splits ############
     task = make_purchase_task(dataset)
+    n_dst_nodes = num_dst_nodes(dataset.get_db(), task)
     assert task.task_type == TaskType.LINK_PREDICTION
 
     train_table = task.get_table("train")
@@ -51,7 +56,7 @@ def test_link_train_fake_product_dataset(tmp_path, make_purchase_task, fake_data
         ("val", val_table),
         ("test", test_table),
     ]:
-        table_input = get_link_train_table_input(table, task)
+        table_input = get_link_train_table_input(table, task, n_dst_nodes)
         dst_nodes_dict[split] = table_input.dst_nodes
         loader_dict[split] = NeighborLoader(
             data,
@@ -130,7 +135,7 @@ def test_link_train_fake_product_dataset(tmp_path, make_purchase_task, fake_data
                 )
                 out = head(x_dict[dst_table]).flatten()
                 batch_size = batch[entity_table].batch_size
-                scores = torch.zeros(batch_size, task.num_dst_nodes, device=out.device)
+                scores = torch.zeros(batch_size, n_dst_nodes, device=out.device)
                 scores[batch[dst_table].batch, batch[dst_table].n_id] = torch.sigmoid(
                     out
                 )

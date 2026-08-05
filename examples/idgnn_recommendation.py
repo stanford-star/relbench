@@ -21,7 +21,11 @@ from tqdm import tqdm
 
 from relbench import load_dataset
 from relbench.base import Dataset, RecommendationTask, TaskType
-from relbench.modeling.graph import get_link_train_table_input, make_pkey_fkey_graph
+from relbench.modeling.graph import (
+    get_link_train_table_input,
+    make_pkey_fkey_graph,
+    num_dst_nodes,
+)
 from relbench.modeling.loader import SparseTensor
 from relbench.modeling.utils import get_stype_proposal
 from relbench.submit import evaluate_task, write_prediction_table
@@ -58,6 +62,7 @@ task: RecommendationTask = dataset.load_task(args.task)
 # Materialize the database once and reuse it: `get_db` is uncached, and this is
 # the task\'s view of it (the columns the task must not see are already dropped).
 db = task.get_db()
+n_dst_nodes = num_dst_nodes(db, task)
 tune_metric = "link_prediction_map"
 assert task.task_type == TaskType.LINK_PREDICTION
 
@@ -91,7 +96,7 @@ loader_dict: Dict[str, NeighborLoader] = {}
 dst_nodes_dict: Dict[str, Tuple[NodeType, Tensor]] = {}
 for split in ["train", "val", "test"]:
     table = task.get_table(split)
-    table_input = get_link_train_table_input(table, task)
+    table_input = get_link_train_table_input(table, task, n_dst_nodes)
     dst_nodes_dict[split] = table_input.dst_nodes
     loader_dict[split] = NeighborLoader(
         data,
@@ -187,7 +192,7 @@ def test(loader: NeighborLoader) -> np.ndarray:
             .flatten()
         )
         batch_size = batch[task.src_entity_table].batch_size
-        scores = torch.zeros(batch_size, task.num_dst_nodes, device=out.device)
+        scores = torch.zeros(batch_size, n_dst_nodes, device=out.device)
         scores[
             batch[task.dst_entity_table].batch, batch[task.dst_entity_table].n_id
         ] = torch.sigmoid(out)

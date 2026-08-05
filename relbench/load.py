@@ -22,7 +22,6 @@ are exactly the shipped behavior; only ``make_table`` changes to run the manifes
 from __future__ import annotations
 
 import os
-from functools import cached_property
 from pathlib import Path
 from typing import Optional, Union
 
@@ -38,6 +37,7 @@ from relbench.base import (
     Table,
     TaskType,
 )
+from relbench.base.task_base import _sort_deterministically
 from relbench.manifest import (
     KIND_AUTOCOMPLETE,
     KIND_EXTERNAL,
@@ -153,10 +153,9 @@ class RelBenchDataset(Dataset):
     Reads relational metadata from the manifest instead of parquet, and does **not**
     reindex: hosted artifacts are already reindexed at build time, so load is pure I/O.
 
-    Construction is lazy: nothing is downloaded or read until something actually needs
-    the files (``manifest``, ``load_task``, ``get_db``, ...). This keeps
-    ``load_dataset(spec).load_task(name)`` as cheap as addressing the task directly --
-    a task backed by hosted labels never touches ``db/``.
+    Construction resolves the dataset directory and reads the manifest, so everything
+    but the data itself is a plain attribute -- nothing here is cached or lazy. The
+    database and the label tables are not touched.
     """
 
     def __init__(
@@ -164,27 +163,11 @@ class RelBenchDataset(Dataset):
     ) -> None:
         self.name_or_path = name_or_path
         self.revision = revision
-
-    @cached_property
-    def dataset_dir(self) -> Path:
-        r"""Resolve (downloading on first access) the dataset directory."""
-        return _resolve_dataset_dir(self.name_or_path, self.revision)
-
-    @property
-    def db_dir(self) -> Path:
-        return self.dataset_dir / "db"
-
-    @cached_property
-    def manifest(self) -> DatasetManifest:
-        return DatasetManifest.load(self.dataset_dir / "manifest.yaml")
-
-    @property
-    def val_timestamp(self) -> pd.Timestamp:
-        return pd.Timestamp(self.manifest.val_timestamp)
-
-    @property
-    def test_timestamp(self) -> pd.Timestamp:
-        return pd.Timestamp(self.manifest.test_timestamp)
+        self.dataset_dir = _resolve_dataset_dir(name_or_path, revision)
+        self.db_dir = self.dataset_dir / "db"
+        self.manifest = DatasetManifest.load(self.dataset_dir / "manifest.yaml")
+        self.val_timestamp = pd.Timestamp(self.manifest.val_timestamp)
+        self.test_timestamp = pd.Timestamp(self.manifest.test_timestamp)
 
     def __repr__(self) -> str:
         return f"RelBenchDataset({str(self.name_or_path)!r})"
@@ -416,7 +399,9 @@ class _AutoCompleteTask(_HostedLabelsMixin, AutoCompleteTask):
         else:
             raise ValueError(f"unknown split: {split!r}")
         table = self.make_table(db, pd.DatetimeIndex([start, end]))
-        return self.filter_dangling_entities(table, full_db)
+        return _sort_deterministically(
+            self.filter_dangling_entities(table, full_db), self
+        )
 
 
 class _ExternalEntityTask(_HostedLabelsMixin, EntityTask):
@@ -518,9 +503,10 @@ def _resolve_dataset_dir(
 def load_dataset(
     name_or_path: Union[str, Path], *, revision: Optional[str] = None
 ) -> RelBenchDataset:
-    r"""Address a RelBench dataset by Hub ``org/repo[/subdir]`` or local path.
+    r"""Load a RelBench dataset from a Hub ``org/repo[/subdir]`` or a local path.
 
-    Cheap: no download and no file read happens here. Tasks come from the returned
-    object -- ``load_dataset(spec).load_task(name)`` / ``.get_task_names()``.
+    Resolves the directory (downloading it if needed) and reads the manifest; the
+    database is read on demand by ``get_db``. Tasks come from the returned object --
+    ``load_dataset(spec).load_task(name)`` / ``.get_task_names()``.
     """
     return RelBenchDataset(name_or_path, revision=revision)

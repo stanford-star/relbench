@@ -21,7 +21,11 @@ from tqdm import tqdm
 
 from relbench import load_dataset
 from relbench.base import Dataset, RecommendationTask, TaskType
-from relbench.modeling.graph import get_link_train_table_input, make_pkey_fkey_graph
+from relbench.modeling.graph import (
+    get_link_train_table_input,
+    make_pkey_fkey_graph,
+    num_dst_nodes,
+)
 from relbench.modeling.loader import LinkNeighborLoader
 from relbench.modeling.utils import get_stype_proposal
 from relbench.submit import evaluate_task, write_prediction_table
@@ -81,6 +85,7 @@ assert task.task_type == TaskType.LINK_PREDICTION
 # Materialize the database once and reuse it: `get_db` is uncached, and this is the
 # task's view of it (the columns the task must not see are already dropped).
 db = task.get_db()
+n_dst_nodes = num_dst_nodes(db, task)
 
 stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
 try:
@@ -106,7 +111,9 @@ data, col_stats_dict = make_pkey_fkey_graph(
 
 num_neighbors = [int(args.num_neighbors // 2**i) for i in range(args.num_layers)]
 
-train_table_input = get_link_train_table_input(task.get_table("train"), task)
+train_table_input = get_link_train_table_input(
+    task.get_table("train"), task, n_dst_nodes
+)
 train_loader = LinkNeighborLoader(
     data=data,
     num_neighbors=num_neighbors,
@@ -150,7 +157,7 @@ for split in ["val", "test"]:
         time_attr="time",
         input_nodes=task.dst_entity_table,
         input_time=torch.full(
-            size=(task.num_dst_nodes,), fill_value=seed_time, dtype=torch.long
+            size=(n_dst_nodes,), fill_value=seed_time, dtype=torch.long
         ),
         batch_size=args.batch_size,
         shuffle=False,

@@ -15,7 +15,6 @@ unless you pass ``revision=`` explicitly.
 from __future__ import annotations
 
 import json
-from functools import lru_cache
 from pathlib import Path
 from typing import Optional
 
@@ -26,13 +25,15 @@ RELBENCH_HF = "stanford-star/relbench"
 REGRESSION_STDS_FILE = "regression_stds.json"
 
 
-@lru_cache(maxsize=None)
 def load_core_regression_stds(revision: Optional[str] = None) -> dict[str, float]:
     r"""Fetch the hosted ``stanford-star/relbench`` regression-std table as
     ``{"<dataset>/<task>": std}``.
 
     Uses ``hf_hub_download``, so if the file is already in the local HF cache (e.g. the user
     has it from a prior call) it is read from disk without a network round-trip.
+
+    Not cached: hold the returned dict if you need it more than once. RelBench's own
+    caller -- the per-task NMAE normalizer -- resolves it once per task.
     """
     from huggingface_hub import hf_hub_download
 

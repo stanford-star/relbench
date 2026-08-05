@@ -51,9 +51,25 @@ def sort_labels(df: pd.DataFrame, sort_cols) -> pd.DataFrame:
     return df.sort_values(cols, kind="stable").reset_index(drop=True)
 
 
-def _sort_deterministically(table: Table) -> Table:
+def label_sort_cols(task) -> list:
+    r"""The canonical sort key of ``task``'s label table, in order.
+
+    Pinned explicitly -- time first, then entity, then link source and destination -- so
+    that every producer (regeneration, the generators, the migration tool) sorts
+    identically. Deriving it from an unordered mapping would let two paths disagree the
+    moment a label table has more than one key column.
+    """
+    return [
+        getattr(task, "time_col", None),
+        getattr(task, "entity_col", None),
+        getattr(task, "src_entity_col", None),
+        getattr(task, "dst_entity_col", None),
+    ]
+
+
+def _sort_deterministically(table: Table, task) -> Table:
     r"""Apply :func:`sort_labels` to a freshly generated label table."""
-    table.df = sort_labels(table.df, [table.time_col, *table.fkey_col_to_pkey_table])
+    table.df = sort_labels(table.df, label_sort_cols(task))
     return table
 
 
@@ -229,7 +245,7 @@ class BaseTask:
             table, db if split != "test" else db.upto(self.dataset.test_timestamp)
         )
 
-        return _sort_deterministically(table)
+        return _sort_deterministically(table, self)
 
     def get_table(
         self,

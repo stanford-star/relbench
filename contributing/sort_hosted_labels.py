@@ -22,7 +22,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from relbench.base.task_base import sort_labels
+from relbench.base.task_base import label_sort_cols, sort_labels
 from relbench.hf import RELBENCH_HF
 from relbench.manifest import TaskManifest
 
@@ -30,12 +30,12 @@ SPLITS = ["train", "val", "test"]
 
 
 def _sort_cols(tm: TaskManifest) -> list:
-    r"""The key columns of a task's label table, in sort order."""
-    return [
-        c
-        for c in [tm.time_col, tm.entity_col, tm.src_entity_col, tm.dst_entity_col]
-        if c
-    ]
+    r"""The key columns of a task's label table, in sort order.
+
+    The manifest carries the same field names the task does, so the pinned order in
+    :func:`relbench.base.task_base.label_sort_cols` applies directly.
+    """
+    return [c for c in label_sort_cols(tm) if c]
 
 
 def main() -> None:

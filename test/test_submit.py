@@ -113,8 +113,11 @@ def _entity_pred(df, task, scale=1.0):
 
 def _link_pred(df, task):
     r"""Deterministic per-source top-eval_k destination ids, shape (N, eval_k)."""
+    from relbench.modeling.graph import num_dst_nodes
+
+    n_dst_nodes = num_dst_nodes(task.get_db(), task)
     src = df[task.src_entity_col].astype("int64").to_numpy()
-    return (src[:, None] + np.arange(task.eval_k)[None, :]) % task.num_dst_nodes
+    return (src[:, None] + np.arange(task.eval_k)[None, :]) % n_dst_nodes
 
 
 # --------------------------------------------------------------------------- #
