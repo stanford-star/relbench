@@ -99,6 +99,9 @@ complete worked example. For how RelBench's own databases were built, cleaned, a
 from their original sources, see [`provenance/`](provenance). Bug reports and feature
 requests: open a GitHub issue or pull request.
 
+If you upload your data in RelBench format to Hugging Face, please let us know at
+[relbench@cs.stanford.edu](mailto:relbench@cs.stanford.edu) so we can list it here!
+
 ## Cite RelBench
 
 If you use RelBench, please cite the benchmark papers:
