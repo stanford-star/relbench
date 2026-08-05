@@ -1,4 +1,3 @@
-from functools import cached_property
 from typing import Dict, Optional
 
 import pandas as pd
@@ -58,7 +57,7 @@ class Table:
             time_col=self.time_col,
         )
 
-    @cached_property
+    @property
     def min_timestamp(self) -> pd.Timestamp:
         r"""Return the earliest time in the table."""
 
@@ -67,7 +66,7 @@ class Table:
 
         return self.df[self.time_col].min()
 
-    @cached_property
+    @property
     def max_timestamp(self) -> pd.Timestamp:
         r"""Return the latest time in the table."""
 

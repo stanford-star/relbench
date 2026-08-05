@@ -404,7 +404,9 @@ def _split_task_name(task_name: str) -> Tuple[str, str]:
         raise ValueError(
             f"task name {task_name!r} must be fully-qualified as '<dataset>/<task>'"
         )
-    dataset_name, name = task_name.split("/", 1)
+    # rsplit, not split: the dataset part may itself contain slashes -- a Hub
+    # 'org/repo[/subdir]' spec or a local path. The task name never does.
+    dataset_name, name = task_name.rsplit("/", 1)
     return dataset_name, name
 
 
@@ -420,7 +422,9 @@ def _fetch_eval_files(dataset_name: str, task_names: Sequence[str]) -> Path:
 
     from relbench.hf import resolve_repo
 
-    repo_id, subdir = resolve_repo(f"{RELBENCH_HF}/{dataset_name}")
+    # `resolve_repo` already maps a bare name onto the hosted RelBench repo, and
+    # passes an 'org/repo[/subdir]' spec through untouched.
+    repo_id, subdir = resolve_repo(dataset_name)
     prefix = f"{subdir}/" if subdir else ""
     patterns = [f"{prefix}manifest.yaml"]
     for name in task_names:
@@ -457,11 +461,15 @@ def evaluate_task(
             probabilities, undecodable link lists, ...).
     """
     dataset_name, name = _split_task_name(task_name)
-    # Default path: fetch only the evaluation files (manifests + hosted test.parquet),
-    # not the full dataset snapshot.
-    dataset_arg = (
-        dataset if dataset is not None else _fetch_eval_files(dataset_name, [name])
-    )
+    if dataset is not None:
+        dataset_arg = dataset
+    elif (Path(dataset_name) / "manifest.yaml").exists():
+        # A local dataset directory: nothing to fetch.
+        dataset_arg = dataset_name
+    else:
+        # Fetch only the files evaluation needs (manifests + hosted test.parquet),
+        # not the full dataset snapshot.
+        dataset_arg = _fetch_eval_files(dataset_name, [name])
     ds = (
         dataset_arg
         if isinstance(dataset_arg, RelBenchDataset)

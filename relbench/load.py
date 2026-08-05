@@ -286,10 +286,6 @@ class _HostedLabelsMixin:
         if mask_input_cols is None:
             mask_input_cols = split == "test"
 
-        key = (split, mask_input_cols)
-        if key in self._tables:
-            return self._tables[key]
-
         path = None
         if self._task_dir is not None and not self._regenerate:
             candidate = Path(self._task_dir) / f"{split}.parquet"
@@ -309,7 +305,6 @@ class _HostedLabelsMixin:
 
         if mask_input_cols:
             table = self._mask_input_cols(table)
-        self._tables[key] = table
         return table
 
 

@@ -1,12 +1,40 @@
 from enum import Enum
 from typing import Callable, List, Optional
 
+import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
 from .database import Database
 from .dataset import Dataset, drop_columns
 from .table import Table
+
+
+def _sort_deterministically(table: Table) -> Table:
+    r"""Order a label table by its key columns.
+
+    ``make_table`` explicitly does not promise an order, and the duckdb queries behind
+    it return the same rows in a different order on every run. Without a canonical
+    order, two calls for the same split disagree -- which silently mis-pairs
+    predictions with targets when they come from different calls. Sorting here makes
+    label generation reproducible instead of relying on the result being memoized.
+    """
+
+    def _sortable(col: str) -> bool:
+        # A link task's destination column holds lists, which are unorderable (and are
+        # not part of the row's identity anyway -- the (time, source) pair is).
+        return (
+            col is not None
+            and col in table.df.columns
+            and not table.df[col].map(lambda v: isinstance(v, (list, np.ndarray))).any()
+        )
+
+    sort_cols = [
+        col for col in [table.time_col, *table.fkey_col_to_pkey_table] if _sortable(col)
+    ]
+    if sort_cols:
+        table.df = table.df.sort_values(sort_cols, kind="stable").reset_index(drop=True)
+    return table
 
 
 class TaskType(Enum):
@@ -64,9 +92,6 @@ class BaseTask:
         """
         self.dataset = dataset
         self.remove_columns = [tuple(pair) for pair in (remove_columns or [])]
-        # Label tables, keyed by (split, mask_input_cols). Small, immutable given the
-        # task, and expensive to rebuild -- unlike the database, which is neither.
-        self._tables: dict = {}
 
         time_diff = self.dataset.test_timestamp - self.dataset.val_timestamp
         if time_diff < self.timedelta:
@@ -182,7 +207,7 @@ class BaseTask:
             table, db if split != "test" else db.upto(self.dataset.test_timestamp)
         )
 
-        return table
+        return _sort_deterministically(table)
 
     def get_table(
         self,
@@ -206,18 +231,17 @@ class BaseTask:
         Returns:
             The task table for the split.
 
-        Label tables are memoized on the task -- they are small and deterministic.
+        Nothing is cached: keep the table you get back. For a task built with
+        ``regenerate=True`` each call re-runs the label SQL, so pass ``db`` and hold
+        the result.
         """
         if mask_input_cols is None:
             mask_input_cols = split == "test"
 
-        key = (split, mask_input_cols)
-        if key not in self._tables:
-            table = self._get_table(split, db)
-            if mask_input_cols:
-                table = self._mask_input_cols(table)
-            self._tables[key] = table
-        return self._tables[key]
+        table = self._get_table(split, db)
+        if mask_input_cols:
+            table = self._mask_input_cols(table)
+        return table
 
     def _mask_input_cols(self, table: Table) -> Table:
         input_cols = [
