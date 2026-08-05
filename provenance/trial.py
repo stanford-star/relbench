@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 from _lib import Table, fetch, write_hf
 
-URL = "https://relbench.stanford.edu/data/relbench-trial.zip"
+URL = "https://huggingface.co/datasets/stanford-star/relbench-raw/resolve/main/rel-trial/relbench-trial.zip"
 SHA = "3f7376b7d901177157b3c5b048221884e936b45d05e809c7875403183ca9e13d"
 # 1 year gap
 VAL_TIMESTAMP, TEST_TIMESTAMP = "2020-01-01", "2021-01-01"

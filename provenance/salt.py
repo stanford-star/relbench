@@ -13,7 +13,7 @@ import sys
 import pandas as pd
 from _lib import Table, fetch, write_hf
 
-URL = "https://relbench.stanford.edu/download/rel-salt/db.zip"
+URL = "https://huggingface.co/datasets/stanford-star/relbench-raw/resolve/main/rel-salt/db.zip"
 SHA = "fca91ab7d9e37646dcf1cb0007cc4229e9b23ef3c85f3c9e578d0f3fcb167001"
 VAL_TIMESTAMP, TEST_TIMESTAMP = "2020-02-01", "2020-07-01"
 

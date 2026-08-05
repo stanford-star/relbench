@@ -22,13 +22,13 @@ in [`clean_databases.py`](clean_databases.py).
 
 | generator | database | raw source | status |
 |---|---|---|---|
-| `f1.py` | rel-f1 | Ergast F1 snapshot (relbench.stanford.edu) | ✅ reproduces published |
-| `salt.py` | rel-salt | SAP SALT db.zip (relbench.stanford.edu) | ✅ reproduces published |
+| `f1.py` | rel-f1 | Ergast F1 snapshot (`stanford-star/relbench-raw`) | ✅ reproduces published |
+| `salt.py` | rel-salt | SAP SALT db.zip (`stanford-star/relbench-raw`) | ✅ reproduces published |
 | `arxiv.py` | rel-arxiv | arXiv citation db.zip (Dropbox) | ✅ reproduces published |
-| `stack.py` | rel-stack | Stack Exchange dump (relbench.stanford.edu) | runnable (large; +#373 drop) |
-| `trial.py` | rel-trial | ClinicalTrials/AACT (relbench.stanford.edu) | runnable (large; +#373 drops) |
+| `stack.py` | rel-stack | Stack Exchange dump (`stanford-star/relbench-raw`) | runnable (large; +#373 drop) |
+| `trial.py` | rel-trial | ClinicalTrials/AACT (`stanford-star/relbench-raw`) | runnable (large; +#373 drops) |
 | `ratebeer.py` | rel-ratebeer | RateBeer db.zip (Dropbox) | ✅ reproduces published (large; +#373 drops) |
-| `avito.py` | rel-avito | Avito ads (relbench.stanford.edu) | runnable; public source is a 100k **sample** |
+| `avito.py` | rel-avito | Avito ads (`stanford-star/relbench-raw`) | runnable; public source is a 100k **sample** |
 | `amazon.py` | rel-amazon | Amazon reviews (McAuley `jmcauley.ucsd.edu`) | runnable; large external download |
 | `event.py` | rel-event | Event Recommendation (Kaggle) | needs Kaggle zip in `$RELBENCH_RAW_CACHE` |
 | `hm.py` | rel-hm | H&M (Kaggle) | needs Kaggle zip in `$RELBENCH_RAW_CACHE` |

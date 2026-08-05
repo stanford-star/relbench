@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 from _lib import Table, fetch, write_hf
 
-URL = "https://relbench.stanford.edu/data/relbench-f1-raw.zip"
+URL = "https://huggingface.co/datasets/stanford-star/relbench-raw/resolve/main/rel-f1/relbench-f1-raw.zip"
 SHA = "2933348953b30aa9723b4831fea8071b336b74977bbcf1fb059da63a04f06eba"
 VAL_TIMESTAMP, TEST_TIMESTAMP = "2005-01-01", "2010-01-01"
 

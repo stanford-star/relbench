@@ -30,7 +30,7 @@ import pyarrow.parquet as pq
 from _lib import Table, fetch, write_hf
 
 # Pre-built RelBench databases are hosted as ``<base>/<name>/db.zip``.
-BASE_URL = "https://relbench.stanford.edu/download"
+BASE_URL = "https://huggingface.co/datasets/stanford-star/relbench-raw/resolve/main/tgb"
 
 # Per-dataset (val_timestamp_s, test_timestamp_s, db.zip sha256). The cutoffs are the
 # official TGB split boundaries, kept verbatim from the legacy ``_TGB_CUTOFFS``; the

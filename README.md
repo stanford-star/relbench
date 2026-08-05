@@ -1,4 +1,4 @@
-<p align="center"><img src="https://relbench.stanford.edu/img/logo.png" alt="RelBench" width="600px" /></p>
+<p align="center"><img src="https://star-project.stanford.edu/assets/img/relbench/logo.png" alt="RelBench" width="600px" /></p>
 
 <p align="center">
   <a href="https://star-project.stanford.edu/relbench"><img src="https://img.shields.io/badge/website-STAR%20Project-3f9e78.svg" alt="Website: STAR Project" /></a>
