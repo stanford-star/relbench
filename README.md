@@ -4,7 +4,6 @@
   <a href="https://pypi.org/project/relbench/"><img src="https://img.shields.io/pypi/v/relbench?color=3f9e78" alt="PyPI" /></a>
   <a href="https://pypi.org/project/relbench/"><img src="https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-3f9e78" alt="Python" /></a>
   <a href="https://github.com/snap-stanford/relbench/actions/workflows/testing.yml"><img src="https://github.com/snap-stanford/relbench/actions/workflows/testing.yml/badge.svg" alt="Tests" /></a>
-  <a href="https://arxiv.org/abs/2312.04615"><img src="https://img.shields.io/badge/arXiv-2312.04615%20(RDL)-b31b1b.svg" alt="arXiv: Relational Deep Learning" /></a>
   <a href="https://arxiv.org/abs/2407.20060"><img src="https://img.shields.io/badge/arXiv-2407.20060%20(RelBench)-b31b1b.svg" alt="arXiv: RelBench" /></a>
   <a href="https://arxiv.org/abs/2602.12606"><img src="https://img.shields.io/badge/arXiv-2602.12606%20(RelBench%20v2)-b31b1b.svg" alt="arXiv: RelBench v2" /></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-3f9e78.svg" alt="License: MIT" /></a>
@@ -115,16 +114,9 @@ requests: open a GitHub issue or pull request.
 
 ## Cite RelBench
 
-If you use RelBench, please cite the position and benchmark papers:
+If you use RelBench, please cite the benchmark papers:
 
 ```bibtex
-@inproceedings{rdl,
-  title={Position: Relational Deep Learning - Graph Representation Learning on Relational Databases},
-  author={Fey, Matthias and Hu, Weihua and Huang, Kexin and Lenssen, Jan Eric and Ranjan, Rishabh and Robinson, Joshua and Ying, Rex and You, Jiaxuan and Leskovec, Jure},
-  booktitle={Forty-first International Conference on Machine Learning},
-  year={2024}
-}
-
 @inproceedings{relbench,
   title={RelBench: A Benchmark for Deep Learning on Relational Databases},
   author={Robinson, Joshua and Ranjan, Rishabh and Hu, Weihua and Huang, Kexin and Han, Jiaqi and Dobles, Alejandro and Fey, Matthias and Lenssen, Jan Eric and Yuan, Yiwen and Zhang, Zecheng and He, Xinwei and Leskovec, Jure},
