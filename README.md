@@ -85,9 +85,10 @@ To submit:
 The submission is validated automatically and the report is posted on the issue; once a
 maintainer approves, your entry appears on the leaderboard.
 
-## BYOD
+## BYOD (Bring Your Own Data)
 
-Adding a dataset or task takes **no code**. A dataset is a self-describing folder — a
+You can easily express your own databases and tasks in the **RelBench format**.
+A dataset is a self-describing folder — a
 `manifest.yaml` (tables, keys, the foreign-key graph, the time splits), one plain parquet
 per table, and a `tasks/` subdirectory — that you publish to the
 [Hugging Face Hub](https://huggingface.co). RelBench loads it straight from its
@@ -96,11 +97,10 @@ per table, and a `tasks/` subdirectory — that you publish to the
 [**`byod/README.md`**](byod/README.md) is the full walkthrough, and the
 published [`stanford-star/relbench/rel-f1`](https://huggingface.co/datasets/stanford-star/relbench) is a
 complete worked example. For how RelBench's own databases were built, cleaned, and verified
-from their original sources, see [`provenance/`](provenance). Bug reports and feature
-requests: open a GitHub issue or pull request.
+from their original sources, see [`provenance/`](provenance).
 
-If you upload your data in RelBench format to Hugging Face, please let us know at
-[relbench@cs.stanford.edu](mailto:relbench@cs.stanford.edu) so we can list it here!
+If you upload your data in RelBench format to Hugging Face, please let us know
+by opening an issue / making a PR so we can list it here!
 
 ## Citations
 

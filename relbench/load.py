@@ -69,27 +69,20 @@ def train_std(task) -> float:
     return float(df[task.target_col].std(ddof=1))
 
 
-def _make_std_getter(task, dataset_name: Optional[str], task_name: Optional[str]):
-    r"""Lazily resolve the NMAE normalizer for ``task``: hosted core std if available,
-    else compute it from the train split.
+def _hosted_std(dataset_name: Optional[str], task_name: Optional[str]):
+    r"""The precomputed NMAE normalizer for a hosted task, or None.
 
-    Lazy so merely loading a task triggers no I/O.
+    Needs no task object, so it can be resolved before one exists -- and when it hits,
+    the train split is never read just to take a standard deviation.
     """
-    from functools import lru_cache as _lru_cache
-
-    @_lru_cache(maxsize=1)
-    def get_std() -> float:
-        if dataset_name is not None and task_name is not None:
-            try:
-                stds = hf.load_core_regression_stds()
-            except Exception:
-                stds = {}
-            std = stds.get(f"{dataset_name}/{task_name}")
-            if std is not None:
-                return float(std)
-        return train_std(task)
-
-    return get_std
+    if dataset_name is None or task_name is None:
+        return None
+    try:
+        stds = hf.load_core_regression_stds()
+    except Exception:
+        return None
+    std = stds.get(f"{dataset_name}/{task_name}")
+    return None if std is None else float(std)
 
 
 def _resolve_metrics(
@@ -104,7 +97,9 @@ def _resolve_metrics(
     out = []
     for name in DEFAULT_METRICS[task_type]:
         if name == "nmae":
-            out.append(metrics.make_nmae(_make_std_getter(task, dataset_name, tm.name)))
+            # `task` is still under construction here, so the std cannot be resolved
+            # yet; `build_task` sets `task.nmae_std` once the task is complete.
+            out.append(metrics.make_nmae(lambda: task.nmae_std))
         else:
             out.append(getattr(metrics, name))
     return out
@@ -369,6 +364,7 @@ class _AutoCompleteTask(_HostedLabelsMixin, AutoCompleteTask):
             entity_table=tm.entity_table,
             target_col=tm.target_col,
             remove_columns=tm.remove_columns,
+            nmae_std=_hosted_std(_dataset_name(dataset), tm.name),
         )
 
     def _get_table(self, split: str, db: Optional[Database] = None) -> Table:
@@ -460,6 +456,18 @@ class _ExternalRecommendationTask(_HostedLabelsMixin, RecommendationTask):
         raise NotImplementedError("external task labels are hosted, not regenerable")
 
 
+def _install_nmae_std(task, dataset: Dataset, tm: TaskManifest) -> None:
+    r"""Resolve the NMAE normalizer once, now that the task is fully built.
+
+    The hosted std if there is one, else the std of the train split. Stored on the task;
+    the metric just reads the attribute.
+    """
+    if TaskType(tm.task_type) != TaskType.REGRESSION:
+        return
+    std = _hosted_std(_dataset_name(dataset), tm.name)
+    task.nmae_std = train_std(task) if std is None else std
+
+
 def build_task(
     dataset: Dataset,
     tm: TaskManifest,
@@ -471,6 +479,8 @@ def build_task(
     tm.validate()
     is_link = TaskType(tm.task_type) == TaskType.LINK_PREDICTION
     if tm.kind == KIND_AUTOCOMPLETE:
+        # AutoCompleteTask resolves its own std in __init__ (it needs the train split
+        # only when there is no hosted value).
         return _AutoCompleteTask(dataset, tm, task_dir=task_dir, regenerate=regenerate)
     if tm.kind == KIND_FORECAST:
         cls = _ForecastRecommendationTask if is_link else _ForecastEntityTask
@@ -483,7 +493,9 @@ def build_task(
     # (dbinfer's `cvr` is `View.added_to_cart`, `charge` is `Dobito.sluzba`). Each task
     # carries its own removals and applies them in `task.get_db()`, so tasks over one
     # dataset stay independent.
-    return cls(dataset, tm, task_dir=task_dir, regenerate=regenerate)
+    task = cls(dataset, tm, task_dir=task_dir, regenerate=regenerate)
+    _install_nmae_std(task, dataset, tm)
+    return task
 
 
 # --------------------------------------------------------------------------- #

@@ -39,6 +39,7 @@ class AutoCompleteTask(EntityTask):
         entity_table: str,
         target_col: str,
         remove_columns: Optional[List[tuple]] = None,
+        nmae_std: Optional[float] = None,
     ):
         super().__init__(dataset, remove_columns=remove_columns)
 
@@ -52,14 +53,14 @@ class AutoCompleteTask(EntityTask):
         self.time_col = db.table_dict[self.entity_table].time_col
 
         if self.task_type == TaskType.REGRESSION:
-            # NMAE = MAE / std(train target, ddof=1); resolved lazily on first eval.
-            self.metrics = [
-                make_nmae(
-                    lambda: float(
-                        self.get_table("train").df[self.target_col].std(ddof=1)
-                    )
-                )
-            ]
+            # NMAE = MAE / std(train target, ddof=1). Resolved once, here: the metric
+            # reads the attribute, so evaluating repeatedly costs nothing extra.
+            self.nmae_std = (
+                float(nmae_std)
+                if nmae_std is not None
+                else float(self.get_table("train").df[self.target_col].std(ddof=1))
+            )
+            self.metrics = [make_nmae(lambda: self.nmae_std)]
         elif self.task_type == TaskType.BINARY_CLASSIFICATION:
             self.metrics = [roc_auc]
             self.num_classes = 2
