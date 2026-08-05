@@ -7,7 +7,7 @@ labels). Adding a task later is just adding a directory.
 
 Public API::
 
-    ds   = relbench.load_dataset("relbench/core/rel-f1")   # Hub 'org/repo[/subdir]' or a local path
+    ds   = relbench.load_dataset("stanford-star/relbench/rel-f1")   # Hub 'org/repo[/subdir]' or a local path
     task = ds.load_task("driver-position")                 # ds.get_task_names() lists them
     db   = ds.get_db()
     train = task.get_table("train")
@@ -61,8 +61,8 @@ DEFAULT_METRICS: dict[TaskType, list[str]] = {
 def train_std(task) -> float:
     r"""Standard deviation (ddof=1) of a regression task's target on its train split.
 
-    This is the normalizer that turns MAE into NMAE. For the hosted relbench/core tasks the
-    same values are precomputed and stored at ``relbench/core`` (see
+    This is the normalizer that turns MAE into NMAE. For the hosted stanford-star/relbench tasks the
+    same values are precomputed and stored at ``stanford-star/relbench`` (see
     :func:`relbench.hf.load_core_regression_stds`); this utility recomputes one from scratch.
     """
     df = task.get_table("train").df

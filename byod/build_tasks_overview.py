@@ -5,16 +5,16 @@ one row per task, with the per-task statistics reported in the RelBench papers
 (`v1 <https://arxiv.org/abs/2407.20060>`_, `v2 <https://arxiv.org/abs/2602.12606>`_).
 
     # write tasks.parquet locally (under --out, default '.') and print it
-    python contributing/build_tasks_overview.py relbench/core --out /tmp/core
+    python byod/build_tasks_overview.py stanford-star/relbench --out /tmp/core
 
     # also upload it to STATS/tasks.parquet, next to STATS/databases.parquet
-    python contributing/build_tasks_overview.py relbench/core --push
+    python byod/build_tasks_overview.py stanford-star/relbench --push
 
     # cross-check the computed numbers against the published paper tables
-    python contributing/build_tasks_overview.py relbench/core --check
+    python byod/build_tasks_overview.py stanford-star/relbench --check
 
-``<spec>`` is a Hub repo that hosts one or more datasets (``relbench/core``), a single
-hosted dataset (``relbench/core/rel-f1``), or a *local* dataset folder (a directory with a
+``<spec>`` is a Hub repo that hosts one or more datasets (``stanford-star/relbench``), a single
+hosted dataset (``stanford-star/relbench/rel-f1``), or a *local* dataset folder (a directory with a
 ``manifest.yaml`` and a ``tasks/`` subfolder). Only the manifests and the task label
 tables are downloaded -- never the (much larger) ``db/`` tables -- so this stays cheap
 even for repos with thousands of datasets.
@@ -562,7 +562,7 @@ def main() -> None:
     if do_push:
         if Path(spec).exists():
             sys.exit(
-                "--push needs a Hub repo spec (e.g. 'relbench/core'), not a local path"
+                "--push needs a Hub repo spec (e.g. 'stanford-star/relbench'), not a local path"
             )
         repo_id, _ = resolve_repo(spec)
         from huggingface_hub import HfApi

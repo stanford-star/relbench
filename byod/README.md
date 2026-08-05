@@ -1,6 +1,6 @@
-# Contributing a dataset or task
+# BYOD: bring your own data
 
-Contributing to RelBench needs **no Python classes and no central registry**. A dataset is a
+Bringing your own data to RelBench needs **no Python classes and no central registry**. A dataset is a
 self-describing folder you publish to the [Hugging Face Hub](https://huggingface.co); a task
 is one subdirectory inside it. RelBench loads it straight from its `org/repo[/subdir]`
 address. That's the whole contribution model — the rest of this page is just how to produce
@@ -45,7 +45,7 @@ timestamps), every table as a view by its name, and `{timedelta}` substituted as
 ## Package it for the Hub
 
 Once you have `manifest.yaml` + `db/*.parquet` + `tasks/`, the rest is generated. The
-published [`relbench/core/rel-f1`](https://huggingface.co/datasets/relbench/core) is a
+published [`stanford-star/relbench/rel-f1`](https://huggingface.co/datasets/stanford-star/relbench) is a
 complete worked example.
 
 **1. Generate the schema diagram and dataset card** from the manifest:
@@ -63,13 +63,13 @@ open("README.md", "w").write(dataset_card(m, repo="<org>/<repo>"))   # dataset c
 
 ```bash
 python provenance/check_provenance.py .                       # forecast labels reproduce from SQL
-python contributing/build_databases_overview.py . --out STATS # -> STATS/databases.parquet
-python contributing/build_tasks_overview.py     . --out STATS # -> STATS/tasks.parquet
+python byod/build_databases_overview.py . --out STATS # -> STATS/databases.parquet
+python byod/build_tasks_overview.py     . --out STATS # -> STATS/tasks.parquet
 hf upload <org>/<repo> . --repo-type dataset                  # commit the whole folder
 ```
 
 `<path>` above is `.` for a local dataset folder, but every tool also accepts a Hub repo
-(`relbench/core`) or a single hosted dataset (`relbench/core/rel-f1`) — so you can rebuild
+(`stanford-star/relbench`) or a single hosted dataset (`stanford-star/relbench/rel-f1`) — so you can rebuild
 the tables for anything already on the Hub. Only manifests and parquet *footers/labels* are
 read, never the full `db/` tables, so this stays cheap even for repos with thousands of
 datasets.

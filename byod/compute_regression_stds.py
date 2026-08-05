@@ -1,15 +1,15 @@
 r"""Compute and publish the RelBench core regression-target stds.
 
-For every regression task in the ``relbench/core`` datasets, compute the standard deviation
+For every regression task in the ``stanford-star/relbench`` datasets, compute the standard deviation
 (ddof=1) of the target on the *train* split and store them all together in one file at the
-root of the ``relbench/core`` Hub repo. These stds normalize MAE into NMAE (the regression
+root of the ``stanford-star/relbench`` Hub repo. These stds normalize MAE into NMAE (the regression
 metric); see ``relbench.metrics.make_nmae`` / ``relbench.hf.load_core_regression_stds``.
 
     # write regression_stds.json locally (under OUT) and print it
-    python contributing/compute_regression_stds.py
+    python byod/compute_regression_stds.py
 
-    # also upload it to the relbench/core dataset repo
-    python contributing/compute_regression_stds.py --push
+    # also upload it to the stanford-star/relbench dataset repo
+    python byod/compute_regression_stds.py --push
 
 Keyed by "<dataset>/<task>" (e.g. "rel-f1/driver-position").
 """
@@ -35,7 +35,7 @@ def main() -> None:
 
     api = HfApi()
 
-    # Enumerate relbench/core's sub-datasets (each has a top-level <name>/manifest.yaml).
+    # Enumerate stanford-star/relbench's sub-datasets (each has a top-level <name>/manifest.yaml).
     files = api.list_repo_files(RELBENCH_HF, repo_type="dataset")
     datasets = sorted(
         {

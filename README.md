@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="https://star-project.stanford.edu/relbench"><img src="https://img.shields.io/badge/website-STAR%20Project-3f9e78.svg" alt="Website: STAR Project" /></a>
-  <a href="https://huggingface.co/relbench"><img src="https://img.shields.io/badge/data-%F0%9F%A4%97%20Hugging%20Face-ffcc00.svg" alt="Data: Hugging Face" /></a>
+  <a href="https://huggingface.co/stanford-star"><img src="https://img.shields.io/badge/data-%F0%9F%A4%97%20Hugging%20Face-ffcc00.svg" alt="Data: Hugging Face" /></a>
   <a href="https://pypi.org/project/relbench/"><img src="https://img.shields.io/pypi/v/relbench?color=3f9e78" alt="PyPI" /></a>
   <a href="https://github.com/snap-stanford/relbench/actions/workflows/testing.yml"><img src="https://github.com/snap-stanford/relbench/actions/workflows/testing.yml/badge.svg" alt="Tests" /></a>
   <a href="https://arxiv.org/abs/2407.20060"><img src="https://img.shields.io/badge/arXiv-2407.20060%20(RelBench)-b31b1b.svg" alt="arXiv: RelBench" /></a>
@@ -14,7 +14,7 @@
   <a href="#get-started"><b>Get Started</b></a> ·
   <a href="#tutorials"><b>Tutorials</b></a> ·
   <a href="#leaderboard"><b>Leaderboard</b></a> ·
-  <a href="#contributing"><b>Contributing</b></a> ·
+  <a href="#byod"><b>BYOD</b></a> ·
   <a href="#cite-relbench"><b>Cite RelBench</b></a>
 </p>
 
@@ -85,7 +85,7 @@ To submit:
 The submission is validated automatically and the report is posted on the issue; once a
 maintainer approves, your entry appears on the leaderboard.
 
-## Contributing
+## BYOD
 
 Adding a dataset or task takes **no code**. A dataset is a self-describing folder — a
 `manifest.yaml` (tables, keys, the foreign-key graph, the time splits), one plain parquet
@@ -93,8 +93,8 @@ per table, and a `tasks/` subdirectory — that you publish to the
 [Hugging Face Hub](https://huggingface.co). RelBench loads it straight from its
 `org/repo[/subdir]` address; there is no central registry to register with.
 
-[**`contributing/README.md`**](contributing/README.md) is the full walkthrough, and the
-published [`relbench/core/rel-f1`](https://huggingface.co/datasets/relbench/core) is a
+[**`byod/README.md`**](byod/README.md) is the full walkthrough, and the
+published [`stanford-star/relbench/rel-f1`](https://huggingface.co/datasets/stanford-star/relbench) is a
 complete worked example. For how RelBench's own databases were built, cleaned, and verified
 from their original sources, see [`provenance/`](provenance). Bug reports and feature
 requests: open a GitHub issue or pull request.
@@ -123,4 +123,4 @@ If you use RelBench, please cite the benchmark papers:
 ```
 
 Datasets sourced from external repositories (CTU/ReDeLEx, 4DBInfer, TGB) carry their own
-citations on their [Hugging Face](https://huggingface.co/relbench) dataset cards.
+citations on their [Hugging Face](https://huggingface.co/stanford-star) dataset cards.

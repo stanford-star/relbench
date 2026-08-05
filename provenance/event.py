@@ -11,7 +11,7 @@ credentials to download; once you have a Kaggle API key::
 place the resulting ``event-recommendation-engine-challenge.zip`` under
 ``$RELBENCH_RAW_CACHE`` (default ``~/.cache/relbench-raw``) so ``fetch`` can extract it.
 Produces the Hugging Face layout (manifest.yaml + db/*.parquet) reproducing
-relbench/core/rel-event.
+stanford-star/relbench/rel-event.
 """
 
 import sys

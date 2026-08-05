@@ -1,4 +1,4 @@
-r"""Generate the **relbench/dbinfer** database family from the 4DBInfer collection.
+r"""Generate the **stanford-star/dbinfer** database family from the 4DBInfer collection.
 
     python dbinfer.py DATASET [OUT_DIR]   # one dataset (default OUT_DIR: ./DATASET)
     python dbinfer.py --all  [OUT_ROOT]   # the whole collection (default OUT_ROOT: ./dbinfer)
@@ -835,7 +835,7 @@ def write_card(out: Path, name: str, dm=None, manifests=None, implicit=None) -> 
     card = dataset_card(
         dm,
         tasks=manifests,
-        repo=f"relbench/dbinfer/dbinfer-{name}",
+        repo=f"stanford-star/dbinfer/dbinfer-{name}",
         source=SOURCE,
     )
     note = ["", "## Port notes", ""]
@@ -967,7 +967,7 @@ drop it yourself.
 
 ```python
 import relbench
-ds = relbench.load_dataset("relbench/dbinfer/dbinfer-diginetica")
+ds = relbench.load_dataset("stanford-star/dbinfer/dbinfer-diginetica")
 task = ds.load_task("ctr")
 db = ds.get_db()
 train = task.get_table("train")
@@ -1065,7 +1065,7 @@ def write_stats(out_root: Path) -> None:
     r"""Build ``STATS/{databases,tasks}.parquet`` for the collection (the tables behind
     the Hub dataset viewer), filling in the descriptive columns the generic builders
     leave for a human."""
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "contributing"))
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "byod"))
     import build_databases_overview as bdo
     import build_tasks_overview as bto
 

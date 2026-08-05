@@ -10,9 +10,9 @@ only**: no value is recomputed, no row added or dropped, so every metric is unch
 
 Usage::
 
-    python contributing/sort_hosted_labels.py                  # dry run, whole repo
-    python contributing/sort_hosted_labels.py --dataset rel-f1 # dry run, one dataset
-    python contributing/sort_hosted_labels.py --push           # upload the changes
+    python byod/sort_hosted_labels.py                  # dry run, whole repo
+    python byod/sort_hosted_labels.py --dataset rel-f1 # dry run, one dataset
+    python byod/sort_hosted_labels.py --push           # upload the changes
 """
 
 import argparse

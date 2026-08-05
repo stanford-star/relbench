@@ -4,7 +4,7 @@ r"""Generate the **rel-hm** database from its raw source (H&M fashion recommenda
 
 Source: the Kaggle "H&M Personalized Fashion Recommendations" competition data (the
 ``customers.csv``, ``articles.csv``, and ``transactions_train.csv`` dumps). Produces the
-Hugging Face layout (manifest.yaml + db/*.parquet) reproducing relbench/core/rel-hm.
+Hugging Face layout (manifest.yaml + db/*.parquet) reproducing stanford-star/relbench/rel-hm.
 """
 
 import sys
