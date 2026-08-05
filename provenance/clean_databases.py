@@ -52,7 +52,7 @@ DROP: dict[str, dict[str, dict[str, dict[str, str]]]] = {
             "user_friends": {"Unnamed: 0": "artifact"},
         },
     },
-    "stanford-star/contrib": {
+    "stanford-star/relbench-v2-extra": {
         "rel-ratebeer": {
             "users": {
                 c: "leakage"
