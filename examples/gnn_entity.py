@@ -76,6 +76,9 @@ except Exception:
         )
     raise
 
+# Materialize the database once and reuse it: `get_db` is uncached, and this is the
+# task's view of it (the columns the task must not see are already dropped).
+db = task.get_db()
 
 stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
 try:
@@ -85,7 +88,7 @@ try:
         for col, stype_str in col_to_stype.items():
             col_to_stype[col] = stype(stype_str)
 except FileNotFoundError:
-    col_to_stype_dict = get_stype_proposal(dataset.get_db())
+    col_to_stype_dict = get_stype_proposal(db)
     Path(stypes_cache_path).parent.mkdir(parents=True, exist_ok=True)
     with open(stypes_cache_path, "w") as f:
         json.dump(col_to_stype_dict, f, indent=2, default=str)
@@ -97,7 +100,7 @@ elif args.include_task_tables == "current_only":
 else:
     tasks_to_add = []
 
-db = dataset.get_db()
+
 # add (time-censored) labels tables to the db
 for task_name in tasks_to_add:
     t = dataset.load_task(task_name)

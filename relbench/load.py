@@ -22,7 +22,7 @@ are exactly the shipped behavior; only ``make_table`` changes to run the manifes
 from __future__ import annotations
 
 import os
-from functools import cached_property, lru_cache
+from functools import cached_property
 from pathlib import Path
 from typing import Optional, Union
 
@@ -150,10 +150,8 @@ def _load_database(db_dir: Path, manifest: DatasetManifest) -> Database:
 class RelBenchDataset(Dataset):
     r"""A dataset loaded from a manifest + parquet folder.
 
-    Mirrors the *download* path of the legacy ``Dataset`` (load -> upto ->
-    validate/correct -> optional autocomplete modification) but reads relational
-    metadata from the manifest instead of parquet, and does **not** reindex: hosted
-    artifacts are already reindexed at build time, so load is pure I/O.
+    Reads relational metadata from the manifest instead of parquet, and does **not**
+    reindex: hosted artifacts are already reindexed at build time, so load is pure I/O.
 
     Construction is lazy: nothing is downloaded or read until something actually needs
     the files (``manifest``, ``load_task``, ``get_db``, ...). This keeps
@@ -166,7 +164,6 @@ class RelBenchDataset(Dataset):
     ) -> None:
         self.name_or_path = name_or_path
         self.revision = revision
-        super().__init__(cache_dir=None)
 
     @cached_property
     def dataset_dir(self) -> Path:
@@ -214,16 +211,16 @@ class RelBenchDataset(Dataset):
     def make_db(self) -> Database:
         return _load_database(self.db_dir, self.manifest)
 
-    @lru_cache(maxsize=None)
     def get_db(self, upto_test_timestamp: bool = True) -> Database:
+        r"""Build the database. Pure and uncached -- keep what you get back.
+
+        Hosted artifacts are already reindexed at build time, so this skips the
+        reindexing step of the base implementation; load is pure I/O.
+        """
         db = self.make_db()
         if upto_test_timestamp:
             db = db.upto(self.test_timestamp)
         self.validate_and_correct_db(db)
-        # `remove_columns` applies to every task kind, and only autocomplete tasks set
-        # `target_col` on the dataset -- so gate on either.
-        if self.target_col or self.remove_columns:
-            db = self.get_modified_db(db)
         return db
 
 
@@ -280,10 +277,18 @@ class _HostedLabelsMixin:
             }
         return {self.entity_col: self.entity_table}
 
-    @lru_cache(maxsize=None)
-    def get_table(self, split: str, mask_input_cols: Optional[bool] = None) -> Table:
+    def get_table(
+        self,
+        split: str,
+        mask_input_cols: Optional[bool] = None,
+        db: Optional[Database] = None,
+    ) -> Table:
         if mask_input_cols is None:
             mask_input_cols = split == "test"
+
+        key = (split, mask_input_cols)
+        if key in self._tables:
+            return self._tables[key]
 
         path = None
         if self._task_dir is not None and not self._regenerate:
@@ -300,10 +305,11 @@ class _HostedLabelsMixin:
                 time_col=self.time_col,
             )
         else:
-            table = self._get_table(split)  # regenerate (already filters dangling)
+            table = self._get_table(split, db)  # regenerate (already filters dangling)
 
         if mask_input_cols:
             table = self._mask_input_cols(table)
+        self._tables[key] = table
         return table
 
 
@@ -324,7 +330,7 @@ class _ForecastEntityTask(_HostedLabelsMixin, EntityTask):
         self._sql = tm.sql
         self._task_dir = Path(task_dir) if task_dir is not None else None
         self._regenerate = regenerate
-        super().__init__(dataset, cache_dir=None)
+        super().__init__(dataset, remove_columns=tm.remove_columns)
 
     def make_table(self, db: Database, timestamps) -> Table:
         df = _run_task_sql(self._sql, db, timestamps, self.timedelta)
@@ -356,7 +362,7 @@ class _ForecastRecommendationTask(_HostedLabelsMixin, RecommendationTask):
         self._sql = tm.sql
         self._task_dir = Path(task_dir) if task_dir is not None else None
         self._regenerate = regenerate
-        super().__init__(dataset, cache_dir=None)
+        super().__init__(dataset, remove_columns=tm.remove_columns)
 
     def make_table(self, db: Database, timestamps) -> Table:
         df = _run_task_sql(self._sql, db, timestamps, self.timedelta)
@@ -382,17 +388,17 @@ class _AutoCompleteTask(_HostedLabelsMixin, AutoCompleteTask):
             task_type=TaskType(tm.task_type),
             entity_table=tm.entity_table,
             target_col=tm.target_col,
-            cache_dir=None,
-            remove_columns=[tuple(pair) for pair in tm.remove_columns],
+            remove_columns=tm.remove_columns,
         )
 
-    def _get_table(self, split: str) -> Table:
+    def _get_table(self, split: str, db: Optional[Database] = None) -> Table:
         # Efficient autocomplete window. The legacy AutoCompleteTask materializes
         # pd.date_range at 1-second freq across the whole split span (~1.7B entries /
         # OOM on wide val/test gaps like rel-f1's 60 years). make_table only uses the
         # min/max of that range, so we pass just the two bounds -- identical labels,
         # no giant allocation.
-        db = self.dataset.get_db(upto_test_timestamp=split != "test")
+        full_db = db if db is not None else self.get_db(upto_test_timestamp=False)
+        db = full_db if split == "test" else full_db.upto(self.dataset.test_timestamp)
         if split == "train":
             start, end = self.dataset.val_timestamp - self.timedelta, db.min_timestamp
         elif split == "val":
@@ -411,7 +417,7 @@ class _AutoCompleteTask(_HostedLabelsMixin, AutoCompleteTask):
         else:
             raise ValueError(f"unknown split: {split!r}")
         table = self.make_table(db, pd.DatetimeIndex([start, end]))
-        return self.filter_dangling_entities(table)
+        return self.filter_dangling_entities(table, full_db)
 
 
 class _ExternalEntityTask(_HostedLabelsMixin, EntityTask):
@@ -435,7 +441,7 @@ class _ExternalEntityTask(_HostedLabelsMixin, EntityTask):
         )
         self._task_dir = Path(task_dir) if task_dir is not None else None
         self._regenerate = False  # external labels are not regenerable
-        super().__init__(dataset, cache_dir=None)
+        super().__init__(dataset, remove_columns=tm.remove_columns)
 
     def make_table(self, db: Database, timestamps) -> Table:
         raise NotImplementedError("external task labels are hosted, not regenerable")
@@ -464,7 +470,7 @@ class _ExternalRecommendationTask(_HostedLabelsMixin, RecommendationTask):
         )
         self._task_dir = Path(task_dir) if task_dir is not None else None
         self._regenerate = False
-        super().__init__(dataset, cache_dir=None)
+        super().__init__(dataset, remove_columns=tm.remove_columns)
 
     def make_table(self, db: Database, timestamps) -> Table:
         raise NotImplementedError("external task labels are hosted, not regenerable")
@@ -481,8 +487,6 @@ def build_task(
     tm.validate()
     is_link = TaskType(tm.task_type) == TaskType.LINK_PREDICTION
     if tm.kind == KIND_AUTOCOMPLETE:
-        # AutoCompleteTask.__init__ installs remove_columns on the dataset itself,
-        # together with the target column it also has to hide.
         return _AutoCompleteTask(dataset, tm, task_dir=task_dir, regenerate=regenerate)
     if tm.kind == KIND_FORECAST:
         cls = _ForecastRecommendationTask if is_link else _ForecastEntityTask
@@ -491,12 +495,10 @@ def build_task(
     else:
         raise ValueError(f"unknown task kind: {tm.kind!r}")
     # `remove_columns` is not an autocomplete-only field: a forecast or external task
-    # whose label is derived from a database column has to hide that column too (dbinfer's
-    # `cvr` is `View.added_to_cart`, `charge` is `Dobito.sluzba`). Install it the way
-    # AutoCompleteTask does -- on the dataset, since `get_db` is what applies it -- and
-    # drop the memoized database so a task loaded after another sees its own removals.
-    dataset.remove_columns = [tuple(pair) for pair in tm.remove_columns]
-    dataset.get_db.cache_clear()
+    # whose label is derived from a database column has to hide that column too
+    # (dbinfer's `cvr` is `View.added_to_cart`, `charge` is `Dobito.sluzba`). Each task
+    # carries its own removals and applies them in `task.get_db()`, so tasks over one
+    # dataset stay independent.
     return cls(dataset, tm, task_dir=task_dir, regenerate=regenerate)
 
 

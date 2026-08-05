@@ -50,13 +50,17 @@ dataset = load_dataset(args.dataset)
 
 task: EntityTask = dataset.load_task(args.task)
 
+# Materialize the database once and reuse it: `get_db` is uncached, and this is
+# the task\'s view of it (the columns the task must not see are already dropped).
+db = task.get_db(upto_test_timestamp=False)
+
 train_table = task.get_table("train")
 val_table = task.get_table("val")
 test_table = task.get_table("test")
 
 
 dfs: Dict[str, pd.DataFrame] = {}
-entity_table = dataset.get_db().table_dict[task.entity_table]
+entity_table = db.table_dict[task.entity_table]
 entity_df = entity_table.df
 
 stypes_cache_path = Path(
@@ -69,15 +73,15 @@ try:
         for col, stype_str in col_to_stype.items():
             col_to_stype[col] = stype(stype_str)
 except FileNotFoundError:
-    col_to_stype_dict = get_stype_proposal(dataset.get_db())
+    col_to_stype_dict = get_stype_proposal(db)
     Path(stypes_cache_path).parent.mkdir(parents=True, exist_ok=True)
     with open(stypes_cache_path, "w") as f:
         json.dump(col_to_stype_dict, f, indent=2, default=str)
 
 col_to_stype = col_to_stype_dict[task.entity_table]
 remove_pkey_fkey(col_to_stype, entity_table)
-for col in dataset.remove_columns:
-    if col in col_to_stype:
+for table, col in task.remove_columns:
+    if table == task.entity_table and col in col_to_stype:
         del col_to_stype[col]
 
 if task.task_type == TaskType.BINARY_CLASSIFICATION:
@@ -111,7 +115,7 @@ for split, table in [
     )
     if args.left_join_fkey:
         for fkey_col, pkey_table_name in entity_table.fkey_col_to_pkey_table.items():
-            pkey_table = dataset.get_db().table_dict[pkey_table_name]
+            pkey_table = db.table_dict[pkey_table_name]
             dfs[split] = dfs[split].merge(
                 pkey_table.df,
                 how="left",

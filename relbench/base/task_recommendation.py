@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from functools import cached_property
 from typing import Callable, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
+from .database import Database
 from .dataset import Dataset
 from .table import Table
 from .task_base import BaseTask, TaskType
@@ -39,22 +41,30 @@ class RecommendationTask(BaseTask):
     def __init__(
         self,
         dataset: Dataset,
-        cache_dir: Optional[str] = None,
+        remove_columns: Optional[List[tuple]] = None,
     ):
         if self.num_eval_timestamps != 1:
             raise NotImplementedError(
                 "RecommendationTask currently only supports num_eval_timestamps=1."
             )
-        super().__init__(dataset, cache_dir)
+        super().__init__(dataset, remove_columns)
 
-    def filter_dangling_entities(self, table: Table) -> Table:
+    def filter_dangling_entities(self, table: Table, db: Database) -> Table:
+        num_src_nodes = len(db.table_dict[self.src_entity_table])
+        num_dst_nodes = len(db.table_dict[self.dst_entity_table])
+        # Entity counts come from the database in hand; cache them for the
+        # num_src_nodes / num_dst_nodes properties, which would otherwise have to
+        # rebuild the database just to take two lengths.
+        self.__dict__.setdefault("num_src_nodes", num_src_nodes)
+        self.__dict__.setdefault("num_dst_nodes", num_dst_nodes)
+
         # filter dangling destination entities from a list
         table.df[self.dst_entity_col] = table.df[self.dst_entity_col].apply(
-            lambda x: [i for i in x if i < self.num_dst_nodes]
+            lambda x: [i for i in x if i < num_dst_nodes]
         )
 
         # filter dangling source entities and empty list (after above filtering)
-        filter_mask = (table.df[self.src_entity_col] >= self.num_src_nodes) | (
+        filter_mask = (table.df[self.src_entity_col] >= num_src_nodes) | (
             ~table.df[self.dst_entity_col].map(bool)
         )
 
@@ -101,13 +111,18 @@ class RecommendationTask(BaseTask):
 
         return {fn.__name__: fn(pred_isin, dst_count) for fn in metrics}
 
-    @property
+    @cached_property
     def num_src_nodes(self) -> int:
-        return len(self.dataset.get_db().table_dict[self.src_entity_table])
+        r"""Number of source entities (upto test_timestamp).
 
-    @property
+        Cached: it is a single integer, but computing it costs a database build.
+        """
+        return len(self.get_db().table_dict[self.src_entity_table])
+
+    @cached_property
     def num_dst_nodes(self) -> int:
-        return len(self.dataset.get_db().table_dict[self.dst_entity_table])
+        r"""Number of destination entities (upto test_timestamp)."""
+        return len(self.get_db().table_dict[self.dst_entity_table])
 
     def stats(self) -> Dict[str, Dict[str, int]]:
         r"""Get train / val / test table statistics for each timestamp and the whole

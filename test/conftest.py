@@ -20,10 +20,11 @@ from relbench.load import build_task
 from relbench.manifest import TaskManifest
 
 
-def _generate_random_string(min_length: int, max_length: int) -> str:
-    length = random.randint(min_length, max_length)
-    random_string = "".join(random.choice(string.ascii_letters) for _ in range(length))
-    return random_string
+def _generate_random_string(
+    rng: random.Random, min_length: int, max_length: int
+) -> str:
+    length = rng.randint(min_length, max_length)
+    return "".join(rng.choice(string.ascii_letters) for _ in range(length))
 
 
 class FakeDataset(Dataset):
@@ -35,7 +36,9 @@ class FakeDataset(Dataset):
         num_customers: int = 100,
         num_reviews: int = 600,
         num_relations: int = 20,
+        seed: int = 42,
     ):
+        self.seed = seed
         self.num_products = num_products
         self.num_customers = num_customers
         self.num_reviews = num_reviews
@@ -48,6 +51,11 @@ class FakeDataset(Dataset):
         super().__init__()
 
     def make_db(self) -> Database:
+        # Seeded per call: `make_db` must be a pure function of the dataset, so that
+        # repeated `get_db()` calls (which are uncached) yield identical databases.
+        rng = random.Random(self.seed)
+        nprng = np.random.RandomState(self.seed)
+
         num_products = self.num_products
         num_customers = self.num_customers
         num_reviews = self.num_reviews
@@ -56,14 +64,16 @@ class FakeDataset(Dataset):
             {
                 "product_id": [f"product_id_{i}" for i in range(num_products)],
                 "category": [None, [], ["toy", "health"]] * (num_products // 3),
-                "title": [_generate_random_string(5, 15) for _ in range(num_products)],
-                "price": np.random.rand(num_products) * 10,
+                "title": [
+                    _generate_random_string(rng, 5, 15) for _ in range(num_products)
+                ],
+                "price": nprng.rand(num_products) * 10,
             }
         )
         customer_df = pd.DataFrame(
             {
                 "customer_id": [f"customer_id_{i}" for i in range(num_customers)],
-                "age": np.random.randint(10, 50, size=(num_customers,)),
+                "age": nprng.randint(10, 50, size=(num_customers,)),
                 "gender": ["male", "female"] * (num_customers // 2),
             }
         )
@@ -71,15 +81,15 @@ class FakeDataset(Dataset):
         review_df = pd.DataFrame(
             {
                 "customer_id": [
-                    f"customer_id_{random.randint(0, num_customers+5)}"
+                    f"customer_id_{rng.randint(0, num_customers + 5)}"
                     for _ in range(num_reviews)
                 ],
                 "product_id": [
-                    f"product_id_{random.randint(0, num_products-1)}"
+                    f"product_id_{rng.randint(0, num_products - 1)}"
                     for _ in range(num_reviews)
                 ],
                 "review_time": pd.to_datetime(2 * np.arange(num_reviews), unit="D"),
-                "rating": np.random.randint(1, 6, size=(num_reviews,)),
+                "rating": nprng.randint(1, 6, size=(num_reviews,)),
             }
         )
         review_df["review"] = review_df["rating"].apply(
@@ -88,11 +98,11 @@ class FakeDataset(Dataset):
         relations_df = pd.DataFrame(
             {
                 "customer_id": [
-                    f"customer_id_{random.randint(0, num_customers+5)}"
+                    f"customer_id_{rng.randint(0, num_customers + 5)}"
                     for _ in range(num_relations)
                 ],
                 "product_id": [
-                    f"product_id_{random.randint(0, num_products-1)}"
+                    f"product_id_{rng.randint(0, num_products - 1)}"
                     for _ in range(num_relations)
                 ],
             }

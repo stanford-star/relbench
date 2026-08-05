@@ -64,6 +64,10 @@ dataset = load_dataset(args.dataset)
 
 task: EntityTask = dataset.load_task(args.task)
 
+# Materialize the database once and reuse it: `get_db` is uncached, and this is
+# the task\'s view of it (the columns the task must not see are already dropped).
+db = task.get_db(upto_test_timestamp=False)
+
 stypes_cache_path = Path(
     f"{args.cache_dir}/{args.dataset}/tasks/{args.task}/stypes.json"
 )
@@ -74,7 +78,7 @@ try:
         for col, stype_str in col_to_stype.items():
             col_to_stype[col] = stype(stype_str)
 except FileNotFoundError:
-    col_to_stype_dict = get_stype_proposal(dataset.get_db())
+    col_to_stype_dict = get_stype_proposal(db)
     Path(stypes_cache_path).parent.mkdir(parents=True, exist_ok=True)
     with open(stypes_cache_path, "w") as f:
         json.dump(col_to_stype_dict, f, indent=2, default=str)
@@ -82,16 +86,14 @@ except FileNotFoundError:
 # Remove the target column from the col_to_stype_dict if it exists
 if task.target_col in col_to_stype_dict[task.entity_table]:
     del col_to_stype_dict[task.entity_table][task.target_col]
-for col in dataset.remove_columns:
-    if col in col_to_stype_dict[task.entity_table]:
-        del col_to_stype_dict[task.entity_table][col]
+for table, col in task.remove_columns:
+    if col in col_to_stype_dict.get(table, {}):
+        del col_to_stype_dict[table][col]
 
 data, col_stats_dict = make_pkey_fkey_graph(
     # NOTE: Important!: Do not use `upto_test_timestamp=True` here, as this will
     # cause task rows with timestamps after the test timestamp to dangle.
-    dataset.get_db(
-        upto_test_timestamp=False,
-    ),
+    db,
     col_to_stype_dict=col_to_stype_dict,
     text_embedder_cfg=TextEmbedderConfig(
         text_embedder=GloveTextEmbedding(device="cpu"), batch_size=256

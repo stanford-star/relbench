@@ -1,5 +1,7 @@
-from typing import Optional
+from functools import cached_property
+from typing import List, Optional
 
+import numpy as np
 import pandas as pd
 
 from relbench.metrics import make_nmae, roc_auc
@@ -15,8 +17,8 @@ class AutoCompleteTask(EntityTask):
     r"""Auto complete column task on a dataset. Predict all values in the target column.
 
     The task is constructed by specifying the entity table, entity column, time column, and target column.
-    The target column is removed from the entity table and saved to `db.table_dict[entity_table].removed_cols`,
-    which is used to construct the table for the predict column task.
+    The target column is removed from the entity table by :meth:`get_db` and kept on
+    the task, which is what the label table is built from.
 
     The entity table needs to have a time column by which the data is split into training and validation set.
 
@@ -25,7 +27,6 @@ class AutoCompleteTask(EntityTask):
         task_type: The type of the task.
         entity_table: The name of the entity table.
         target_col: The name of the target column to be predicted.
-        cache_dir: The directory to cache the task tables.
         remove_columns: List of columns, table pairs to remove from the graph.
     """
 
@@ -38,21 +39,15 @@ class AutoCompleteTask(EntityTask):
         task_type: TaskType,
         entity_table: str,
         target_col: str,
-        cache_dir: Optional[str] = None,
-        remove_columns: list[tuple[str, str]] = [],
+        remove_columns: Optional[List[tuple]] = None,
     ):
-        super().__init__(dataset, cache_dir=cache_dir)
+        super().__init__(dataset, remove_columns=remove_columns)
 
         self.task_type = task_type
         self.entity_table = entity_table
         self.target_col = target_col
-        self.remove_columns = remove_columns
-        self.dataset.target_col = target_col
-        self.dataset.entity_table = entity_table
-        self.dataset.remove_columns = remove_columns
-        # clear the cache as we will be modifying the database
-        self.dataset.get_db.cache_clear()
-        db = self.dataset.get_db()
+
+        db = self.get_db()
         self.entity_col = db.table_dict[entity_table].pkey_col
         assert self.entity_col is not None
         self.time_col = db.table_dict[self.entity_table].time_col
@@ -75,8 +70,40 @@ class AutoCompleteTask(EntityTask):
             # ``task.evaluate(pred, metrics=[...])``.
             self.metrics = []
 
-    def filter_dangling_entities(self, table: Table) -> Table:
-        db = self.dataset.get_db(upto_test_timestamp=False)
+    def get_db(self, upto_test_timestamp: bool = True) -> Database:
+        r"""The database with the target column (this task's label) taken out.
+
+        The target column is moved off the entity table and kept on the task as
+        ``self._removed_cols``, an ``[entity_col, target_col]`` frame that
+        ``make_table`` joins back to build labels. Nothing is written to the dataset,
+        so other tasks over the same dataset are unaffected.
+        """
+        db = super().get_db(upto_test_timestamp=upto_test_timestamp)
+        table = db.table_dict[self.entity_table]
+        col = self.target_col
+
+        if table.pkey_col is None:
+            table.pkey_col = "primary_key"
+            table.df["primary_key"] = np.arange(len(table.df))
+
+        if col not in table.df.columns:
+            raise ValueError(f"Column {col} not found in table {self.entity_table}.")
+        if col in table.fkey_col_to_pkey_table:
+            raise ValueError(
+                f"Column {col} is a foreign key in table {self.entity_table}. "
+                "Only feature columns can be removed."
+            )
+        if col == table.pkey_col:
+            raise ValueError(
+                f"Column {col} is the primary key in table {self.entity_table}. "
+                "Only feature columns can be removed."
+            )
+
+        self._removed_cols = table.df[[table.pkey_col, col]]
+        table.df = table.df.drop(columns=[col])
+        return db
+
+    def filter_dangling_entities(self, table: Table, db: Database) -> Table:
         num_entities = len(db.table_dict[self.entity_table])
         filter_mask = table.df[self.entity_col] >= num_entities
 
@@ -85,7 +112,7 @@ class AutoCompleteTask(EntityTask):
 
         return table
 
-    def _get_table(self, split: str) -> Table:
+    def _get_table(self, split: str, db: Optional[Database] = None) -> Table:
         r"""Helper function to get a table for a split.
 
         This function overrides the `_get_table` method in `EntityTask`.
@@ -93,7 +120,10 @@ class AutoCompleteTask(EntityTask):
         for each split and take all rows in the table between them.
         """
 
-        db = self.dataset.get_db(upto_test_timestamp=split != "test")
+        # One build serves both roles: labels come from the split's view, dangling
+        # entities are filtered against the full database (every split).
+        full_db = db if db is not None else self.get_db(upto_test_timestamp=False)
+        db = full_db if split == "test" else full_db.upto(self.dataset.test_timestamp)
 
         if split == "train":
             start = self.dataset.val_timestamp - self.timedelta
@@ -133,15 +163,13 @@ class AutoCompleteTask(EntityTask):
             )
 
         table = self.make_table(db, timestamps)
-        table = self.filter_dangling_entities(table)
+        table = self.filter_dangling_entities(table, full_db)
 
         return table
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         entity_table = db.table_dict[self.entity_table].df  # noqa: F841
-        entity_table_removed_cols = db.table_dict[  # noqa: F841
-            self.entity_table
-        ].removed_cols
+        entity_table_removed_cols = self._removed_cols  # noqa: F841
 
         entity_col = db.table_dict[self.entity_table].pkey_col
 

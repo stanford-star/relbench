@@ -50,6 +50,10 @@ seed_everything(args.seed)
 
 dataset: Dataset = load_dataset(args.dataset)
 task: RecommendationTask = dataset.load_task(args.task)
+
+# Materialize the database once and reuse it: `get_db` is uncached, and this is
+# the task\'s view of it (the columns the task must not see are already dropped).
+db = task.get_db()
 target_col_name: str = LINK_PRED_BASELINE_TARGET_COL_NAME
 
 train_table = task.get_table("train")
@@ -60,7 +64,7 @@ test_table = task.get_table("test")
 # entity and target table features during lightGBM training.
 dfs: Dict[str, pd.DataFrame] = {}
 target_dfs: Dict[str, pd.DateOffset] = {}
-db = dataset.get_db()
+
 src_entity_table = db.table_dict[task.src_entity_table]
 src_entity_df = src_entity_table.df
 dst_entity_table = db.table_dict[task.dst_entity_table]
@@ -74,7 +78,7 @@ try:
         for col, stype_str in col_to_stype.items():
             col_to_stype[col] = stype(stype_str)
 except FileNotFoundError:
-    col_to_stype_dict = get_stype_proposal(dataset.get_db())
+    col_to_stype_dict = get_stype_proposal(db)
     Path(stypes_cache_path).parent.mkdir(parents=True, exist_ok=True)
     with open(stypes_cache_path, "w") as f:
         json.dump(col_to_stype_dict, f, indent=2, default=str)

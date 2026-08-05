@@ -1,14 +1,11 @@
-import time
 from enum import Enum
-from functools import lru_cache
-from pathlib import Path
 from typing import Callable, List, Optional
 
 import pandas as pd
 from numpy.typing import NDArray
 
 from .database import Database
-from .dataset import Dataset
+from .dataset import Dataset, drop_columns
 from .table import Table
 
 
@@ -55,19 +52,21 @@ class BaseTask:
     def __init__(
         self,
         dataset: Dataset,
-        cache_dir: Optional[str] = None,
+        remove_columns: Optional[List[tuple]] = None,
     ):
         r"""Create a task object.
 
         Args:
             dataset: The dataset object on which the task is defined.
-            cache_dir: A directory for caching the task table objects. If specified,
-                we will either process and cache the file (if not available) or use
-                the cached file. If None, we will not use cached file and re-process
-                everything from scratch without saving the cache.
+            remove_columns: ``(table, column)`` pairs this task must not see -- the
+                database columns its label is derived from. Applied by
+                :meth:`get_db`, per task; the dataset is never modified.
         """
         self.dataset = dataset
-        self.cache_dir = cache_dir
+        self.remove_columns = [tuple(pair) for pair in (remove_columns or [])]
+        # Label tables, keyed by (split, mask_input_cols). Small, immutable given the
+        # task, and expensive to rebuild -- unlike the database, which is neither.
+        self._tables: dict = {}
 
         time_diff = self.dataset.test_timestamp - self.dataset.val_timestamp
         if time_diff < self.timedelta:
@@ -79,6 +78,33 @@ class BaseTask:
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(dataset={repr(self.dataset)})"
+
+    def get_db(self, upto_test_timestamp: bool = True) -> Database:
+        r"""The database as this task is allowed to see it.
+
+        The dataset's database with this task's ``remove_columns`` dropped. Pure and
+        uncached, like :meth:`Dataset.get_db` -- keep the returned object rather than
+        calling this repeatedly.
+        """
+        return drop_columns(
+            self.dataset.get_db(upto_test_timestamp=upto_test_timestamp),
+            self.remove_columns,
+        )
+
+    def _split_db(self, split: str, db: Optional[Database] = None) -> Database:
+        r"""The database to generate ``split``'s labels from.
+
+        Test labels live after ``test_timestamp``, so they need the full database;
+        train/val labels must not see past it.
+
+        ``db``, when given, must be this task's *full* (``upto_test_timestamp=False``)
+        database -- it is filtered here as needed, but never re-filtered for columns.
+        Passing it lets a caller build the database once and generate every split from
+        it, instead of rebuilding it per split.
+        """
+        if db is None:
+            return self.get_db(upto_test_timestamp=split != "test")
+        return db if split == "test" else db.upto(self.dataset.test_timestamp)
 
     def make_table(
         self,
@@ -99,10 +125,10 @@ class BaseTask:
 
         raise NotImplementedError
 
-    def _get_table(self, split: str) -> Table:
+    def _get_table(self, split: str, db: Optional[Database] = None) -> Table:
         r"""Helper function to get a table for a split."""
 
-        db = self.dataset.get_db(upto_test_timestamp=split != "test")
+        db = self._split_db(split, db)
 
         if split == "train":
             start = self.dataset.val_timestamp - self.timedelta
@@ -150,12 +176,20 @@ class BaseTask:
             )
 
         table = self.make_table(db, timestamps)
-        table = self.filter_dangling_entities(table)
+        # Dangling-entity filtering is defined against the database upto
+        # test_timestamp for every split, including test.
+        table = self.filter_dangling_entities(
+            table, db if split != "test" else db.upto(self.dataset.test_timestamp)
+        )
 
         return table
 
-    @lru_cache(maxsize=None)
-    def get_table(self, split, mask_input_cols=None):
+    def get_table(
+        self,
+        split: str,
+        mask_input_cols: Optional[bool] = None,
+        db: Optional[Database] = None,
+    ) -> Table:
         r"""Get a table for a split.
 
         Args:
@@ -163,37 +197,27 @@ class BaseTask:
             mask_input_cols: If True, keep only the input columns in the table. If
                 None, mask the input columns only for the test split. This helps
                 prevent data leakage.
+            db: Optional pre-built database to generate labels from, so several
+                splits can share one build. It must be *this task's* full database,
+                i.e. ``task.get_db(upto_test_timestamp=False)`` -- it is used as
+                given, so a dataset-level database would not have this task's
+                ``remove_columns`` applied.
 
         Returns:
             The task table for the split.
 
-        The table is cached in memory.
+        Label tables are memoized on the task -- they are small and deterministic.
         """
-
         if mask_input_cols is None:
             mask_input_cols = split == "test"
 
-        table_path = f"{self.cache_dir}/{split}.parquet"
-        if self.cache_dir and Path(table_path).exists():
-            table = Table.load(table_path)
-        else:
-            print(f"Making task table for {split} split from scratch...")
-            # print(
-            #     "(You can also use `get_task(..., download=True)` "
-            #     "for tasks prepared by the RelBench team.)"
-            # )
-            tic = time.time()
-            table = self._get_table(split)
-            toc = time.time()
-            print(f"Done in {toc - tic:.2f} seconds.")
-
-            if self.cache_dir:
-                table.save(table_path)
-
-        if mask_input_cols:
-            table = self._mask_input_cols(table)
-
-        return table
+        key = (split, mask_input_cols)
+        if key not in self._tables:
+            table = self._get_table(split, db)
+            if mask_input_cols:
+                table = self._mask_input_cols(table)
+            self._tables[key] = table
+        return self._tables[key]
 
     def _mask_input_cols(self, table: Table) -> Table:
         input_cols = [
@@ -208,8 +232,8 @@ class BaseTask:
             time_col=table.time_col,
         )
 
-    def filter_dangling_entities(self, table: Table) -> Table:
-        r"""Filter out dangling entities from a table.
+    def filter_dangling_entities(self, table: Table, db: Database) -> Table:
+        r"""Filter out dangling entities from a table, against ``db``.
 
         Implemented by EntityTask and RecommendationTask.
         """

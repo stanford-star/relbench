@@ -47,13 +47,17 @@ seed_everything(args.seed)
 dataset: Dataset = load_dataset(args.dataset)
 task: EntityTask = dataset.load_task(args.task)
 
+# Materialize the database once and reuse it: `get_db` is uncached, and this is
+# the task\'s view of it (the columns the task must not see are already dropped).
+db = task.get_db()
+
 train_table = task.get_table("train")
 val_table = task.get_table("val")
 test_table = task.get_table("test")
 
 
 dfs: Dict[str, pd.DataFrame] = {}
-entity_table = dataset.get_db().table_dict[task.entity_table]
+entity_table = db.table_dict[task.entity_table]
 entity_df = entity_table.df
 
 stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
@@ -64,7 +68,7 @@ try:
         for col, stype_str in col_to_stype.items():
             col_to_stype[col] = stype(stype_str)
 except FileNotFoundError:
-    col_to_stype_dict = get_stype_proposal(dataset.get_db())
+    col_to_stype_dict = get_stype_proposal(db)
     Path(stypes_cache_path).parent.mkdir(parents=True, exist_ok=True)
     with open(stypes_cache_path, "w") as f:
         json.dump(col_to_stype_dict, f, indent=2, default=str)

@@ -14,7 +14,7 @@ Provenance note: each TGB dataset is distributed as a *pre-built* RelBench datab
 RelBench export pipeline (https://github.com/pc0618/TGB2, ``scripts/export_to_relbench.py``)
 -- which uses the ``tgb`` package to read the raw temporal-graph events. The original
 ``make_db`` here therefore did not rebuild from the raw events; it loaded that pre-built
-database (``Database.load``). This generator reproduces that step verbatim from the
+database (the legacy ``Database.load``). This generator reproduces that step verbatim from the
 hosted ``db.zip`` artifacts -- no ``tgb`` package, no ``pooch``/legacy-relbench machinery
 -- recovering each table's primary/foreign-key and time-column schema from the parquet
 metadata, and rewriting the Hugging Face layout (``manifest.yaml`` + ``db/*.parquet``).
@@ -119,8 +119,8 @@ DATASETS: dict = {
 
 def _load_table(path) -> Table:
     r"""Load a pre-built RelBench table, recovering pkey/fkey/time_col from the parquet
-    metadata (the verbatim equivalent of the legacy ``Table.load`` /
-    ``Database.load``)."""
+    metadata (the verbatim equivalent of the legacy ``Table.load`` / ``Database.load``,
+    both since removed)."""
     table = pq.read_table(path)
     df = table.to_pandas()
     # DuckDB cannot ingest pandas StringDtype reliably; match the legacy load and coerce.

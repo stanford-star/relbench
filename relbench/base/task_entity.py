@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
+from .database import Database
 from .table import Table
 from .task_base import BaseTask, TaskType
 
@@ -31,8 +32,7 @@ class EntityTask(BaseTask):
     metrics: List[Callable[[NDArray, NDArray], float]]
     num_eval_timestamps: int = 1
 
-    def filter_dangling_entities(self, table: Table) -> Table:
-        db = self.dataset.get_db()
+    def filter_dangling_entities(self, table: Table, db: Database) -> Table:
         num_entities = len(db.table_dict[self.entity_table])
         filter_mask = table.df[self.entity_col] >= num_entities
 
