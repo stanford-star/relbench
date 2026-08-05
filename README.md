@@ -1,8 +1,8 @@
 <p align="center"><img src="https://relbench.stanford.edu/img/logo.png" alt="RelBench" width="600px" /></p>
 
 <p align="center">
-  <a href="https://star-project.stanford.edu/relbench"><img src="https://img.shields.io/badge/Website-relbench-3f9e78.svg" alt="Website" /></a>
-  <a href="https://huggingface.co/relbench"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-relbench-ffcc00.svg" alt="Hugging Face" /></a>
+  <a href="https://star-project.stanford.edu/relbench"><img src="https://img.shields.io/badge/website-STAR%20Project-3f9e78.svg" alt="Website: STAR Project" /></a>
+  <a href="https://huggingface.co/relbench"><img src="https://img.shields.io/badge/data-%F0%9F%A4%97%20Hugging%20Face-ffcc00.svg" alt="Data: Hugging Face" /></a>
   <a href="https://pypi.org/project/relbench/"><img src="https://img.shields.io/pypi/v/relbench?color=3f9e78" alt="PyPI" /></a>
   <a href="https://github.com/snap-stanford/relbench/actions/workflows/testing.yml"><img src="https://github.com/snap-stanford/relbench/actions/workflows/testing.yml/badge.svg" alt="Tests" /></a>
   <a href="https://arxiv.org/abs/2407.20060"><img src="https://img.shields.io/badge/arXiv-2407.20060%20(RelBench)-b31b1b.svg" alt="arXiv: RelBench" /></a>
