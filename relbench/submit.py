@@ -55,7 +55,7 @@ import pandas as pd
 
 from relbench.base import TaskType
 from relbench.hf import RELBENCH_HF
-from relbench.load import load_task
+from relbench.load import RelBenchDataset
 
 __all__ = [
     "LEADERBOARD_TASKS",
@@ -443,7 +443,7 @@ def evaluate_task(
         task_name: Fully-qualified ``"<dataset>/<task>"`` (e.g. ``"rel-amazon/user-churn"``).
         csv_path: Path to the prediction-table CSV (see :func:`write_prediction_table`).
         dataset: Optional dataset override passed straight to
-            :func:`relbench.load.load_task` -- a local dataset directory, a Hub
+            :meth:`RelBenchDataset.load_task` -- a local dataset directory, a Hub
             ``org/repo[/subdir]`` spec, or a loaded ``RelBenchDataset``. When ``None`` the
             dataset is resolved from the ``task_name`` prefix as
             ``"<RELBENCH_HF>/<dataset>"`` (the hosted RelBench core location).
@@ -462,7 +462,12 @@ def evaluate_task(
     dataset_arg = (
         dataset if dataset is not None else _fetch_eval_files(dataset_name, [name])
     )
-    task = load_task(dataset_arg, name)
+    ds = (
+        dataset_arg
+        if isinstance(dataset_arg, RelBenchDataset)
+        else RelBenchDataset(dataset_arg)
+    )
+    task = ds.load_task(name)
     _supported(task)
 
     gt_table = task.get_table("test", mask_input_cols=False)
@@ -962,8 +967,8 @@ def _print_report(result: Dict[str, Any]) -> None:
 
 
 def _markdown_report(result: Dict[str, Any]) -> str:
-    r"""The validation report as GitHub-flavored markdown (same content and structure
-    as :func:`_print_report`, styled with markdown instead of ANSI codes)."""
+    r"""The validation report as GitHub-flavored markdown (same content and structure as
+    :func:`_print_report`, styled with markdown instead of ANSI codes)."""
     tasks = result["tasks"]
     families = result["families"]
     lines: List[str] = []
@@ -1013,9 +1018,13 @@ def _markdown_report(result: Dict[str, Any]) -> str:
         problems = []
         if not fam["complete"]:
             if fam["missing"]:
-                problems.append("missing: " + ", ".join(f"`{t}`" for t in fam["missing"]))
+                problems.append(
+                    "missing: " + ", ".join(f"`{t}`" for t in fam["missing"])
+                )
             if fam["invalid"]:
-                problems.append("invalid: " + ", ".join(f"`{t}`" for t in fam["invalid"]))
+                problems.append(
+                    "invalid: " + ", ".join(f"`{t}`" for t in fam["invalid"])
+                )
         badge = "✅ OK" if fam["complete"] else "❌ FAIL"
         lines.append(f"| {badge} | {family} | {counts} | {'; '.join(problems)} |")
     lines.append("")
@@ -1068,9 +1077,7 @@ def _package(
     pred_dir = Path(pred_dir)
     outputs: List[Tuple[Path, int]] = []
     for family in validated:
-        filenames = [
-            t.replace("/", "__") + ".csv" for t in families[family]["valid"]
-        ]
+        filenames = [t.replace("/", "__") + ".csv" for t in families[family]["valid"]]
         zip_bytes = _zip_files(pred_dir, filenames)
         fam_out = out.with_name(f"{out.stem}-{family}.zip")
         fam_out.write_bytes(zip_bytes)

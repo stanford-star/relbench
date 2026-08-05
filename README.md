@@ -29,10 +29,10 @@ Load a dataset and a task — both come straight from the Hub, with **no per-dat
 ```python
 import relbench
 
-dataset = relbench.load_dataset("stanford-star/relbench/rel-f1")   # a Hub 'org/repo[/subdir]', or a local path
+dataset = relbench.load_dataset("rel-f1")   # or a HuggingFace 'org/repo[/subdir]', or a local path
 db = dataset.get_db()                  # rows after test_timestamp are hidden
 
-task = relbench.load_task("stanford-star/relbench/rel-f1", "driver-position")
+task = dataset.load_task("driver-position")   # dataset.get_task_names() lists them
 train_table = task.get_table("train")  # train / val / test label tables
 test_table  = task.get_table("test")   # the target column is hidden on test
 
@@ -72,14 +72,14 @@ To submit:
    ```
 
 2. **Validate and package** the directory — this scores every CSV against the test tables,
-   prints a verdict per leaderboard, and writes a clean submission zip:
+   prints a verdict per leaderboard, and writes clean submission zip file(s):
 
    ```bash
    python -m relbench.submit preds/
    ```
 
 3. **[Open a submission issue](https://github.com/rishabh-ranjan/relbench/issues/new?template=submit.yml)**
-   on this repository: fill in the short form and drag the zip into it.
+   on this repository: fill in the short form and upload the zip file(s) into it.
 
 The submission is validated automatically and the report is posted on the issue; once a
 maintainer approves, your entry appears on the leaderboard.

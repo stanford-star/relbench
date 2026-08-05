@@ -20,7 +20,7 @@ from torch_geometric.loader import NeighborLoader
 from torch_geometric.seed import seed_everything
 from tqdm import tqdm
 
-from relbench import get_task_names, load_dataset, load_task
+from relbench import load_dataset
 from relbench.base import Dataset, EntityTask, Table, TaskType
 from relbench.modeling.graph import get_node_train_table_input, make_pkey_fkey_graph
 from relbench.modeling.utils import get_stype_proposal
@@ -67,7 +67,7 @@ seed_everything(args.seed)
 
 try:
     dataset: Dataset = load_dataset(args.dataset)
-    task: EntityTask = load_task(args.dataset, args.task)
+    task: EntityTask = dataset.load_task(args.task)
 except Exception:
     if bool(args.download):
         print(
@@ -91,7 +91,7 @@ except FileNotFoundError:
         json.dump(col_to_stype_dict, f, indent=2, default=str)
 
 if args.include_task_tables == "all":
-    tasks_to_add = get_task_names(args.dataset)
+    tasks_to_add = dataset.get_task_names()
 elif args.include_task_tables == "current_only":
     tasks_to_add = [args.task]
 else:
@@ -100,7 +100,7 @@ else:
 db = dataset.get_db()
 # add (time-censored) labels tables to the db
 for task_name in tasks_to_add:
-    t = load_task(args.dataset, task_name)
+    t = dataset.load_task(task_name)
     if not isinstance(t, EntityTask):
         continue
     labels_table_name = f"{task_name}_labels"

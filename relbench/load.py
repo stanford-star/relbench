@@ -8,7 +8,7 @@ labels). Adding a task later is just adding a directory.
 Public API::
 
     ds   = relbench.load_dataset("relbench/core/rel-f1")   # Hub 'org/repo[/subdir]' or a local path
-    task = relbench.load_task("relbench/core/rel-f1", "driver-position")
+    task = ds.load_task("driver-position")                 # ds.get_task_names() lists them
     db   = ds.get_db()
     train = task.get_table("train")
     task.evaluate(pred)
@@ -22,7 +22,7 @@ are exactly the shipped behavior; only ``make_table`` changes to run the manifes
 from __future__ import annotations
 
 import os
-from functools import lru_cache
+from functools import cached_property, lru_cache
 from pathlib import Path
 from typing import Optional, Union
 
@@ -154,20 +154,62 @@ class RelBenchDataset(Dataset):
     validate/correct -> optional autocomplete modification) but reads relational
     metadata from the manifest instead of parquet, and does **not** reindex: hosted
     artifacts are already reindexed at build time, so load is pure I/O.
+
+    Construction is lazy: nothing is downloaded or read until something actually needs
+    the files (``manifest``, ``load_task``, ``get_db``, ...). This keeps
+    ``load_dataset(spec).load_task(name)`` as cheap as addressing the task directly --
+    a task backed by hosted labels never touches ``db/``.
     """
 
     def __init__(
-        self, dataset_dir: Union[str, Path], manifest: DatasetManifest
+        self, name_or_path: Union[str, Path], *, revision: Optional[str] = None
     ) -> None:
-        self.dataset_dir = Path(dataset_dir)
-        self.db_dir = self.dataset_dir / "db"
-        self.manifest = manifest
-        self.val_timestamp = pd.Timestamp(manifest.val_timestamp)
-        self.test_timestamp = pd.Timestamp(manifest.test_timestamp)
+        self.name_or_path = name_or_path
+        self.revision = revision
         super().__init__(cache_dir=None)
 
+    @cached_property
+    def dataset_dir(self) -> Path:
+        r"""Resolve (downloading on first access) the dataset directory."""
+        return _resolve_dataset_dir(self.name_or_path, self.revision)
+
+    @property
+    def db_dir(self) -> Path:
+        return self.dataset_dir / "db"
+
+    @cached_property
+    def manifest(self) -> DatasetManifest:
+        return DatasetManifest.load(self.dataset_dir / "manifest.yaml")
+
+    @property
+    def val_timestamp(self) -> pd.Timestamp:
+        return pd.Timestamp(self.manifest.val_timestamp)
+
+    @property
+    def test_timestamp(self) -> pd.Timestamp:
+        return pd.Timestamp(self.manifest.test_timestamp)
+
     def __repr__(self) -> str:
-        return f"RelBenchDataset(name={self.manifest.name!r})"
+        return f"RelBenchDataset({str(self.name_or_path)!r})"
+
+    def get_task_names(self) -> list[str]:
+        r"""List tasks available for this dataset (``tasks/*/manifest.yaml``)."""
+        tasks_dir = self.dataset_dir / "tasks"
+        if not tasks_dir.exists():
+            return []
+        return sorted(
+            d.name for d in tasks_dir.iterdir() if (d / "manifest.yaml").exists()
+        )
+
+    def load_task(self, task_name: str, *, regenerate: bool = False):
+        r"""Load one of this dataset's tasks.
+
+        Uses hosted labels when present; ``regenerate=True`` recomputes them from the
+        database via the task manifest's SQL (the provenance check used in CI).
+        """
+        task_dir = self.dataset_dir / "tasks" / task_name
+        tm = TaskManifest.load(task_dir / "manifest.yaml")
+        return build_task(self, tm, task_dir=task_dir, regenerate=regenerate)
 
     def make_db(self) -> Database:
         return _load_database(self.db_dir, self.manifest)
@@ -475,44 +517,9 @@ def _resolve_dataset_dir(
 def load_dataset(
     name_or_path: Union[str, Path], *, revision: Optional[str] = None
 ) -> RelBenchDataset:
-    r"""Load a RelBench dataset from a Hub ``org/repo[/subdir]`` or a local path."""
-    dataset_dir = _resolve_dataset_dir(name_or_path, revision)
-    manifest = DatasetManifest.load(dataset_dir / "manifest.yaml")
-    return RelBenchDataset(dataset_dir, manifest)
+    r"""Address a RelBench dataset by Hub ``org/repo[/subdir]`` or local path.
 
-
-def get_task_names(
-    name_or_path: Union[str, Path], *, revision: Optional[str] = None
-) -> list[str]:
-    r"""List tasks available for a dataset by enumerating ``tasks/*/manifest.yaml``."""
-    dataset_dir = _resolve_dataset_dir(name_or_path, revision)
-    tasks_dir = dataset_dir / "tasks"
-    if not tasks_dir.exists():
-        return []
-    return sorted(d.name for d in tasks_dir.iterdir() if (d / "manifest.yaml").exists())
-
-
-def load_task(
-    dataset: Union[str, Path, RelBenchDataset],
-    task_name: str,
-    *,
-    revision: Optional[str] = None,
-    regenerate: bool = False,
-):
-    r"""Load a task. Uses hosted labels when present; ``regenerate=True`` forces the SQL.
-
-    For ``kind="sql"`` tasks, ``regenerate`` recomputes labels from the database via the
-    manifest SQL -- this is also the provenance check used in CI.
+    Cheap: no download and no file read happens here. Tasks come from the returned
+    object -- ``load_dataset(spec).load_task(name)`` / ``.get_task_names()``.
     """
-    if isinstance(dataset, RelBenchDataset):
-        ds = dataset
-        dataset_dir = ds.dataset_dir
-    else:
-        dataset_dir = _resolve_dataset_dir(dataset, revision)
-        ds = RelBenchDataset(
-            dataset_dir, DatasetManifest.load(dataset_dir / "manifest.yaml")
-        )
-
-    task_dir = dataset_dir / "tasks" / task_name
-    tm = TaskManifest.load(task_dir / "manifest.yaml")
-    return build_task(ds, tm, task_dir=task_dir, regenerate=regenerate)
+    return RelBenchDataset(name_or_path, revision=revision)

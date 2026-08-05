@@ -1,12 +1,10 @@
 from relbench import base
-from relbench.load import get_task_names, load_dataset, load_task, train_std
+from relbench.load import load_dataset, train_std
 
 __all__ = [
     "base",
     "modeling",
     "load_dataset",
-    "load_task",
-    "get_task_names",
     "train_std",
 ]
 
@@ -14,7 +12,7 @@ __all__ = [
 def __getattr__(name):
     # `relbench.modeling` pulls in torch / PyTorch Geometric, which data-only users (and the
     # in-browser WebAssembly tutorials) don't need. Import it lazily on first access so plain
-    # `import relbench` + load_dataset/load_task stays torch-free.
+    # `import relbench` + load_dataset/get_db stays torch-free.
     if name == "modeling":
         import importlib
 

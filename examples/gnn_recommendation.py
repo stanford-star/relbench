@@ -19,7 +19,7 @@ from torch_geometric.loader import NeighborLoader
 from torch_geometric.seed import seed_everything
 from tqdm import tqdm
 
-from relbench import load_dataset, load_task
+from relbench import load_dataset
 from relbench.base import Dataset, RecommendationTask, TaskType
 from relbench.modeling.graph import get_link_train_table_input, make_pkey_fkey_graph
 from relbench.modeling.loader import LinkNeighborLoader
@@ -67,7 +67,7 @@ seed_everything(args.seed)
 
 try:
     dataset: Dataset = load_dataset(args.dataset)
-    task: RecommendationTask = load_task(args.dataset, args.task)
+    task: RecommendationTask = dataset.load_task(args.task)
 except Exception:
     if bool(args.download):
         print(

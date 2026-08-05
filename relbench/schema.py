@@ -368,7 +368,7 @@ def dataset_card(
         "```python",
         "import relbench",
         f'ds = relbench.load_dataset("{addr}")',
-        f'task = relbench.load_task("{addr}", "<task>")',
+        f'task = ds.load_task("<task>")',
         "```",
         "",
         "## Citation",

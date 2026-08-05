@@ -50,9 +50,9 @@ def main() -> None:
     for name in datasets:
         spec = f"{RELBENCH_HF}/{name}"
         ds = relbench.load_dataset(spec)
-        for task_name in relbench.get_task_names(spec):
+        for task_name in ds.get_task_names():
             try:
-                task = relbench.load_task(ds, task_name)
+                task = ds.load_task(task_name)
             except NotImplementedError:
                 # Unsupported task type (e.g. a multiclass autocomplete task); not a
                 # regression task, so it has no std to store.

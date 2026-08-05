@@ -2,7 +2,7 @@ r"""Tests for the prediction-table evaluator and leaderboard tooling.
 
 Network-free: a synthetic :class:`FakeDataset` (from ``conftest``) is serialized to a temp
 directory as a manifest + parquet RelBench dataset, with three tasks (binary
-classification, regression and link prediction) so ``relbench.load.load_task`` -- which the
+classification, regression and link prediction) so ``RelBenchDataset.load_task`` -- which the
 evaluator calls by name -- finds it on disk. The hosted regression-std lookup is
 monkeypatched out, and ``evaluate_submission`` is exercised in-process (``num_workers=1``)
 so monkeypatched dataset resolution is visible.
@@ -16,7 +16,7 @@ import pytest
 from conftest import _CHURN, _PURCHASE, FakeDataset
 
 from relbench.base import TaskType
-from relbench.load import load_task
+from relbench.load import load_dataset
 from relbench.manifest import DatasetManifest, TableSpec, TaskManifest
 from relbench.submit import (
     LEADERBOARD_TASKS,
@@ -121,7 +121,7 @@ def _link_pred(df, task):
 # Round-trip tests: write_prediction_table -> evaluate_task == task.evaluate(pred)
 # --------------------------------------------------------------------------- #
 def test_roundtrip_binary_classification(fake_ds_dir, tmp_path):
-    task = load_task(str(fake_ds_dir), "user-churn")
+    task = load_dataset(str(fake_ds_dir)).load_task("user-churn")
     assert task.task_type == TaskType.BINARY_CLASSIFICATION
     masked = task.get_table("test", mask_input_cols=True)
     gt = task.get_table("test", mask_input_cols=False)
@@ -140,7 +140,7 @@ def test_roundtrip_binary_classification(fake_ds_dir, tmp_path):
 
 
 def test_roundtrip_regression(fake_ds_dir, tmp_path):
-    task = load_task(str(fake_ds_dir), "user-ltv")
+    task = load_dataset(str(fake_ds_dir)).load_task("user-ltv")
     assert task.task_type == TaskType.REGRESSION
     masked = task.get_table("test", mask_input_cols=True)
     gt = task.get_table("test", mask_input_cols=False)
@@ -156,7 +156,7 @@ def test_roundtrip_regression(fake_ds_dir, tmp_path):
 
 
 def test_roundtrip_link_prediction(fake_ds_dir, tmp_path):
-    task = load_task(str(fake_ds_dir), "user-item-purchase")
+    task = load_dataset(str(fake_ds_dir)).load_task("user-item-purchase")
     assert task.task_type == TaskType.LINK_PREDICTION
     masked = task.get_table("test", mask_input_cols=True)
     gt = task.get_table("test", mask_input_cols=False)
@@ -178,7 +178,7 @@ def test_roundtrip_link_prediction(fake_ds_dir, tmp_path):
 # Validation failures
 # --------------------------------------------------------------------------- #
 def _valid_clf_csv(fake_ds_dir, csv):
-    task = load_task(str(fake_ds_dir), "user-churn")
+    task = load_dataset(str(fake_ds_dir)).load_task("user-churn")
     masked = task.get_table("test", mask_input_cols=True)
     write_prediction_table(task, _entity_pred(masked.df, task), csv)
     return task
@@ -225,7 +225,7 @@ def test_validation_prob_out_of_range(fake_ds_dir, tmp_path):
 
 def test_validation_link_list_too_long(fake_ds_dir, tmp_path):
     csv = tmp_path / "purchase.csv"
-    task = load_task(str(fake_ds_dir), "user-item-purchase")
+    task = load_dataset(str(fake_ds_dir)).load_task("user-item-purchase")
     masked = task.get_table("test", mask_input_cols=True)
     write_prediction_table(task, _link_pred(masked.df, task), csv)
     df = pd.read_csv(csv)
@@ -249,13 +249,13 @@ def test_evaluate_submission(fake_ds_dir, tmp_path, monkeypatch):
     pred_dir = tmp_path / "preds"
     pred_dir.mkdir()
 
-    churn = load_task(str(fake_ds_dir), "user-churn")
+    churn = load_dataset(str(fake_ds_dir)).load_task("user-churn")
     write_prediction_table(
         churn,
         _entity_pred(churn.get_table("test", mask_input_cols=True).df, churn),
         pred_dir / "rel-amazon__user-churn.csv",
     )
-    purchase = load_task(str(fake_ds_dir), "user-item-purchase")
+    purchase = load_dataset(str(fake_ds_dir)).load_task("user-item-purchase")
     write_prediction_table(
         purchase,
         _link_pred(purchase.get_table("test", mask_input_cols=True).df, purchase),
@@ -308,7 +308,7 @@ def test_evaluate_submission_reports_task_errors(fake_ds_dir, tmp_path, monkeypa
     pred_dir = tmp_path / "preds"
     pred_dir.mkdir()
 
-    churn = load_task(str(fake_ds_dir), "user-churn")
+    churn = load_dataset(str(fake_ds_dir)).load_task("user-churn")
     csv = pred_dir / "rel-amazon__user-churn.csv"
     write_prediction_table(
         churn,

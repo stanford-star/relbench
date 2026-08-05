@@ -7,7 +7,7 @@ import pandas as pd
 import torch
 from torch_geometric.seed import seed_everything
 
-from relbench import load_dataset, load_task
+from relbench import load_dataset
 from relbench.base import Dataset, EntityTask, Table, TaskType
 from relbench.submit import evaluate_task, write_prediction_table
 
@@ -21,7 +21,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 seed_everything(args.seed)
 
 dataset: Dataset = load_dataset(args.dataset)
-task: EntityTask = load_task(args.dataset, args.task)
+task: EntityTask = dataset.load_task(args.task)
 
 train_table = task.get_table("train")
 val_table = task.get_table("val")

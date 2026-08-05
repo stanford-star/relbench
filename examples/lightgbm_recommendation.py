@@ -17,7 +17,7 @@ from torch_frame.gbdt import LightGBM
 from torch_frame.typing import Metric
 from torch_geometric.seed import seed_everything
 
-from relbench import load_dataset, load_task
+from relbench import load_dataset
 from relbench.base import Dataset, RecommendationTask, Table
 from relbench.modeling.utils import get_stype_proposal, remove_pkey_fkey
 from relbench.submit import evaluate_task, write_prediction_table
@@ -49,7 +49,7 @@ if torch.cuda.is_available():
 seed_everything(args.seed)
 
 dataset: Dataset = load_dataset(args.dataset)
-task: RecommendationTask = load_task(args.dataset, args.task)
+task: RecommendationTask = dataset.load_task(args.task)
 target_col_name: str = LINK_PRED_BASELINE_TARGET_COL_NAME
 
 train_table = task.get_table("train")

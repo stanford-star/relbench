@@ -871,7 +871,7 @@ def write_card(out: Path, name: str, dm=None, manifests=None, implicit=None) -> 
             "",
             "Each such task declares `remove_columns`, and the column is left in `db/` so "
             "the database stays faithful to the source. `Dataset.get_db` drops the declared "
-            "pairs, so `relbench.load_task(...)` hands you a graph without them -- for "
+            "pairs, so `ds.load_task(...)` hands you a graph without them -- for "
             "every task `kind`, not just autocomplete. If you read the parquet directly, "
             "drop them yourself.",
             "",
@@ -957,7 +957,7 @@ Several tasks derive their label from a column that is also in the database
 `seznam/prepay` <- `Probehnuto.sluzba`, `outbrain-small/ctr` <- `Click.clicked`,
 `amazon/rating` <- `Review.rating`). Each such task declares `remove_columns`; the column is
 kept in `db/` so the database stays faithful to 4DBInfer, and `Dataset.get_db` drops it, so
-`relbench.load_task(...)` hands you a graph without it. If you read the parquet directly,
+`ds.load_task(...)` hands you a graph without it. If you read the parquet directly,
 drop it yourself.
 
 ## Loading
@@ -965,7 +965,7 @@ drop it yourself.
 ```python
 import relbench
 ds = relbench.load_dataset("relbench/dbinfer/dbinfer-diginetica")
-task = relbench.load_task("relbench/dbinfer/dbinfer-diginetica", "ctr")
+task = ds.load_task("ctr")
 db = ds.get_db()
 train = task.get_table("train")
 ```

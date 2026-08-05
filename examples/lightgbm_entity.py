@@ -16,7 +16,7 @@ from torch_frame.typing import Metric
 from torch_geometric.seed import seed_everything
 from tqdm import tqdm
 
-from relbench import load_dataset, load_task
+from relbench import load_dataset
 from relbench.base import Dataset, EntityTask, TaskType
 from relbench.modeling.utils import get_stype_proposal, remove_pkey_fkey
 from relbench.submit import evaluate_task, write_prediction_table
@@ -45,7 +45,7 @@ if torch.cuda.is_available():
 seed_everything(args.seed)
 
 dataset: Dataset = load_dataset(args.dataset)
-task: EntityTask = load_task(args.dataset, args.task)
+task: EntityTask = dataset.load_task(args.task)
 
 train_table = task.get_table("train")
 val_table = task.get_table("val")

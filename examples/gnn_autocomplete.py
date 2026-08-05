@@ -17,8 +17,8 @@ from torch_geometric.loader import NeighborLoader
 from torch_geometric.seed import seed_everything
 from tqdm import tqdm
 
-from relbench import load_task
-from relbench.base import Dataset, EntityTask, TaskType
+from relbench import load_dataset
+from relbench.base import EntityTask, TaskType
 from relbench.modeling.graph import get_node_train_table_input, make_pkey_fkey_graph
 from relbench.modeling.utils import get_stype_proposal
 from relbench.submit import evaluate_task, write_prediction_table
@@ -59,8 +59,10 @@ if torch.cuda.is_available():
 seed_everything(args.seed)
 
 
-task: EntityTask = load_task(args.dataset, args.task)
-dataset: Dataset = task.dataset
+dataset = load_dataset(args.dataset)
+
+
+task: EntityTask = dataset.load_task(args.task)
 
 stypes_cache_path = Path(
     f"{args.cache_dir}/{args.dataset}/tasks/{args.task}/stypes.json"

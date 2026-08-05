@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 
 from relbench.base import RecommendationTask
-from relbench.load import get_task_names, load_task
+from relbench.load import load_dataset
 
 SPLITS = ["train", "val", "test"]
 
@@ -55,11 +55,12 @@ def check_provenance(dataset: str) -> bool:
     r"""Return True iff every ``forecast`` task's regenerated labels match its hosted
     labels."""
     ok_all, checked = True, 0
-    for name in get_task_names(dataset):
-        regen = load_task(dataset, name, regenerate=True)
+    ds = load_dataset(dataset)
+    for name in ds.get_task_names():
+        regen = ds.load_task(name, regenerate=True)
         if not getattr(regen, "_sql", None):
             continue  # only forecast tasks carry regenerating SQL; nothing to check
-        cached = load_task(dataset, name, regenerate=False)
+        cached = ds.load_task(name, regenerate=False)
         keys, target, is_list = _keys_target(regen)
         for split in SPLITS:
             r = regen.get_table(split, mask_input_cols=False).df
