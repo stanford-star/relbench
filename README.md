@@ -10,6 +10,14 @@
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-3f9e78.svg" alt="License: MIT" /></a>
 </p>
 
+<p align="center">
+  <a href="#get-started"><b>Get Started</b></a> ·
+  <a href="#tutorials"><b>Tutorials</b></a> ·
+  <a href="#leaderboard"><b>Leaderboard</b></a> ·
+  <a href="#contributing"><b>Contributing</b></a> ·
+  <a href="#cite-relbench"><b>Cite RelBench</b></a>
+</p>
+
 ## Get Started
 
 ```bash
