@@ -50,7 +50,7 @@ dev=[
 ]
 
 [project.urls]
-Home = "https://relbench.stanford.edu"
+Home = "https://star-project.stanford.edu/relbench"
 
 [tool.flit.module]
 name="relbench"

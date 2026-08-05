@@ -10,15 +10,6 @@
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-3f9e78.svg" alt="License: MIT" /></a>
 </p>
 
-<p align="center">
-  <a href="https://relbench.stanford.edu"><b>Website</b></a> ·
-  <a href="#get-started"><b>Get Started</b></a> ·
-  <a href="https://star-project.stanford.edu/relbench/leaderboard/"><b>Leaderboard</b></a> ·
-  <a href="https://relbench.stanford.edu/papers/"><b>Papers</b></a> ·
-  <a href="https://huggingface.co/relbench"><b>Hugging Face</b></a> ·
-  <a href="#contributing"><b>Contributing</b></a>
-</p>
-
 ## Get Started
 
 ```bash
