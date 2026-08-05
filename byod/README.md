@@ -34,7 +34,7 @@ A task declares how its labels are produced (`kind` in its `manifest.yaml`):
 
 | kind | labels are… | example |
 |---|---|---|
-| `forecast` | computed by a DuckDB query over the database — **regenerable**, and CI-checked against the shipped labels | predict a driver's next-race position |
+| `forecast` | computed by a SQL query over the database — **regenerable**, and CI-checked against the shipped labels | predict a driver's next-race position |
 | `autocomplete` | an existing column you predict (the column is masked from the graph) | predict a product's category |
 | `external` | shipped as-is (built by an upstream pipeline) | TGB / 4DBInfer tasks |
 
