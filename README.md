@@ -1,6 +1,8 @@
 <p align="center"><img src="https://relbench.stanford.edu/img/logo.png" alt="RelBench" width="600px" /></p>
 
 <p align="center">
+  <a href="https://star-project.stanford.edu/relbench"><img src="https://img.shields.io/badge/Website-relbench-3f9e78.svg" alt="Website" /></a>
+  <a href="https://huggingface.co/relbench"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-relbench-ffcc00.svg" alt="Hugging Face" /></a>
   <a href="https://pypi.org/project/relbench/"><img src="https://img.shields.io/pypi/v/relbench?color=3f9e78" alt="PyPI" /></a>
   <a href="https://github.com/snap-stanford/relbench/actions/workflows/testing.yml"><img src="https://github.com/snap-stanford/relbench/actions/workflows/testing.yml/badge.svg" alt="Tests" /></a>
   <a href="https://arxiv.org/abs/2407.20060"><img src="https://img.shields.io/badge/arXiv-2407.20060%20(RelBench)-b31b1b.svg" alt="arXiv: RelBench" /></a>
@@ -55,7 +57,7 @@ Open these directly in Google Colab — no setup required:
 | [**Quickstart**](https://colab.research.google.com/github/rishabh-ranjan/relbench/blob/main/tutorials/quickstart.ipynb) | Load a dataset/task, explore the schema, run a baseline | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/rishabh-ranjan/relbench/blob/main/tutorials/quickstart.ipynb) |
 | [**Training a GNN**](https://colab.research.google.com/github/rishabh-ranjan/relbench/blob/main/tutorials/gnn.ipynb) | A GNN baseline for an entity task (PyG + PyTorch Frame) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/rishabh-ranjan/relbench/blob/main/tutorials/gnn.ipynb) (needs a GPU) |
 
-## Submitting to the leaderboard
+## Leaderboard
 
 The [**RelBench leaderboard**](https://star-project.stanford.edu/relbench/leaderboard/)
 ranks methods by their test-set performance, averaged over a fixed task set. There are
