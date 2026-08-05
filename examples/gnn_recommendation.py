@@ -252,11 +252,13 @@ def test(src_loader: NeighborLoader, dst_loader: NeighborLoader) -> np.ndarray:
 
 state_dict = None
 best_val_metric = 0
+val_table = task.get_table("val")  # hoisted: get_table is uncached
+
 for epoch in range(1, args.epochs + 1):
     train_loss = train()
     if epoch % args.eval_epochs_interval == 0:
         val_pred = test(*eval_loaders_dict["val"])
-        val_metrics = task.evaluate(val_pred, task.get_table("val"))
+        val_metrics = task.evaluate(val_pred, val_table)
         print(
             f"Epoch: {epoch:02d}, Train loss: {train_loss}, "
             f"Val metrics: {val_metrics}"
@@ -274,7 +276,7 @@ else:
         "No best checkpoint was selected (state_dict is None); evaluating with current model weights."
     )
 val_pred = test(*eval_loaders_dict["val"])
-val_metrics = task.evaluate(val_pred, task.get_table("val"))
+val_metrics = task.evaluate(val_pred, val_table)
 print(f"Best Val metrics: {val_metrics}")
 
 if "test" in eval_loaders_dict:

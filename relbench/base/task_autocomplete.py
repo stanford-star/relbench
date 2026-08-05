@@ -142,14 +142,16 @@ class AutoCompleteTask(EntityTask):
             freq = -self.timedelta
 
         elif split == "test":
-            if self.dataset.test_timestamp + self.timedelta > db.max_timestamp:
+            # Read once: `max_timestamp` is uncached and scans every table.
+            db_max_timestamp = db.max_timestamp
+            if self.dataset.test_timestamp + self.timedelta > db_max_timestamp:
                 raise RuntimeError(
                     "test timestamp + timedelta is larger than max timestamp! "
                     "This would cause test labels to be generated with "
                     "insufficient aggregation time."
                 )
 
-            start = db.max_timestamp
+            start = db_max_timestamp
             end = self.dataset.test_timestamp
             freq = -self.timedelta
 

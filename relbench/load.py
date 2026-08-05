@@ -38,6 +38,7 @@ from relbench.base import (
     Table,
     TaskType,
 )
+from relbench.base.task_base import _sort_deterministically
 from relbench.manifest import (
     KIND_AUTOCOMPLETE,
     KIND_EXTERNAL,
@@ -294,11 +295,15 @@ class _HostedLabelsMixin:
 
         if path is not None:
             df = _coerce_string_dtype(pd.read_parquet(path))
-            table = Table(
-                df=df,
-                fkey_col_to_pkey_table=self._label_fkeys(),
-                pkey_col=None,
-                time_col=self.time_col,
+            # Canonical order, same as regeneration: the hosted parquet carries
+            # whatever order it was written in, which need not match.
+            table = _sort_deterministically(
+                Table(
+                    df=df,
+                    fkey_col_to_pkey_table=self._label_fkeys(),
+                    pkey_col=None,
+                    time_col=self.time_col,
+                )
             )
         else:
             table = self._get_table(split, db)  # regenerate (already filters dangling)
@@ -404,11 +409,13 @@ class _AutoCompleteTask(_HostedLabelsMixin, AutoCompleteTask):
                 self.dataset.val_timestamp,
             )
         elif split == "test":
-            if self.dataset.test_timestamp + self.timedelta > db.max_timestamp:
+            # Read once: `max_timestamp` is uncached and scans every table.
+            db_max_timestamp = db.max_timestamp
+            if self.dataset.test_timestamp + self.timedelta > db_max_timestamp:
                 raise RuntimeError(
                     "test timestamp + timedelta exceeds db max timestamp"
                 )
-            start, end = db.max_timestamp, self.dataset.test_timestamp
+            start, end = db_max_timestamp, self.dataset.test_timestamp
         else:
             raise ValueError(f"unknown split: {split!r}")
         table = self.make_table(db, pd.DatetimeIndex([start, end]))

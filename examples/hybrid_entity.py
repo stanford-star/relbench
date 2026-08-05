@@ -110,6 +110,8 @@ elif task.task_type == TaskType.REGRESSION:
 else:
     raise ValueError(f"Unsupported task type: {task.task_type}")
 
+val_table = task.get_table("val")  # hoisted: get_table is uncached
+
 loader_dict: Dict[str, NeighborLoader] = {}
 # Create a mapping for each split's entity table
 entity_table_mapping: Dict[str, str] = {}
@@ -267,7 +269,7 @@ else:
     for epoch in range(1, args.epochs + 1):
         train_loss = train()
         val_pred = test(loader_dict["val"])
-        val_metrics = task.evaluate(val_pred, task.get_table("val"))
+        val_metrics = task.evaluate(val_pred, val_table)
         print(
             f"Epoch: {epoch:02d}, Train loss: {train_loss}, Val metrics: {val_metrics}"
         )
@@ -291,7 +293,7 @@ print("GNN model performance")
 print("=====================")
 model.load_state_dict(state_dict)
 val_pred = test(loader_dict["val"])
-val_metrics = task.evaluate(val_pred, task.get_table("val"))
+val_metrics = task.evaluate(val_pred, val_table)
 print(f"Best Val metrics: {val_metrics}")
 
 test_pred = test(loader_dict["test"])
@@ -355,7 +357,7 @@ lgbm_model = LightGBM(task_type=task_type, metric=tune_metric)
 lgbm_model.tune(tf_train, tf_val, num_trials=10)
 
 pred = lgbm_model.predict(tf_val).numpy()
-val_metrics = task.evaluate(pred, task.get_table("val"))
+val_metrics = task.evaluate(pred, val_table)
 print(f"LightGBM Val metrics: {val_metrics}")
 
 test_pred = lgbm_model.predict(tf_test).numpy()

@@ -120,6 +120,8 @@ elif task.task_type == TaskType.REGRESSION:
 else:
     raise ValueError(f"Unsupported task type: {task.task_type}")
 
+val_table = task.get_table("val")  # hoisted: get_table is uncached
+
 loader_dict: Dict[str, NeighborLoader] = {}
 for split in ["train", "val", "test"]:
     table = task.get_table(split)
@@ -210,7 +212,7 @@ best_val_metric = -math.inf if higher_is_better else math.inf
 for epoch in range(1, args.epochs + 1):
     train_loss = train()
     val_pred = test(loader_dict["val"])
-    val_metrics = task.evaluate(val_pred, task.get_table("val"))
+    val_metrics = task.evaluate(val_pred, val_table)
     print(f"Epoch: {epoch:02d}, Train loss: {train_loss}, Val metrics: {val_metrics}")
 
     if (higher_is_better and val_metrics[tune_metric] >= best_val_metric) or (
@@ -222,7 +224,7 @@ for epoch in range(1, args.epochs + 1):
 
 model.load_state_dict(state_dict)
 val_pred = test(loader_dict["val"])
-val_metrics = task.evaluate(val_pred, task.get_table("val"))
+val_metrics = task.evaluate(val_pred, val_table)
 print(f"Best Val metrics: {val_metrics}")
 
 test_pred = test(loader_dict["test"])
