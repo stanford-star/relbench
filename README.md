@@ -15,7 +15,7 @@
   <a href="#tutorials"><b>Tutorials</b></a> ·
   <a href="#leaderboard"><b>Leaderboard</b></a> ·
   <a href="#byod"><b>BYOD</b></a> ·
-  <a href="#cite-relbench"><b>Cite RelBench</b></a>
+  <a href="#cite-relbench"><b>Citations</b></a>
 </p>
 
 ## Get Started
@@ -102,7 +102,7 @@ requests: open a GitHub issue or pull request.
 If you upload your data in RelBench format to Hugging Face, please let us know at
 [relbench@cs.stanford.edu](mailto:relbench@cs.stanford.edu) so we can list it here!
 
-## Cite RelBench
+## Citations
 
 If you use RelBench, please cite the benchmark papers:
 
