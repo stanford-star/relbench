@@ -83,11 +83,12 @@ def _block(s: str) -> str:
     lines = [line.rstrip() for line in s.strip("\n").splitlines()]
     if not lines:
         return ""
-    head, rest = lines[0], lines[1:]
+    # The first line carries no meaningful indentation (it is whatever the
+    # source literal happened to open with), and leaving any on it forces yaml
+    # to write an explicit indentation indicator -- `|2-` instead of `|`.
+    head, rest = lines[0].lstrip(), lines[1:]
     if rest:
         rest = textwrap.dedent("\n".join(rest)).splitlines()
-        if not head.startswith((" ", "\t")):
-            head = head.lstrip()
     return "\n".join([head, *rest]).strip("\n")
 
 
