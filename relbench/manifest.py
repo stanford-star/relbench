@@ -20,6 +20,7 @@ they load directly with pandas/duckdb. Manifests are YAML for readability (the S
 from __future__ import annotations
 
 import dataclasses
+import textwrap
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, Union
@@ -38,6 +39,18 @@ KIND_EXTERNAL = (
 )
 KINDS = (KIND_FORECAST, KIND_AUTOCOMPLETE, KIND_EXTERNAL)
 
+# Task ``task_type`` -- what is predicted, and therefore which evaluator applies.
+# Spelled out here rather than imported from relbench.base so a manifest can be
+# written and validated without pulling in pandas/numpy; kept in step with
+# :class:`relbench.base.TaskType`, which the round-trip test pins.
+TASK_TYPES = (
+    "regression",
+    "binary_classification",
+    "multiclass_classification",
+    "multilabel_classification",
+    "recommendation",
+)
+
 
 class _Dumper(yaml.SafeDumper):
     pass
@@ -45,8 +58,37 @@ class _Dumper(yaml.SafeDumper):
 
 def _represent_str(dumper, data):
     # Render multi-line strings (e.g. SQL) as readable block scalars (`|`).
-    style = "|" if "\n" in data else None
-    return dumper.represent_scalar("tag:yaml.org,2002:str", data, style=style)
+    #
+    # YAML cannot express a block scalar whose first line is blank or whose
+    # lines carry trailing spaces, and pyyaml silently falls back to a
+    # double-quoted one-liner full of \n escapes when asked to -- which is how
+    # every hosted manifest ended up with its SQL unreadable. The strings come
+    # from triple-quoted Python literals, so that leading newline and that
+    # trailing indentation are an artefact of how the source was written, not
+    # content: normalise them away and the block scalar applies.
+    if "\n" in data:
+        return dumper.represent_scalar("tag:yaml.org,2002:str", _block(data), style="|")
+    return dumper.represent_scalar("tag:yaml.org,2002:str", data)
+
+
+def _block(s: str) -> str:
+    """A multi-line string as it should read in a block scalar.
+
+    ``textwrap.dedent`` alone is not enough: a triple-quoted literal that opens
+    on the same line as its first word (``sql = \"\"\"SELECT ...``) has no indent
+    on line 1, which makes the common prefix empty and leaves every other line
+    stranded at the source file's indentation. Dedent the continuation lines on
+    their own, and line 1 goes back where it belongs.
+    """
+    lines = [line.rstrip() for line in s.strip("\n").splitlines()]
+    if not lines:
+        return ""
+    head, rest = lines[0], lines[1:]
+    if rest:
+        rest = textwrap.dedent("\n".join(rest)).splitlines()
+        if not head.startswith((" ", "\t")):
+            head = head.lstrip()
+    return "\n".join([head, *rest]).strip("\n")
 
 
 _Dumper.add_representer(str, _represent_str)
@@ -158,7 +200,7 @@ class TaskManifest:
     target_col: Optional[str] = None
     time_col: Optional[str] = None
 
-    # Link-prediction (recommendation) tasks.
+    # Recommendation tasks.
     src_entity_table: Optional[str] = None
     src_entity_col: Optional[str] = None
     dst_entity_table: Optional[str] = None
@@ -232,11 +274,16 @@ class TaskManifest:
     def validate(self) -> None:
         if self.kind not in KINDS:
             raise ValueError(f"task '{self.name}': kind must be one of {KINDS}")
+        if self.task_type not in TASK_TYPES:
+            raise ValueError(
+                f"task '{self.name}': task_type must be one of {TASK_TYPES}, "
+                f"got {self.task_type!r}"
+            )
         if self.kind == KIND_FORECAST and not self.sql:
             raise ValueError(
                 f"task '{self.name}': kind='forecast' requires a 'sql' field"
             )
-        if self.task_type == "link_prediction" and self.kind == KIND_FORECAST:
+        if self.task_type == "recommendation" and self.kind == KIND_FORECAST:
             missing = [
                 k
                 for k in (

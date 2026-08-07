@@ -18,7 +18,7 @@ Columns. The structural ones are computed from the data:
 
     name, num_tables, num_rows, num_cols, num_tasks,
     tasks_binary_classification, tasks_regression, tasks_multiclass_classification,
-    tasks_multilabel_classification, tasks_link_prediction,
+    tasks_multilabel_classification, tasks_recommendation,
     start_timestamp, val_timestamp, test_timestamp, size_gb
 
 A per-type task-count column that is zero for every database is dropped (a task type the
@@ -56,7 +56,7 @@ COMPUTED_COLS = [
     "tasks_regression",
     "tasks_multiclass_classification",
     "tasks_multilabel_classification",
-    "tasks_link_prediction",
+    "tasks_recommendation",
     "start_timestamp",
     "val_timestamp",
     "test_timestamp",
@@ -77,7 +77,7 @@ COLUMNS = [
     "tasks_regression",
     "tasks_multiclass_classification",
     "tasks_multilabel_classification",
-    "tasks_link_prediction",
+    "tasks_recommendation",
     "start_timestamp",
     "val_timestamp",
     "test_timestamp",
@@ -91,7 +91,7 @@ _TASK_TYPE_COL = {
     "regression": "tasks_regression",
     "multiclass_classification": "tasks_multiclass_classification",
     "multilabel_classification": "tasks_multilabel_classification",
-    "link_prediction": "tasks_link_prediction",
+    "recommendation": "tasks_recommendation",
 }
 
 
@@ -295,7 +295,7 @@ _INT_COLS = {
     "tasks_regression",
     "tasks_multiclass_classification",
     "tasks_multilabel_classification",
-    "tasks_link_prediction",
+    "tasks_recommendation",
 }
 _FLOAT_COLS = {"size_gb"}
 

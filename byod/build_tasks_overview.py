@@ -108,7 +108,7 @@ HEADLINE_COLS = [
 _METRIC = {
     "binary_classification": "roc_auc",
     "regression": "nmae",
-    "link_prediction": "link_prediction_map",
+    "recommendation": "map",
 }
 
 
@@ -120,7 +120,7 @@ def _metric(tm: TaskManifest) -> Optional[str]:
 
 def _entity_col(dm: DatasetManifest, tm: TaskManifest, task_dir: Path) -> Optional[str]:
     r"""The column whose distinct values are the task's (source) entities."""
-    if tm.task_type == "link_prediction":
+    if tm.task_type == "recommendation":
         return tm.src_entity_col
     if tm.entity_col:
         return tm.entity_col
@@ -181,7 +181,7 @@ def task_row(dm: DatasetManifest, name: str, task: str, task_dir: Path) -> dict:
         overlap = round(100 * len(seen & test) / len(test), 2)
 
     num_dst = None
-    if tm.task_type == "link_prediction" and tm.dst_entity_col:
+    if tm.task_type == "recommendation" and tm.dst_entity_col:
         # Destination candidates seen at fit time = links in train + val (not test).
         parts = [_num_links(splits[s], tm.dst_entity_col) for s in ("train", "val")]
         if any(p is not None for p in parts):

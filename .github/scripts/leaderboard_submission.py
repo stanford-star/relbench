@@ -49,7 +49,7 @@ MAINTAINER = os.environ.get("LEADERBOARD_MAINTAINER") or "maintainer"
 FAMILY_TO_BOARD = {
     "classification": "binary_classification",
     "regression": "regression",
-    "recommendation": "link_prediction",
+    "recommendation": "recommendation",
 }
 
 # Attachment URLs GitHub produces for files dragged into an issue.
@@ -168,8 +168,7 @@ def build_entry(
         "in_context": bool(fields.get("in_context")),
         "url": fields.get("url"),
         "note": fields.get("note"),
-        "date": created_at
-        or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "date": created_at or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "author": author,
         "issue": issue,
         "boards": boards,

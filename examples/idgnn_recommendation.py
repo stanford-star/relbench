@@ -63,8 +63,8 @@ task: RecommendationTask = dataset.load_task(args.task)
 # the task\'s view of it (the columns the task must not see are already dropped).
 db = task.get_db()
 n_dst_nodes = num_dst_nodes(db, task)
-tune_metric = "link_prediction_map"
-assert task.task_type == TaskType.LINK_PREDICTION
+tune_metric = "map"
+assert task.task_type == TaskType.RECOMMENDATION
 
 stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
 try:

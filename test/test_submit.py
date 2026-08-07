@@ -2,7 +2,7 @@ r"""Tests for the prediction-table evaluator and leaderboard tooling.
 
 Network-free: a synthetic :class:`FakeDataset` (from ``conftest``) is serialized to a temp
 directory as a manifest + parquet RelBench dataset, with three tasks (binary
-classification, regression and link prediction) so ``RelBenchDataset.load_task`` -- which the
+classification, regression and recommendation) so ``RelBenchDataset.load_task`` -- which the
 evaluator calls by name -- finds it on disk. The hosted regression-std lookup is
 monkeypatched out, and ``evaluate_submission`` is exercised in-process (``num_workers=1``)
 so monkeypatched dataset resolution is visible.
@@ -111,7 +111,7 @@ def _entity_pred(df, task, scale=1.0):
     return (((ent * 2654435761) % 997) / 997.0) * scale
 
 
-def _link_pred(df, task):
+def _rec_pred(df, task):
     r"""Deterministic per-source top-eval_k destination ids, shape (N, eval_k)."""
     from relbench.modeling.graph import num_dst_nodes
 
@@ -158,23 +158,23 @@ def test_roundtrip_regression(fake_ds_dir, tmp_path):
     assert got["nmae"] == pytest.approx(want["nmae"])
 
 
-def test_roundtrip_link_prediction(fake_ds_dir, tmp_path):
+def test_roundtrip_recommendation(fake_ds_dir, tmp_path):
     task = load_dataset(str(fake_ds_dir)).load_task("user-item-purchase")
-    assert task.task_type == TaskType.LINK_PREDICTION
+    assert task.task_type == TaskType.RECOMMENDATION
     masked = task.get_table("test", mask_input_cols=True)
     gt = task.get_table("test", mask_input_cols=False)
 
     csv = tmp_path / "purchase.csv"
-    write_prediction_table(task, _link_pred(masked.df, task), csv)
+    write_prediction_table(task, _rec_pred(masked.df, task), csv)
 
     cols = list(pd.read_csv(csv).columns)
     assert cols == [task.src_entity_col, task.time_col, task.dst_entity_col]
 
     got = evaluate_task("fakeds/user-item-purchase", csv, dataset=str(fake_ds_dir))
-    want = task.evaluate(_link_pred(gt.df, task), target_table=gt)
-    assert set(got) == {"link_prediction_map"}
-    assert 0.0 <= got["link_prediction_map"] <= 1.0
-    assert got["link_prediction_map"] == pytest.approx(want["link_prediction_map"])
+    want = task.evaluate(_rec_pred(gt.df, task), target_table=gt)
+    assert set(got) == {"map"}
+    assert 0.0 <= got["map"] <= 1.0
+    assert got["map"] == pytest.approx(want["map"])
 
 
 # --------------------------------------------------------------------------- #
@@ -230,7 +230,7 @@ def test_validation_link_list_too_long(fake_ds_dir, tmp_path):
     csv = tmp_path / "purchase.csv"
     task = load_dataset(str(fake_ds_dir)).load_task("user-item-purchase")
     masked = task.get_table("test", mask_input_cols=True)
-    write_prediction_table(task, _link_pred(masked.df, task), csv)
+    write_prediction_table(task, _rec_pred(masked.df, task), csv)
     df = pd.read_csv(csv)
     import json
 
@@ -261,7 +261,7 @@ def test_evaluate_submission(fake_ds_dir, tmp_path, monkeypatch):
     purchase = load_dataset(str(fake_ds_dir)).load_task("user-item-purchase")
     write_prediction_table(
         purchase,
-        _link_pred(purchase.get_table("test", mask_input_cols=True).df, purchase),
+        _rec_pred(purchase.get_table("test", mask_input_cols=True).df, purchase),
         pred_dir / "rel-amazon__user-item-purchase.csv",
     )
 
@@ -276,7 +276,7 @@ def test_evaluate_submission(fake_ds_dir, tmp_path, monkeypatch):
     assert clf["status"] == "ok" and clf["family"] == "classification"
     assert clf["metric_name"] == "roc_auc" and np.isfinite(clf["metric"])
     assert rec["status"] == "ok" and rec["family"] == "recommendation"
-    assert rec["metric_name"] == "link_prediction_map" and np.isfinite(rec["metric"])
+    assert rec["metric_name"] == "map" and np.isfinite(rec["metric"])
 
     # Per-task metric matches the standalone evaluator.
     direct = evaluate_task(

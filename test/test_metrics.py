@@ -1,6 +1,6 @@
 import numpy as np
 
-from relbench.metrics import link_prediction_map, make_nmae, roc_auc
+from relbench.metrics import make_nmae, map, roc_auc
 
 
 def test_roc_auc():
@@ -18,10 +18,10 @@ def test_nmae():
     assert np.isclose(nmae(true, pred), expected)
 
 
-def test_link_prediction_map():
+def test_map():
     num_src_nodes = 100
     eval_k = 10
     rng = np.random.default_rng(0)
     pred_isin = rng.integers(0, 2, size=(num_src_nodes, eval_k)).astype(bool)
     dst_count = pred_isin.sum(axis=1) + rng.integers(0, 5, size=(num_src_nodes,))
-    assert 0 <= link_prediction_map(pred_isin, dst_count) <= 1
+    assert 0 <= map(pred_isin, dst_count) <= 1

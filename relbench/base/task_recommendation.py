@@ -13,7 +13,7 @@ from .task_base import BaseTask, TaskType
 
 
 class RecommendationTask(BaseTask):
-    r"""A link prediction task on a dataset.
+    r"""A recommendation task on a dataset.
 
     Attributes:
         src_entity_col: The source entity column.

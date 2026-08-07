@@ -54,7 +54,7 @@ from relbench.manifest import (
 DEFAULT_METRICS: dict[TaskType, list[str]] = {
     TaskType.BINARY_CLASSIFICATION: ["roc_auc"],
     TaskType.REGRESSION: ["nmae"],
-    TaskType.LINK_PREDICTION: ["link_prediction_map"],
+    TaskType.RECOMMENDATION: ["map"],
 }
 
 
@@ -477,7 +477,7 @@ def build_task(
 ):
     r"""Instantiate the generic task object for a task manifest."""
     tm.validate()
-    is_link = TaskType(tm.task_type) == TaskType.LINK_PREDICTION
+    is_link = TaskType(tm.task_type) == TaskType.RECOMMENDATION
     if tm.kind == KIND_AUTOCOMPLETE:
         # AutoCompleteTask resolves its own std in __init__ (it needs the train split
         # only when there is no hosted value).

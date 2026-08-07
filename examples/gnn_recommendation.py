@@ -79,8 +79,8 @@ except Exception:
             file=sys.stderr,
         )
     raise
-tune_metric = "link_prediction_map"
-assert task.task_type == TaskType.LINK_PREDICTION
+tune_metric = "map"
+assert task.task_type == TaskType.RECOMMENDATION
 
 # Materialize the database once and reuse it: `get_db` is uncached, and this is the
 # task's view of it (the columns the task must not see are already dropped).

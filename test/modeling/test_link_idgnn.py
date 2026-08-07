@@ -43,7 +43,7 @@ def test_link_train_fake_product_dataset(tmp_path, make_purchase_task, fake_data
     # Ensure that neighbor loading works on train/val/test splits ############
     task = make_purchase_task(dataset)
     n_dst_nodes = num_dst_nodes(dataset.get_db(), task)
-    assert task.task_type == TaskType.LINK_PREDICTION
+    assert task.task_type == TaskType.RECOMMENDATION
 
     train_table = task.get_table("train")
     val_table = task.get_table("val")

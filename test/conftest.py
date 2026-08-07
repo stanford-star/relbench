@@ -182,7 +182,7 @@ _CHURN = TaskManifest(
 _PURCHASE = TaskManifest(
     name="purchase",
     kind="forecast",
-    task_type="link_prediction",
+    task_type="recommendation",
     src_entity_table="customer",
     src_entity_col="customer_id",
     dst_entity_table="product",
@@ -210,7 +210,7 @@ def make_churn_task():
 
 @pytest.fixture
 def make_purchase_task():
-    r"""Return a builder: dataset -> forecast link-prediction (purchase) task."""
+    r"""Return a builder: dataset -> forecast recommendation (purchase) task."""
     return lambda dataset: build_task(dataset, _PURCHASE)
 
 
@@ -226,6 +226,6 @@ def churn_manifest():
 
 @pytest.fixture
 def purchase_manifest():
-    r"""The purchase (link-prediction) task manifest itself, for tests that vary one
+    r"""The purchase (recommendation) task manifest itself, for tests that vary one
     field."""
     return dataclasses.replace(_PURCHASE)

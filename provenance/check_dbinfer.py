@@ -231,7 +231,7 @@ def check_dataset(root: Path, raw_root: Path | None) -> None:
         tm = TaskManifest.load(tm_path)
         print(f"  -- task {tm.name} ({tm.task_type})", flush=True)
         endpoints = []
-        if tm.task_type == "link_prediction":
+        if tm.task_type == "recommendation":
             endpoints = [
                 (tm.src_entity_col, tm.src_entity_table),
                 (tm.dst_entity_col, tm.dst_entity_table),
@@ -278,7 +278,7 @@ def check_dataset(root: Path, raw_root: Path | None) -> None:
                     )
             if tm.target_col and tm.target_col not in names:
                 # retrieval train splits legitimately carry positives only
-                if not (tm.task_type == "link_prediction" and split == "train"):
+                if not (tm.task_type == "recommendation" and split == "train"):
                     fail(f"{tm.name}/{split}: target '{tm.target_col}' absent")
             if tm.time_col and tm.time_col in names:
                 ts = pd.to_datetime(_col(path, tm.time_col)).dropna()

@@ -22,7 +22,7 @@ from relbench.base import Dataset, RecommendationTask, Table
 from relbench.modeling.utils import get_stype_proposal, remove_pkey_fkey
 from relbench.submit import evaluate_task, write_prediction_table
 
-LINK_PRED_BASELINE_TARGET_COL_NAME = "link_pred_baseline_target_column_name"
+REC_BASELINE_TARGET_COL_NAME = "rec_baseline_target_column_name"
 PRED_SCORE_COL_NAME = "pred_score_col_name"
 
 parser = argparse.ArgumentParser()
@@ -54,7 +54,7 @@ task: RecommendationTask = dataset.load_task(args.task)
 # Materialize the database once and reuse it: `get_db` is uncached, and this is
 # the task\'s view of it (the columns the task must not see are already dropped).
 db = task.get_db()
-target_col_name: str = LINK_PRED_BASELINE_TARGET_COL_NAME
+target_col_name: str = REC_BASELINE_TARGET_COL_NAME
 
 train_table = task.get_table("train")
 val_table = task.get_table("val")
@@ -245,10 +245,10 @@ for split, table in [
     dfs[split] = df
 
 
-def prepare_for_link_pred_eval(
+def prepare_for_rec_eval(
     evaluate_table_df: pd.DataFrame, past_table_df: pd.DataFrame
 ) -> pd.DataFrame:
-    """Transform evaluation dataframe into the correct format for link prediction metric
+    """Transform evaluation dataframe into the correct format for recommendation metric
     calculation.
 
     Args:
@@ -329,7 +329,7 @@ val_df_pred = val_table.df[val_df_pred_column_names]
 # Per each src entity, collect all past linked dst entities
 val_past_table_df = train_table.df
 val_past_table_df.drop(columns=[train_table.time_col], inplace=True)
-val_df_pred = prepare_for_link_pred_eval(val_df_pred, val_past_table_df)
+val_df_pred = prepare_for_rec_eval(val_df_pred, val_past_table_df)
 dfs["val_pred"] = val_df_pred
 
 # Prepare test dataset for lightGBM model evaluation
@@ -339,7 +339,7 @@ test_df = test_table.df[test_df_column_names]
 # Per each src entity, collect all past linked dst entities
 test_past_table_df = pd.concat([train_table.df, val_table.df], axis=0)
 test_past_table_df.drop(columns=[train_table.time_col], inplace=True)
-test_df = prepare_for_link_pred_eval(test_df, test_past_table_df)
+test_df = prepare_for_rec_eval(test_df, test_past_table_df)
 dfs["test"] = test_df
 
 train_dataset = torch_frame.data.Dataset(
@@ -411,7 +411,7 @@ def evaluate(
     task: RecommendationTask,
 ) -> Dict[str, float]:
     """Given the input dataframe used for lightGBM binary link classification and its
-    output prediction scores and true labels, generate link prediction evaluation
+    output prediction scores and true labels, generate recommendation evaluation
     metrics.
 
     Args:
@@ -420,14 +420,14 @@ def evaluate(
         src_entity_name (str): The src entity name.
         dst_entity_name (str): The dst entity name
         timestamp_col (str): The name of the time column.
-        eval_k (int): Pre-defined eval k parameter for link pred metric
+        eval_k (int): Pre-defined eval k parameter for recommendation metric
             evaluation.
         pred_score (float): The binary classification prediction scores.
         train_table (Table): The train table.
         task (RecommendationTask): The task.
 
     Returns:
-        Dict[str, float]: The link pred metrics
+        Dict[str, float]: The recommendation metrics
     """
 
     dst_entity_array = predict_link(

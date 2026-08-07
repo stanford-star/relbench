@@ -72,7 +72,7 @@ Port decisions
 Retrieval tasks (``amazon/purchase``, ``diginetica/purchase``) are 4DBInfer's MRR-scored
 candidate-ranking protocol: the train split holds positives only, while val/test enumerate
 candidates with ``label`` and ``query_idx`` columns. They are declared
-``task_type: link_prediction`` -- with both endpoints named, so the labels are at least
+``task_type: recommendation`` -- with both endpoints named, so the labels are at least
 joinable -- rather than being forced into the entity-task mould as multiclass targets.
 RelBench's default link metric (MAP over a ranked list) is *not* 4DBInfer's MRR over the
 supplied candidate set, so score them with your own metric over ``label``/``query_idx``;
@@ -727,7 +727,7 @@ def build(root: Path, name: str, out: Path) -> dict:
                     test_ts.append(df[time_col].min())
 
         if tk["task_type"] in RETRIEVAL_TYPES:
-            task_type = "link_prediction"
+            task_type = "recommendation"
         elif tk["task_type"] == "regression":
             task_type = "regression"
         elif n_classes == 2:
@@ -742,7 +742,7 @@ def build(root: Path, name: str, out: Path) -> dict:
             description=extra["description"],
             time_col=time_col,
         )
-        if task_type == "link_prediction":
+        if task_type == "recommendation":
             fields.update(
                 src_entity_table=extra["src_entity_table"],
                 src_entity_col=extra["src_entity_col"],

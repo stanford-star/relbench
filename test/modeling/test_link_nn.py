@@ -46,7 +46,7 @@ def test_link_train_fake_product_dataset(
 
     # Ensure that neighbor loading works on train/val/test splits ############
     task: RecommendationTask = make_purchase_task(dataset)
-    assert task.task_type == TaskType.LINK_PREDICTION
+    assert task.task_type == TaskType.RECOMMENDATION
 
     # Ensure that stats computation works on train/val/test splits ###########
     stats = task.stats()

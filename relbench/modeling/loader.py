@@ -124,7 +124,7 @@ class TimestampSampler(Sampler[int]):
 
 
 class CustomLinkDataset(Dataset):
-    r"""A custom link prediction dataset.
+    r"""A custom recommendation dataset.
 
     Sample source nodes, time, and one positive destination node.
     """
@@ -164,7 +164,7 @@ class CustomLinkDataset(Dataset):
 
 
 class LinkNeighborLoader(DataLoader):
-    r"""A custom neighbor loader for link prediction.
+    r"""A custom neighbor loader for recommendation.
     Based on https://pytorch-geometric.readthedocs.io/en/latest/_modules/torch_geometric/loader/neighbor_loader.html
 
     Args:

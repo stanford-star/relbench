@@ -179,7 +179,7 @@ def get_node_train_table_input(
 
 
 class LinkTrainTableInput(NamedTuple):
-    r"""Training table input for link prediction.
+    r"""Training table input for recommendation.
 
     - src_nodes is a Tensor of source node indices.
     - dst_nodes is PyTorch sparse tensor in csr format.
@@ -211,7 +211,7 @@ def get_link_train_table_input(
     task: RecommendationTask,
     num_dst_nodes: int,
 ) -> LinkTrainTableInput:
-    r"""Get the training table input for link prediction.
+    r"""Get the training table input for recommendation.
 
     ``num_dst_nodes`` sizes the destination space; see :func:`num_dst_nodes`.
     """

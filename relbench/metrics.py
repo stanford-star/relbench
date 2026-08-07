@@ -6,7 +6,7 @@ each -- the user does not choose:
 * binary classification -> ``roc_auc``             (AUROC)
 * regression            -> NMAE, built per-task by :func:`make_nmae` (MAE
                            normalized by the train-split target std, ddof=1)
-* link prediction / rec.-> ``link_prediction_map`` (MAP@k, k = task's eval_k)
+* recommendation / rec.-> ``map`` (MAP@k, k = task's eval_k)
 
 Multiclass and multilabel tasks are definable and loadable, but RelBench provides no
 evaluator for them: ``task.metrics`` is empty -- pass your own to
@@ -45,8 +45,8 @@ def make_nmae(get_std: Callable[[], float]) -> Callable[[NDArray, NDArray], floa
     return nmae
 
 
-####### Link prediction metric (MAP@k)
-"""The link prediction metric takes two arguments
+####### Recommendation metric (MAP@k)
+"""The recommendation metric takes two arguments
     - pred_isin: Numpy boolean array of size (num_src_nodes, eval_k)
     - dst_count: Numpy integer array of size (num_src_nodes, ), storing
         the number of destination nodes attached to each source node.
@@ -60,7 +60,7 @@ def _filter(
     return pred_isin[is_pos], dst_count[is_pos]
 
 
-def link_prediction_map(
+def map(
     pred_isin: NDArray[np.int_],
     dst_count: NDArray[np.int_],
 ) -> float:

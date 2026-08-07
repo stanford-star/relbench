@@ -14,7 +14,7 @@ the target column replaced by predictions:
   (a float in ``[0, 1]``);
 * ``regression`` (EntityTask) -- target column holds the numeric prediction, on the
   original target scale;
-* ``link_prediction`` (RecommendationTask) -- the destination-entity column holds, per
+* ``recommendation`` (RecommendationTask) -- the destination-entity column holds, per
   source row, the top-``eval_k`` predicted destination ids (same id space as the
   ground-truth destination lists), encoded as a JSON list string in the CSV cell.
 
@@ -120,10 +120,10 @@ _TASK_TO_FAMILY: Dict[str, str] = {
 _FAMILY_METRIC: Dict[str, str] = {
     "classification": "roc_auc",
     "regression": "nmae",
-    "recommendation": "link_prediction_map",
+    "recommendation": "map",
 }
 
-# Padding id for link-prediction rows shorter than eval_k. Destination ids are
+# Padding id for recommendation rows shorter than eval_k. Destination ids are
 # non-negative reindexed integers, so -1 can never match a ground-truth id.
 _LINK_PAD = -1
 
@@ -159,7 +159,7 @@ def _extra_files(pred_dir: Union[str, os.PathLike]) -> List[str]:
 # Task introspection helpers
 # --------------------------------------------------------------------------- #
 def _is_link(task: Any) -> bool:
-    return task.task_type == TaskType.LINK_PREDICTION
+    return task.task_type == TaskType.RECOMMENDATION
 
 
 def _key_cols(task: Any) -> List[str]:
@@ -180,11 +180,11 @@ def _supported(task: Any) -> None:
     if task.task_type not in (
         TaskType.BINARY_CLASSIFICATION,
         TaskType.REGRESSION,
-        TaskType.LINK_PREDICTION,
+        TaskType.RECOMMENDATION,
     ):
         raise NotImplementedError(
             f"leaderboard evaluation supports binary_classification, regression and "
-            f"link_prediction only; got task_type={task.task_type}"
+            f"recommendation only; got task_type={task.task_type}"
         )
 
 
@@ -277,7 +277,7 @@ def _key_set(df: pd.DataFrame, key_cols: Sequence[str]) -> set:
 
 
 def _decode_id_list(raw: Any) -> List[int]:
-    r"""Decode one link-prediction cell into a list of integer destination ids."""
+    r"""Decode one recommendation cell into a list of integer destination ids."""
     if isinstance(raw, (list, tuple, np.ndarray)):
         seq = list(raw)
     else:
@@ -285,11 +285,11 @@ def _decode_id_list(raw: Any) -> List[int]:
             seq = json.loads(raw)
         except (TypeError, ValueError) as exc:
             raise ValueError(
-                f"could not decode link-prediction cell as a JSON list: {raw!r} ({exc})"
+                f"could not decode recommendation cell as a JSON list: {raw!r} ({exc})"
             )
     if not isinstance(seq, list):
         raise ValueError(
-            f"link-prediction cell must decode to a JSON list, got "
+            f"recommendation cell must decode to a JSON list, got "
             f"{type(seq).__name__}: {raw!r}"
         )
     out: List[int] = []
@@ -297,7 +297,7 @@ def _decode_id_list(raw: Any) -> List[int]:
         try:
             out.append(int(x))
         except (TypeError, ValueError):
-            raise ValueError(f"link-prediction id {x!r} is not an integer")
+            raise ValueError(f"recommendation id {x!r} is not an integer")
     return out
 
 
@@ -369,7 +369,7 @@ def _build_pred_array(
             ids = _decode_id_list(raw)
             if len(ids) > eval_k:
                 raise ValueError(
-                    f"link-prediction row has {len(ids)} ids, exceeding eval_k={eval_k}"
+                    f"recommendation row has {len(ids)} ids, exceeding eval_k={eval_k}"
                 )
             decoded.append(ids)
         pred_df = pred_df.assign(**{pred_col: decoded})
@@ -854,9 +854,9 @@ class _Style:
 _METRIC_DISPLAY: Dict[str, str] = {
     "roc_auc": "AUROC",
     "nmae": "nMAE",
-    "link_prediction_map": "mAP",
+    "map": "mAP",
 }
-_PERCENT_METRICS = {"roc_auc", "nmae", "link_prediction_map"}
+_PERCENT_METRICS = {"roc_auc", "nmae", "map"}
 
 
 def _metric_display(name: Optional[str]) -> str:
