@@ -16,6 +16,9 @@ from _lib import Table, fetch, write_hf
 URL = "https://huggingface.co/datasets/stanford-star/relbench-raw/resolve/main/rel-salt/db.zip"
 SHA = "fca91ab7d9e37646dcf1cb0007cc4229e9b23ef3c85f3c9e578d0f3fcb167001"
 VAL_TIMESTAMP, TEST_TIMESTAMP = "2020-02-01", "2020-07-01"
+DESCRIPTION = (
+    "SAP SALT sales documents: sales orders, line items, customers, and addresses."
+)
 
 
 def build(raw) -> dict:
@@ -67,7 +70,14 @@ def build(raw) -> dict:
 
 def main(out="rel-salt") -> None:
     raw = fetch(URL, SHA)
-    write_hf(out, "rel-salt", VAL_TIMESTAMP, TEST_TIMESTAMP, build(raw))
+    write_hf(
+        out,
+        "rel-salt",
+        VAL_TIMESTAMP,
+        TEST_TIMESTAMP,
+        build(raw),
+        description=DESCRIPTION,
+    )
 
 
 if __name__ == "__main__":

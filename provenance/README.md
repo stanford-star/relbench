@@ -24,14 +24,14 @@ in [`clean_databases.py`](clean_databases.py).
 |---|---|---|---|
 | `f1.py` | rel-f1 | Ergast F1 snapshot (`stanford-star/relbench-raw`) | ✅ reproduces published |
 | `salt.py` | rel-salt | SAP SALT db.zip (`stanford-star/relbench-raw`) | ✅ reproduces published |
-| `arxiv.py` | rel-arxiv | arXiv citation db.zip (Dropbox) | ✅ reproduces published |
+| `arxiv.py` | rel-arxiv | arXiv citation db.zip (`stanford-star/relbench-raw` mirror, Dropbox fallback) | ✅ reproduces published |
 | `stack.py` | rel-stack | Stack Exchange dump (`stanford-star/relbench-raw`) | runnable (large; +#373 drop) |
 | `trial.py` | rel-trial | ClinicalTrials/AACT (`stanford-star/relbench-raw`) | runnable (large; +#373 drops) |
-| `ratebeer.py` | rel-ratebeer | RateBeer db.zip (Dropbox) | ✅ reproduces published (large; +#373 drops) |
+| `ratebeer.py` | rel-ratebeer | RateBeer db.zip (`stanford-star/relbench-raw` mirror, Dropbox fallback) | ✅ reproduces published (large; +#373 drops) |
 | `avito.py` | rel-avito | Avito ads (`stanford-star/relbench-raw`) | runnable; public source is a 100k **sample** |
 | `amazon.py` | rel-amazon | Amazon reviews (McAuley `jmcauley.ucsd.edu`) | runnable; large external download |
-| `event.py` | rel-event | Event Recommendation (Kaggle) | needs Kaggle zip in `$RELBENCH_RAW_CACHE` |
-| `hm.py` | rel-hm | H&M (Kaggle) | needs Kaggle zip in `$RELBENCH_RAW_CACHE` |
+| `event.py` | rel-event | Event Recommendation (Kaggle) | needs `$RELBENCH_RAW_CACHE/event-recommendation-engine-challenge.zip` |
+| `hm.py` | rel-hm | H&M (Kaggle) | needs `$RELBENCH_RAW_CACHE/h-and-m-personalized-fashion-recommendations.zip` |
 | `dbinfer.py` | `stanford-star/dbinfer` family | 4DBInfer pre-built `db.zip` artifacts | runnable (collection) |
 | `tgb.py` | `stanford-star/tgb` family | TGB pre-built `db.zip` artifacts | runnable (collection) |
 
@@ -60,16 +60,32 @@ Four non-generator scripts round out the data's paper trail:
       python provenance/check_dbinfer.py DBINFER_DIR [RAW_ROOT]
 
 - **`push_dbinfer.py`** — publish a locally generated `dbinfer` collection (the output of
-  `dbinfer.py --all`) to its Hugging Face repo, as a single commit that replaces every
-  `dbinfer-*` path.
+  `dbinfer.py --all`) to its Hugging Face repo as a single commit. Files are added or
+  overwritten, never deleted: anything a regenerate dropped (a table, a diagram) stays in
+  the repo until it is removed explicitly.
 
-      python provenance/push_dbinfer.py BUILD_DIR          # dry run: show the plan
-      python provenance/push_dbinfer.py BUILD_DIR --push   # upload
+      python provenance/push_dbinfer.py BUILD_DIR                         # dry run: show the plan
+      python provenance/push_dbinfer.py BUILD_DIR --push                  # upload
+      python provenance/push_dbinfer.py BUILD_DIR --push --message "..."  # custom commit message
 
 `dbinfer.py` / `tgb.py` mirror the legacy step for those `external` collections: the raw
 temporal-graph / 4DBInfer conversion happens upstream, and RelBench ingested the resulting
 pre-built `db.zip` artifacts — which these scripts download and rewrite into the HF layout.
-The Kaggle-gated sources (`event`, `hm`) need their competition zip placed in the cache
-first (the script names the expected file). `f1`/`salt`/`arxiv`/`ratebeer` are verified to
-reproduce their published databases table-for-table (the latter exercises the #373 column
-drops); the rest are faithful ports of the same logic.
+The Kaggle-gated sources (`event`, `hm`) cannot be downloaded anonymously: place the
+competition zip at `$RELBENCH_RAW_CACHE/<filename>` first (the script's docstring, and the
+error it raises when the file is missing, name the exact path; a download that is not a
+real archive — e.g. a login page — is discarded rather than cached).
+`f1`/`salt`/`arxiv`/`ratebeer` are verified to reproduce their published databases
+table-for-table (the latter exercises the #373 column drops); the rest are faithful ports
+of the same logic.
+
+## Mirroring raw sources
+
+`arxiv.py` and `ratebeer.py` try the `stanford-star/relbench-raw` mirror first and fall
+back to the original Dropbox links. A maintainer uploads the mirror files once, from the
+sha256-verified `db.zip` that `fetch` cached under `$RELBENCH_RAW_CACHE`:
+
+    hf upload stanford-star/relbench-raw <local db.zip> rel-arxiv/db.zip --repo-type dataset
+    hf upload stanford-star/relbench-raw <local db.zip> rel-ratebeer/db.zip --repo-type dataset
+
+Until then the mirror URL 404s and the Dropbox fallback is used.

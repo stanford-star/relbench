@@ -17,6 +17,9 @@ URL = "https://huggingface.co/datasets/stanford-star/relbench-raw/resolve/main/r
 SHA = "ad3bf96f35146d50ef48fa198921685936c49b95c6b67a8a47de53e90036745f"
 # 3 months gap
 VAL_TIMESTAMP, TEST_TIMESTAMP = "2020-10-01", "2021-01-01"
+DESCRIPTION = (
+    "Stack Exchange Q&A: users, posts, comments, votes, badges, and post links."
+)
 
 
 def build(raw) -> dict:
@@ -140,7 +143,14 @@ def build(raw) -> dict:
 
 def main(out="rel-stack") -> None:
     raw = os.path.join(fetch(URL, SHA), "raw")
-    write_hf(out, "rel-stack", VAL_TIMESTAMP, TEST_TIMESTAMP, build(raw))
+    write_hf(
+        out,
+        "rel-stack",
+        VAL_TIMESTAMP,
+        TEST_TIMESTAMP,
+        build(raw),
+        description=DESCRIPTION,
+    )
 
 
 if __name__ == "__main__":

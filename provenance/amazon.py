@@ -24,6 +24,10 @@ REVIEW_URL = f"{URL_PREFIX}/categoryFilesSmall/Books_5.json.gz"
 PRODUCT_SHA = "80ed7ac64f5967a140401e8d7bf0587d2e5087492de9e94077a7f554ef6b18f0"
 REVIEW_SHA = "ded924d1d1a22bae499f1a1c2b39397104304bfdb24232a2dd0aa50e89cd37bb"
 VAL_TIMESTAMP, TEST_TIMESTAMP = "2015-10-01", "2016-01-01"
+DESCRIPTION = (
+    "Amazon product reviews: customers, products, and time-stamped reviews and "
+    "ratings across the Amazon catalog."
+)
 
 # Drop reviews before this date (legacy ``Database.from_`` cutoff).
 FROM_TIMESTAMP = pd.Timestamp("2008-01-01")
@@ -226,6 +230,7 @@ def main(out="rel-amazon") -> None:
         VAL_TIMESTAMP,
         TEST_TIMESTAMP,
         build(product_path, review_path),
+        description=DESCRIPTION,
     )
 
 

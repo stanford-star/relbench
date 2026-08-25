@@ -8,10 +8,11 @@ credentials to download; once you have a Kaggle API key::
 
     kaggle competitions download -c event-recommendation-engine-challenge
 
-place the resulting ``event-recommendation-engine-challenge.zip`` under
-``$RELBENCH_RAW_CACHE`` (default ``~/.cache/relbench-raw``) so ``fetch`` can extract it.
-Produces the Hugging Face layout (manifest.yaml + db/*.parquet) reproducing
-stanford-star/relbench-v1/rel-event.
+place the resulting zip at
+``$RELBENCH_RAW_CACHE/event-recommendation-engine-challenge.zip`` (default
+``~/.cache/relbench-raw/event-recommendation-engine-challenge.zip``); ``fetch`` then uses
+it without downloading. Produces the Hugging Face layout (manifest.yaml + db/*.parquet)
+reproducing stanford-star/relbench-v1/rel-event.
 """
 
 import sys
@@ -24,7 +25,12 @@ URL = (
     "event-recommendation-engine-challenge.zip"
 )
 SHA = None  # Kaggle-gated archive; hash not pinned.
+FILENAME = "event-recommendation-engine-challenge.zip"
 VAL_TIMESTAMP, TEST_TIMESTAMP = "2012-11-21", "2012-11-29"
+DESCRIPTION = (
+    "Event recommendation: users, events, attendance records, and social and "
+    "interest signals."
+)
 
 
 def build(raw) -> dict:
@@ -141,8 +147,15 @@ def build(raw) -> dict:
 
 
 def main(out="rel-event") -> None:
-    raw = fetch(URL, SHA)
-    write_hf(out, "rel-event", VAL_TIMESTAMP, TEST_TIMESTAMP, build(raw))
+    raw = fetch(URL, SHA, filename=FILENAME)
+    write_hf(
+        out,
+        "rel-event",
+        VAL_TIMESTAMP,
+        TEST_TIMESTAMP,
+        build(raw),
+        description=DESCRIPTION,
+    )
 
 
 if __name__ == "__main__":

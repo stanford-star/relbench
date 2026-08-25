@@ -28,6 +28,29 @@ keys, the foreign-key graph, and the time columns. Because that lives in the man
 required. The schema is defined in [`relbench/manifest.py`](../relbench/manifest.py)
 (`DatasetManifest`, `TaskManifest`) — write one by hand or build it programmatically.
 
+## The key contract
+
+RelBench reads `db/*.parquet` as-is, so the keys must already be in the form the hosted
+datasets use:
+
+- every table with a `pkey` holds the integers `0..n-1` in row order (rows of a table
+  with a `time_col` sorted by time first);
+- every `fkeys` column holds those integer row indices of the referenced table, with
+  dangling references stored as null;
+- task label tables use the same integer ids in their entity columns.
+
+`relbench.load_dataset(<folder>).get_db()` raises "not consecutively indexed" otherwise.
+Build your tables with whatever keys you have and normalize once:
+
+```bash
+python byod/reindex_dataset.py <dataset_dir>            # rewrite db/*.parquet in place
+python byod/reindex_dataset.py <dataset_dir> --out <dir> # or write a normalized copy
+```
+
+It maps primary keys to `0..n-1` (time-sorted), rewrites foreign keys to those indices,
+nulls dangling references, and leaves `manifest.yaml` untouched. Generate task labels
+*after* normalizing so their entity ids match.
+
 ## Three kinds of task
 
 A task declares how its labels are produced (`kind` in its `manifest.yaml`):

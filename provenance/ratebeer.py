@@ -2,8 +2,10 @@ r"""Generate the **rel-ratebeer** database from its raw source (RateBeer dump).
 
     python ratebeer.py [OUT_DIR]      # default OUT_DIR: ./rel-ratebeer
 
-Source: a processed RateBeer SQL dump (``db.zip``) hosted on Dropbox. Produces the
-Hugging Face layout (manifest.yaml + db/*.parquet) reproducing stanford-star/relbench-v2-extra/rel-ratebeer.
+Source: a processed RateBeer SQL dump (``db.zip``), mirrored at stanford-star/relbench-raw
+(``rel-ratebeer/db.zip``) with the original Dropbox link as the fallback. Produces the
+Hugging Face layout (manifest.yaml + db/*.parquet) reproducing
+stanford-star/relbench-v2-extra/rel-ratebeer.
 """
 
 import sys
@@ -12,9 +14,15 @@ from typing import Optional
 import pandas as pd
 from _lib import Table, fetch, write_hf
 
-URL = "https://www.dropbox.com/scl/fi/exwygxep7vdvq55uiq28r/db.zip?rlkey=o7q0r8nw758p4wxx1wka9ubuj&st=rg3gvkxg&dl=1"
+URLS = [
+    "https://huggingface.co/datasets/stanford-star/relbench-raw/resolve/main/rel-ratebeer/db.zip",
+    "https://www.dropbox.com/scl/fi/exwygxep7vdvq55uiq28r/db.zip?rlkey=o7q0r8nw758p4wxx1wka9ubuj&st=rg3gvkxg&dl=1",
+]
 SHA = "c3921164da60f8c97e6530d1f2872f7e0d307f8276348106db95c10c2df677ad"
 VAL_TIMESTAMP, TEST_TIMESTAMP = "2018-09-01", "2020-01-01"
+DESCRIPTION = (
+    "RateBeer reviews: users, beers, brewers, places, and time-stamped ratings."
+)
 
 
 def _process_timestamps(
@@ -381,8 +389,15 @@ def build(raw) -> dict:
 
 
 def main(out="rel-ratebeer") -> None:
-    raw = next(fetch(URL, SHA).rglob("beers.csv")).parent
-    write_hf(out, "rel-ratebeer", VAL_TIMESTAMP, TEST_TIMESTAMP, build(raw))
+    raw = next(fetch(URLS, SHA).rglob("beers.csv")).parent
+    write_hf(
+        out,
+        "rel-ratebeer",
+        VAL_TIMESTAMP,
+        TEST_TIMESTAMP,
+        build(raw),
+        description=DESCRIPTION,
+    )
 
 
 if __name__ == "__main__":

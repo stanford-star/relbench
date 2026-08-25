@@ -17,6 +17,10 @@ from _lib import Table, clean_datetime, fetch, write_hf
 URL = "https://huggingface.co/datasets/stanford-star/relbench-raw/resolve/main/rel-avito/rel-avito-raw-100k.zip"
 SHA = "ad4fc1789d8a5073ea449049888c671899525c9a8a42359ca75d1f17d04d7929"
 VAL_TIMESTAMP, TEST_TIMESTAMP = "2015-05-08", "2015-05-14"
+DESCRIPTION = (
+    "Avito online classifieds: users, ads, search queries, and impression / click / "
+    "visit streams."
+)
 FROM_TIMESTAMP = pd.Timestamp("2015-04-25")
 
 
@@ -130,7 +134,14 @@ def build(raw) -> dict:
 
 def main(out="rel-avito") -> None:
     raw = fetch(URL, SHA) / "avito_100k_integ_test"
-    write_hf(out, "rel-avito", VAL_TIMESTAMP, TEST_TIMESTAMP, build(raw))
+    write_hf(
+        out,
+        "rel-avito",
+        VAL_TIMESTAMP,
+        TEST_TIMESTAMP,
+        build(raw),
+        description=DESCRIPTION,
+    )
 
 
 if __name__ == "__main__":

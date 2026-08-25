@@ -3,8 +3,10 @@ categories, and citations).
 
     python arxiv.py [OUT_DIR]      # default OUT_DIR: ./rel-arxiv
 
-Source: a static snapshot of the arXiv relational data, hosted on Dropbox. Produces the
-Hugging Face layout (manifest.yaml + db/*.parquet) reproducing stanford-star/relbench-v2-extra/rel-arxiv.
+Source: a static snapshot of the arXiv relational data (``db.zip``), mirrored at
+stanford-star/relbench-raw (``rel-arxiv/db.zip``) with the original Dropbox link as the
+fallback. Produces the Hugging Face layout (manifest.yaml + db/*.parquet) reproducing
+stanford-star/relbench-v2-extra/rel-arxiv.
 """
 
 import sys
@@ -13,12 +15,15 @@ import pandas as pd
 from _lib import Table, fetch, write_hf
 from sklearn.preprocessing import LabelEncoder
 
-URL = (
-    "https://www.dropbox.com/scl/fi/tjj6r1fqikt4j0rz4qomu/db.zip?rlkey=1ykfkp8pj3hu6n4utz8g9dkx2&st"
-    "=azmm56dc&dl=1"
-)
+URLS = [
+    "https://huggingface.co/datasets/stanford-star/relbench-raw/resolve/main/rel-arxiv/db.zip",
+    "https://www.dropbox.com/scl/fi/tjj6r1fqikt4j0rz4qomu/db.zip?rlkey=1ykfkp8pj3hu6n4utz8g9dkx2&st=azmm56dc&dl=1",
+]
 SHA = "ff9e03e467e28df959d08c79c453db1f31b525f07ff3c0e0b5e571e732acc63f"
 VAL_TIMESTAMP, TEST_TIMESTAMP = "2022-01-01", "2023-01-01"
+DESCRIPTION = (
+    "arXiv scholarly papers: papers, authors, citations, and subject categories."
+)
 
 
 def build(raw) -> dict:
@@ -97,8 +102,15 @@ def build(raw) -> dict:
 
 
 def main(out="rel-arxiv") -> None:
-    raw = next(p for p in fetch(URL, SHA).rglob("1Paper.csv")).parent
-    write_hf(out, "rel-arxiv", VAL_TIMESTAMP, TEST_TIMESTAMP, build(raw))
+    raw = next(p for p in fetch(URLS, SHA).rglob("1Paper.csv")).parent
+    write_hf(
+        out,
+        "rel-arxiv",
+        VAL_TIMESTAMP,
+        TEST_TIMESTAMP,
+        build(raw),
+        description=DESCRIPTION,
+    )
 
 
 if __name__ == "__main__":

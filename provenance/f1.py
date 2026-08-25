@@ -15,6 +15,10 @@ from _lib import Table, fetch, write_hf
 URL = "https://huggingface.co/datasets/stanford-star/relbench-raw/resolve/main/rel-f1/relbench-f1-raw.zip"
 SHA = "2933348953b30aa9723b4831fea8071b336b74977bbcf1fb059da63a04f06eba"
 VAL_TIMESTAMP, TEST_TIMESTAMP = "2005-01-01", "2010-01-01"
+DESCRIPTION = (
+    "Formula 1 motorsport database: races, drivers, constructors, circuits, race "
+    "results, qualifying, and championship standings."
+)
 
 
 def build(raw) -> dict:
@@ -144,7 +148,14 @@ def build(raw) -> dict:
 
 def main(out="rel-f1") -> None:
     raw = fetch(URL, SHA) / "raw"
-    write_hf(out, "rel-f1", VAL_TIMESTAMP, TEST_TIMESTAMP, build(raw))
+    write_hf(
+        out,
+        "rel-f1",
+        VAL_TIMESTAMP,
+        TEST_TIMESTAMP,
+        build(raw),
+        description=DESCRIPTION,
+    )
 
 
 if __name__ == "__main__":
