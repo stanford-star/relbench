@@ -58,15 +58,15 @@ def check_provenance(dataset: str) -> bool:
     ok_all, checked = True, 0
     ds = load_dataset(dataset)
     for name in ds.get_task_names():
-        regen = ds.load_task(name, regenerate=True)
-        if not getattr(regen, "_sql", None):
+        cached = ds.load_task(name, regenerate=False)
+        if getattr(cached, "kind", None) != "forecast":
             continue  # only forecast tasks carry regenerating SQL; nothing to check
+        regen = ds.load_task(name, regenerate=True)
         # `get_db` is uncached by design: build this task's full database once and hand
         # it to all three splits, instead of rebuilding it per split. It has to be the
         # task's own view (its `remove_columns` applied), so it cannot be shared across
         # tasks; `get_table` slices it per split.
         db = regen.get_db(upto_test_timestamp=False)
-        cached = ds.load_task(name, regenerate=False)
         keys, target, is_list = _keys_target(regen)
         for split in SPLITS:
             r = regen.get_table(split, mask_input_cols=False, db=db).df
