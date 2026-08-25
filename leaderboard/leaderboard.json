@@ -229,6 +229,32 @@
   }
  },
  {
+  "name": "Global Zero",
+  "in_context": true,
+  "url": "https://star-project.stanford.edu/relbench",
+  "note": "RelBench baseline",
+  "date": "2026-08-25T03:13:41Z",
+  "author": "rishabh-ranjan",
+  "issue": 387,
+  "boards": {
+   "regression": {
+    "results": {
+     "rel-amazon/user-ltv": 0.2918515308729758,
+     "rel-amazon/item-ltv": 0.13051803409893026,
+     "rel-avito/ad-ctr": 0.5457004081414014,
+     "rel-event/user-attendance": 0.34442011252718346,
+     "rel-f1/driver-position": 1.6975032510530375,
+     "rel-hm/item-sales": 0.15361148606895705,
+     "rel-stack/post-votes": 0.13303310099479038,
+     "rel-trial/study-adverse": 0.17083007461007554,
+     "rel-trial/site-success": 0.9713336052031721
+    },
+    "mean": 0.4932001781745027,
+    "cov": 1.0
+   }
+  }
+ },
+ {
   "name": "ID-GNN",
   "in_context": false,
   "url": "https://star-project.stanford.edu/relbench",
