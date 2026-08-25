@@ -67,9 +67,8 @@ seed_everything(args.seed)
 dataset: Dataset = load_dataset(args.dataset)
 task: EntityTask = dataset.load_task(args.task)
 
-# Materialize the database once and reuse it: `get_db` is uncached, and this is
-# the task's view of it (the columns the task must not see are already dropped).
-db = task.get_db()
+# Dataset-level db: one cache per dataset; hidden columns are dropped after loading.
+db = dataset.get_db()
 
 stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
 try:
@@ -92,6 +91,7 @@ data, col_stats_dict = make_pkey_fkey_graph(
         text_embedder=GloveTextEmbedding(device="cpu"), batch_size=256
     ),
     cache_dir=f"{args.cache_dir}/{args.dataset}/materialized",
+    remove_columns=task.hidden_columns(),
 )
 
 clamp_min, clamp_max = None, None

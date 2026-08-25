@@ -73,9 +73,8 @@ task: RecommendationTask = dataset.load_task(args.task)
 tune_metric = "map"
 assert task.task_type == TaskType.RECOMMENDATION
 
-# Materialize the database once and reuse it: `get_db` is uncached, and this is the
-# task's view of it (the columns the task must not see are already dropped).
-db = task.get_db()
+# Dataset-level db: one cache per dataset; hidden columns are dropped after loading.
+db = dataset.get_db()
 n_dst_nodes = num_dst_nodes(db, task)
 
 stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
@@ -98,6 +97,7 @@ data, col_stats_dict = make_pkey_fkey_graph(
         text_embedder=GloveTextEmbedding(device="cpu"), batch_size=256
     ),
     cache_dir=f"{args.cache_dir}/{args.dataset}/materialized",
+    remove_columns=task.hidden_columns(),
 )
 
 num_neighbors = [int(args.num_neighbors // 2**i) for i in range(args.num_layers)]

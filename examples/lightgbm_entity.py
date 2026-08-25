@@ -43,8 +43,7 @@ seed_everything(args.seed)
 dataset: Dataset = load_dataset(args.dataset)
 task: EntityTask = dataset.load_task(args.task)
 
-# Materialize the database once and reuse it: `get_db` is uncached, and this is
-# the task's view of it (the columns the task must not see are already dropped).
+# Features come from the task's view of the db; the stype cache is built per dataset.
 db = task.get_db()
 
 train_table = task.get_table("train")
@@ -64,10 +63,12 @@ try:
         for col, stype_str in col_to_stype.items():
             col_to_stype[col] = stype(stype_str)
 except FileNotFoundError:
-    col_to_stype_dict = get_stype_proposal(db)
+    col_to_stype_dict = get_stype_proposal(dataset.get_db())
     Path(stypes_cache_path).parent.mkdir(parents=True, exist_ok=True)
     with open(stypes_cache_path, "w") as f:
         json.dump(col_to_stype_dict, f, indent=2, default=str)
+for table, col in task.hidden_columns():
+    col_to_stype_dict.get(table, {}).pop(col, None)
 
 col_to_stype = col_to_stype_dict[task.entity_table]
 remove_pkey_fkey(col_to_stype, entity_table)

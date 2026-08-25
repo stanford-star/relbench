@@ -91,9 +91,8 @@ def evaluate(
     pred_table: Table,
     name: str,
 ) -> Dict[str, float]:
-    is_test = task.dst_entity_col not in pred_table.df
     pred = predict(train_table, pred_table, name)
-    return task.evaluate(pred, None if is_test else pred_table)
+    return task.evaluate(pred, pred_table)
 
 
 eval_name_list = ["past_visit", "global_popularity"]

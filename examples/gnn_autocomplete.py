@@ -58,13 +58,12 @@ dataset = load_dataset(args.dataset)
 
 task: EntityTask = dataset.load_task(args.task)
 
-# Materialize the database once and reuse it: `get_db` is uncached, and this is
-# the task's view of it (the columns the task must not see are already dropped).
-db = task.get_db(upto_test_timestamp=False)
+# Dataset-level db: one cache per dataset; hidden columns are dropped after loading.
+# Autocomplete keeps the rows after test_timestamp (they are the test entities), so
+# this is the full database, cached apart from the upto-test one.
+db = dataset.get_db(upto_test_timestamp=False)
 
-stypes_cache_path = Path(
-    f"{args.cache_dir}/{args.dataset}/tasks/{args.task}/stypes.json"
-)
+stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
 try:
     with open(stypes_cache_path, "r") as f:
         col_to_stype_dict = json.load(f)
@@ -77,22 +76,14 @@ except FileNotFoundError:
     with open(stypes_cache_path, "w") as f:
         json.dump(col_to_stype_dict, f, indent=2, default=str)
 
-# Remove the target column from the col_to_stype_dict if it exists
-if task.target_col in col_to_stype_dict[task.entity_table]:
-    del col_to_stype_dict[task.entity_table][task.target_col]
-for table, col in task.remove_columns:
-    if col in col_to_stype_dict.get(table, {}):
-        del col_to_stype_dict[table][col]
-
 data, col_stats_dict = make_pkey_fkey_graph(
-    # NOTE: Important!: Do not use `upto_test_timestamp=True` here, as this will
-    # cause task rows with timestamps after the test timestamp to dangle.
     db,
     col_to_stype_dict=col_to_stype_dict,
     text_embedder_cfg=TextEmbedderConfig(
         text_embedder=GloveTextEmbedding(device="cpu"), batch_size=256
     ),
-    cache_dir=f"{args.cache_dir}/{args.dataset}/tasks/{args.task}/materialized",
+    cache_dir=f"{args.cache_dir}/{args.dataset}/materialized_full",
+    remove_columns=task.hidden_columns(),
 )
 
 clamp_min, clamp_max = None, None

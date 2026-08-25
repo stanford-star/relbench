@@ -66,9 +66,8 @@ seed_everything(args.seed)
 dataset: Dataset = load_dataset(args.dataset)
 task: EntityTask = dataset.load_task(args.task)
 
-# Materialize the database once and reuse it: `get_db` is uncached, and this is the
-# task's view of it (the columns the task must not see are already dropped).
-db = task.get_db()
+# Dataset-level db: one cache per dataset; hidden columns are dropped after loading.
+db = dataset.get_db()
 
 stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
 try:
@@ -85,13 +84,13 @@ except FileNotFoundError:
 
 if args.include_task_tables == "all":
     tasks_to_add = dataset.get_task_names()
-    cache_name = f"{args.dataset}_all"
+    cache_name = "materialized_all"
 elif args.include_task_tables == "current_only":
     tasks_to_add = [args.task]
-    cache_name = f"{args.dataset}_{args.task}"
+    cache_name = f"materialized_{args.task}"
 else:
     tasks_to_add = []
-    cache_name = args.dataset
+    cache_name = "materialized"
 
 
 # add (time-censored) labels tables to the db
@@ -128,7 +127,8 @@ data, col_stats_dict = make_pkey_fkey_graph(
     text_embedder_cfg=TextEmbedderConfig(
         text_embedder=GloveTextEmbedding(device="cpu"), batch_size=256
     ),
-    cache_dir=f"{args.cache_dir}/{cache_name}/materialized",
+    cache_dir=f"{args.cache_dir}/{args.dataset}/{cache_name}",
+    remove_columns=task.hidden_columns(),
 )
 
 clamp_min, clamp_max = None, None

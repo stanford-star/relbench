@@ -5,7 +5,7 @@ import math
 import os
 import warnings
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict
 
 import numpy as np
 import torch
@@ -17,7 +17,6 @@ from torch_frame import stype
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_geometric.loader import NeighborLoader
 from torch_geometric.seed import seed_everything
-from torch_geometric.typing import NodeType
 from tqdm import tqdm
 
 from relbench import load_dataset
@@ -61,9 +60,8 @@ seed_everything(args.seed)
 dataset: Dataset = load_dataset(args.dataset)
 task: RecommendationTask = dataset.load_task(args.task)
 
-# Materialize the database once and reuse it: `get_db` is uncached, and this is
-# the task's view of it (the columns the task must not see are already dropped).
-db = task.get_db()
+# Dataset-level db: one cache per dataset; hidden columns are dropped after loading.
+db = dataset.get_db()
 n_dst_nodes = num_dst_nodes(db, task)
 tune_metric = "map"
 assert task.task_type == TaskType.RECOMMENDATION
@@ -88,6 +86,7 @@ data, col_stats_dict = make_pkey_fkey_graph(
         text_embedder=GloveTextEmbedding(device="cpu"), batch_size=256
     ),
     cache_dir=f"{args.cache_dir}/{args.dataset}/materialized",
+    remove_columns=task.hidden_columns(),
 )
 
 num_neighbors = [int(args.num_neighbors // 2**i) for i in range(args.num_layers)]
@@ -95,11 +94,11 @@ num_neighbors = [int(args.num_neighbors // 2**i) for i in range(args.num_layers)
 val_table = task.get_table("val")  # hoisted: get_table is uncached
 
 loader_dict: Dict[str, NeighborLoader] = {}
-dst_nodes_dict: Dict[str, Tuple[NodeType, Tensor]] = {}
 for split in ["train", "val", "test"]:
     table = task.get_table(split)
     table_input = get_link_train_table_input(table, task, n_dst_nodes)
-    dst_nodes_dict[split] = table_input.dst_nodes
+    if split == "train":
+        train_dst_nodes = table_input.dst_nodes[1]
     loader_dict[split] = NeighborLoader(
         data,
         num_neighbors=num_neighbors,
@@ -126,7 +125,7 @@ model = Model(
 ).to(device)
 
 optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-train_sparse_tensor = SparseTensor(dst_nodes_dict["train"][1], device=device)
+train_sparse_tensor = SparseTensor(train_dst_nodes, device=device)
 
 
 def train() -> float:

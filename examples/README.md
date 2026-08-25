@@ -26,14 +26,21 @@ that `python -m relbench.submit <pred_dir>` validates and packages for the leade
 pixi run -e gpu python examples/gnn_entity.py --dataset rel-f1 --task driver-position
 ```
 
-Outside pixi: `pip install "relbench[example]"`, plus `pyg-lib` from
-https://data.pyg.org/whl/ (matching your torch/CUDA build) for the GNN scripts, then
-run with plain `python`.
+Outside pixi, install the same extras and run with plain `python`:
+
+```bash
+pip install "relbench[example]"  # + PyTorch Geometric & PyTorch Frame, for the GNN examples
+pip install pyg-lib -f https://data.pyg.org/whl/torch-2.9.0+cpu.html  # neighbor sampling; use the index matching your torch/CUDA build
+```
 
 ## Common flags
 
 - `--dataset`, `--task`: a RelBench dataset and one of its tasks; the leaderboard
   tasks are listed in `relbench/submit.py::LEADERBOARD_TASKS`.
 - `--cache_dir` (default `~/.cache/relbench_examples`): stype proposals and materialized
-  graphs, keyed per dataset (GNN and LightGBM scripts).
-- `--pred_dir` (default `/tmp/relbench_preds`): where the prediction CSV is written.
+  graphs (GNN and LightGBM scripts). Caches live under `{cache_dir}/{dataset}/` and are
+  built from the dataset-level database, so every task on a dataset shares them; a
+  task's hidden columns are dropped after loading. The autocomplete scripts keep the
+  rows after `test_timestamp` and use `materialized_full/` next to `materialized/`.
+- `--pred_dir` (default `/tmp/relbench_preds`): where the prediction CSV
+  `<dataset>__<task>.csv` is written; pass it to `python -m relbench.submit`.

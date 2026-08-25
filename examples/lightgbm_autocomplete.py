@@ -45,8 +45,7 @@ dataset = load_dataset(args.dataset)
 
 task: EntityTask = dataset.load_task(args.task)
 
-# Materialize the database once and reuse it: `get_db` is uncached, and this is
-# the task's view of it (the columns the task must not see are already dropped).
+# Features come from the task's view of the db; the stype cache is built per dataset.
 db = task.get_db(upto_test_timestamp=False)
 
 train_table = task.get_table("train")
@@ -58,9 +57,7 @@ dfs: Dict[str, pd.DataFrame] = {}
 entity_table = db.table_dict[task.entity_table]
 entity_df = entity_table.df
 
-stypes_cache_path = Path(
-    f"{args.cache_dir}/{args.dataset}/tasks/{args.task}/stypes.json"
-)
+stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
 try:
     with open(stypes_cache_path, "r") as f:
         col_to_stype_dict = json.load(f)
@@ -68,16 +65,15 @@ try:
         for col, stype_str in col_to_stype.items():
             col_to_stype[col] = stype(stype_str)
 except FileNotFoundError:
-    col_to_stype_dict = get_stype_proposal(db)
+    col_to_stype_dict = get_stype_proposal(dataset.get_db())
     Path(stypes_cache_path).parent.mkdir(parents=True, exist_ok=True)
     with open(stypes_cache_path, "w") as f:
         json.dump(col_to_stype_dict, f, indent=2, default=str)
+for table, col in task.hidden_columns():
+    col_to_stype_dict.get(table, {}).pop(col, None)
 
 col_to_stype = col_to_stype_dict[task.entity_table]
 remove_pkey_fkey(col_to_stype, entity_table)
-for table, col in task.remove_columns:
-    if table == task.entity_table and col in col_to_stype:
-        del col_to_stype[col]
 
 if task.task_type == TaskType.BINARY_CLASSIFICATION:
     col_to_stype[task.target_col] = torch_frame.categorical
