@@ -53,7 +53,7 @@ def build(raw) -> dict:
     return {
         "papers": Table(
             df=pd.DataFrame(papers),
-            fkey_col_to_pkey_table={},
+            fkey_col_to_pkey_table={"Primary_Category_ID": "categories"},
             pkey_col="Paper_ID",
             time_col="Submission_Date",
         ),
