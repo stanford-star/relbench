@@ -15,6 +15,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stack")
 parser.add_argument("--task", type=str, default="user-post-comment")
 parser.add_argument("--seed", type=int, default=42)
+parser.add_argument("--pred_dir", type=str, default="/tmp/relbench_preds")
 args = parser.parse_args()
 
 
@@ -81,7 +82,7 @@ def predict(
             topk.extend([-1] * (task.eval_k - len(topk)))
         pred = np.tile(np.array(topk), (len(pred_table), 1))
     else:
-        raise ValueError("Unknown eval name called {name}.")
+        raise ValueError(f"Unknown eval name called {name}.")
     return pred
 
 
@@ -100,8 +101,8 @@ for name in eval_name_list:
     train_metrics = evaluate(train_table, train_table, name=name)
     val_metrics = evaluate(train_table, val_table, name=name)
     test_pred = predict(trainval_table, test_table, name=name)
-    os.makedirs("/tmp/relbench_preds", exist_ok=True)
-    pred_path = f"/tmp/relbench_preds/{args.dataset}__{args.task}.csv"
+    os.makedirs(args.pred_dir, exist_ok=True)
+    pred_path = os.path.join(args.pred_dir, f"{args.dataset}__{args.task}.csv")
     write_prediction_table(task, test_pred, pred_path)
     test_metrics = evaluate_task(f"{args.dataset}/{args.task}", pred_path)
     print(f"{name}:")

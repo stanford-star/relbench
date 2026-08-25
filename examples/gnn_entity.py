@@ -3,7 +3,6 @@ import copy
 import json
 import math
 import os
-import sys
 from pathlib import Path
 from typing import Dict
 
@@ -11,9 +10,8 @@ import numpy as np
 import pandas as pd
 import torch
 from model import Model
-from sklearn.preprocessing import LabelEncoder
 from text_embedder import GloveTextEmbedding
-from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, L1Loss
+from torch.nn import BCEWithLogitsLoss, L1Loss
 from torch_frame import stype
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_geometric.loader import NeighborLoader
@@ -43,7 +41,6 @@ parser.add_argument("--temporal_strategy", type=str, default="uniform")
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 parser.add_argument("--num_workers", type=int, default=0)
 parser.add_argument("--seed", type=int, default=42)
-parser.add_argument("--download", action=argparse.BooleanOptionalAction, default=True)
 parser.add_argument(
     "--include_task_tables",
     type=str,
@@ -57,6 +54,7 @@ parser.add_argument(
     type=str,
     default=os.path.expanduser("~/.cache/relbench_examples"),
 )
+parser.add_argument("--pred_dir", type=str, default="/tmp/relbench_preds")
 args = parser.parse_args()
 
 
@@ -65,16 +63,8 @@ if torch.cuda.is_available():
     torch.set_num_threads(1)
 seed_everything(args.seed)
 
-try:
-    dataset: Dataset = load_dataset(args.dataset)
-    task: EntityTask = dataset.load_task(args.task)
-except Exception:
-    if bool(args.download):
-        print(
-            "Download failed. If you already have the dataset cached, re-run with --no-download.",
-            file=sys.stderr,
-        )
-    raise
+dataset: Dataset = load_dataset(args.dataset)
+task: EntityTask = dataset.load_task(args.task)
 
 # Materialize the database once and reuse it: `get_db` is uncached, and this is the
 # task's view of it (the columns the task must not see are already dropped).
@@ -95,10 +85,13 @@ except FileNotFoundError:
 
 if args.include_task_tables == "all":
     tasks_to_add = dataset.get_task_names()
+    cache_name = f"{args.dataset}_all"
 elif args.include_task_tables == "current_only":
     tasks_to_add = [args.task]
+    cache_name = f"{args.dataset}_{args.task}"
 else:
     tasks_to_add = []
+    cache_name = args.dataset
 
 
 # add (time-censored) labels tables to the db
@@ -129,18 +122,13 @@ for task_name in tasks_to_add:
         t.target_col: stype.numerical,
     }
 
-cache_name = (
-    args.include_task_tables
-    if args.include_task_tables != "current_only"
-    else args.task
-)
 data, col_stats_dict = make_pkey_fkey_graph(
     db,
     col_to_stype_dict=col_to_stype_dict,
     text_embedder_cfg=TextEmbedderConfig(
         text_embedder=GloveTextEmbedding(device="cpu"), batch_size=256
     ),
-    cache_dir=f"{args.cache_dir}/{args.dataset}_{cache_name}/materialized",
+    cache_dir=f"{args.cache_dir}/{cache_name}/materialized",
 )
 
 clamp_min, clamp_max = None, None
@@ -272,8 +260,8 @@ val_metrics = task.evaluate(val_pred, val_table)
 print(f"Best Val metrics: {val_metrics}")
 
 test_pred = test(loader_dict["test"])
-os.makedirs("/tmp/relbench_preds", exist_ok=True)
-pred_path = f"/tmp/relbench_preds/{args.dataset}__{args.task}.csv"
+os.makedirs(args.pred_dir, exist_ok=True)
+pred_path = os.path.join(args.pred_dir, f"{args.dataset}__{args.task}.csv")
 write_prediction_table(task, test_pred, pred_path)
 test_metrics = evaluate_task(f"{args.dataset}/{args.task}", pred_path)
 print(f"Best test metrics: {test_metrics}")

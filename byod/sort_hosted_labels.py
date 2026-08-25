@@ -19,6 +19,7 @@ Usage::
 
 import argparse
 import sys
+import tempfile
 from pathlib import Path
 
 import numpy as np
@@ -59,7 +60,6 @@ def main() -> None:
     print(f"{args.repo}: {len(task_manifests)} tasks", flush=True)
 
     changed, checked = [], 0
-    local = None
     for mpath in task_manifests:
         tdir = mpath.rsplit("/", 1)[0]  # "<dataset>/tasks/<task>"
         local = Path(
@@ -96,7 +96,7 @@ def main() -> None:
                 .reset_index(drop=True)[key]
                 .equals(out[key])
             ), rel
-            changed.append((rel, len(df), path, out))
+            changed.append((rel, len(df), out))
             print(f"  REORDER {rel:<60} rows={len(df)}", flush=True)
 
     print(f"\n{len(changed)} of {checked} label files need reordering")
@@ -106,17 +106,20 @@ def main() -> None:
         print("dry run -- pass --push to upload")
         return
 
-    for rel, _, path, out in changed:
-        out.to_parquet(path, index=False)
-    api.upload_folder(
-        repo_id=args.repo,
-        repo_type="dataset",
-        folder_path=str(local),
-        allow_patterns=[rel for rel, *_ in changed],
-        commit_message=(
-            "Write task labels in canonical sorted order (row reorder only)"
-        ),
-    )
+    with tempfile.TemporaryDirectory() as tmp:
+        for rel, _, out in changed:
+            dst = Path(tmp) / rel
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            out.to_parquet(dst, index=False)
+        api.upload_folder(
+            repo_id=args.repo,
+            repo_type="dataset",
+            folder_path=tmp,
+            allow_patterns=[rel for rel, *_ in changed],
+            commit_message=(
+                "Write task labels in canonical sorted order (row reorder only)"
+            ),
+        )
     print(f"pushed {len(changed)} files to {args.repo}", flush=True)
 
 

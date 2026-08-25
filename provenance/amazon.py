@@ -166,8 +166,8 @@ def build(product_path, review_path) -> dict:
     print("keeping only products common to product and review tables...")
     tic = time.time()
     plist = list(set(pdf["product_id"]) & set(rdf["product_id"]))
-    pdf.query("product_id == @plist", inplace=True)
-    rdf.query("product_id == @plist", inplace=True)
+    pdf = pdf[pdf["product_id"].isin(plist)]
+    rdf = rdf[rdf["product_id"].isin(plist)]
     toc = time.time()
     print(f"done in {toc - tic:.2f} seconds.")
 

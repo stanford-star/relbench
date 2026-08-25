@@ -3,6 +3,7 @@ import copy
 import json
 import math
 import os
+import warnings
 from pathlib import Path
 from typing import Dict
 
@@ -55,6 +56,7 @@ parser.add_argument(
     type=str,
     default=os.path.expanduser("~/.cache/relbench_examples"),
 )
+parser.add_argument("--pred_dir", type=str, default="/tmp/relbench_preds")
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -66,7 +68,7 @@ dataset: Dataset = load_dataset(args.dataset)
 task: EntityTask = dataset.load_task(args.task)
 
 # Materialize the database once and reuse it: `get_db` is uncached, and this is
-# the task\'s view of it (the columns the task must not see are already dropped).
+# the task's view of it (the columns the task must not see are already dropped).
 db = task.get_db()
 
 stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
@@ -265,7 +267,7 @@ if os.path.exists(STATE_DICT_PTH) and args.attempt_load_state_dict:
 else:
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     state_dict = None
-    best_val_metric = 0 if higher_is_better else math.inf
+    best_val_metric = -math.inf if higher_is_better else math.inf
     for epoch in range(1, args.epochs + 1):
         train_loss = train()
         val_pred = test(loader_dict["val"])
@@ -274,14 +276,15 @@ else:
             f"Epoch: {epoch:02d}, Train loss: {train_loss}, Val metrics: {val_metrics}"
         )
 
-        if (higher_is_better and val_metrics[tune_metric] > best_val_metric) or (
-            not higher_is_better and val_metrics[tune_metric] < best_val_metric
+        if (higher_is_better and val_metrics[tune_metric] >= best_val_metric) or (
+            not higher_is_better and val_metrics[tune_metric] <= best_val_metric
         ):
             best_val_metric = val_metrics[tune_metric]
             state_dict = copy.deepcopy(model.state_dict())
 
     # save state dict
-    if args.attempt_load_state_dict:
+    if args.attempt_load_state_dict and state_dict is not None:
+        os.makedirs(os.path.dirname(STATE_DICT_PTH), exist_ok=True)
         torch.save(state_dict, STATE_DICT_PTH)
 
 
@@ -291,14 +294,19 @@ test_pred_accum = 0
 print("=====================")
 print("GNN model performance")
 print("=====================")
-model.load_state_dict(state_dict)
+if state_dict is not None:
+    model.load_state_dict(state_dict)
+else:
+    warnings.warn(
+        "No best checkpoint was selected (state_dict is None); evaluating with current model weights."
+    )
 val_pred = test(loader_dict["val"])
 val_metrics = task.evaluate(val_pred, val_table)
 print(f"Best Val metrics: {val_metrics}")
 
 test_pred = test(loader_dict["test"])
-os.makedirs("/tmp/relbench_preds", exist_ok=True)
-pred_path = f"/tmp/relbench_preds/{args.dataset}__{args.task}.csv"
+os.makedirs(args.pred_dir, exist_ok=True)
+pred_path = os.path.join(args.pred_dir, f"{args.dataset}__{args.task}.csv")
 write_prediction_table(task, test_pred, pred_path)
 test_metrics = evaluate_task(f"{args.dataset}/{args.task}", pred_path)
 print(f"Best test metrics: {test_metrics}")
@@ -361,8 +369,8 @@ val_metrics = task.evaluate(pred, val_table)
 print(f"LightGBM Val metrics: {val_metrics}")
 
 test_pred = lgbm_model.predict(tf_test).numpy()
-os.makedirs("/tmp/relbench_preds", exist_ok=True)
-pred_path = f"/tmp/relbench_preds/{args.dataset}__{args.task}.csv"
+os.makedirs(args.pred_dir, exist_ok=True)
+pred_path = os.path.join(args.pred_dir, f"{args.dataset}__{args.task}.csv")
 write_prediction_table(task, test_pred, pred_path)
 test_metrics = evaluate_task(f"{args.dataset}/{args.task}", pred_path)
 print(f"LightGBM Best Test metrics: {test_metrics}")

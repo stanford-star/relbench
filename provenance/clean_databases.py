@@ -1,7 +1,7 @@
 r"""Clean published RelBench databases: drop noise / leakage columns and refresh schemas.
 
 This is the reproducible record (provenance) of a one-off cleanup applied to the hosted
-databases in response to https://github.com/snap-stanford/relbench/issues/373. It removes,
+databases in response to https://github.com/stanford-star/relbench/issues/373. It removes,
 per the categories below, only columns that are *not* used by any task and are *not*
 keys/time columns -- so labels and the foreign-key graph are untouched (verify with
 ``python provenance/check_provenance.py <dataset>``). It then re-renders each affected

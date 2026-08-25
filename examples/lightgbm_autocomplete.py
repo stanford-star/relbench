@@ -4,11 +4,8 @@ import os
 from pathlib import Path
 from typing import Dict
 
-os.environ["OMP_NUM_THREADS"] = "8"
-
 import numpy as np
 import pandas as pd
-import torch
 import torch_frame
 from text_embedder import GloveTextEmbedding
 from torch_frame import stype
@@ -39,11 +36,9 @@ parser.add_argument(
     default=os.path.expanduser("~/.cache/relbench_examples"),
 )
 parser.add_argument("--left_join_fkey", action="store_true", default=False)
+parser.add_argument("--pred_dir", type=str, default="/tmp/relbench_preds")
 args = parser.parse_args()
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-if torch.cuda.is_available():
-    torch.set_num_threads(1)
 seed_everything(args.seed)
 
 dataset = load_dataset(args.dataset)
@@ -51,7 +46,7 @@ dataset = load_dataset(args.dataset)
 task: EntityTask = dataset.load_task(args.task)
 
 # Materialize the database once and reuse it: `get_db` is uncached, and this is
-# the task\'s view of it (the columns the task must not see are already dropped).
+# the task's view of it (the columns the task must not see are already dropped).
 db = task.get_db(upto_test_timestamp=False)
 
 train_table = task.get_table("train")
@@ -188,13 +183,10 @@ pred = model.predict(tf_test=tf_val).cpu().numpy()
 val_metrics = task.evaluate(pred, val_table)
 
 pred = model.predict(tf_test=tf_test).cpu().numpy()
-if task.task_type in (TaskType.BINARY_CLASSIFICATION, TaskType.REGRESSION):
-    os.makedirs("/tmp/relbench_preds", exist_ok=True)
-    pred_path = f"/tmp/relbench_preds/{args.dataset}__{args.task}.csv"
-    write_prediction_table(task, pred, pred_path)
-    test_metrics = evaluate_task(f"{args.dataset}/{args.task}", pred_path)
-else:
-    test_metrics = task.evaluate(pred)
+os.makedirs(args.pred_dir, exist_ok=True)
+pred_path = os.path.join(args.pred_dir, f"{args.dataset}__{args.task}.csv")
+write_prediction_table(task, pred, pred_path)
+test_metrics = evaluate_task(f"{args.dataset}/{args.task}", pred_path)
 
 print(f"Train: {train_metrics}")
 print(f"Val: {val_metrics}")

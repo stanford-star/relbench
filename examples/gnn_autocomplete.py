@@ -10,7 +10,7 @@ import numpy as np
 import torch
 from model import Model
 from text_embedder import GloveTextEmbedding
-from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, L1Loss
+from torch.nn import BCEWithLogitsLoss, L1Loss
 from torch_frame import stype
 from torch_frame.config.text_embedder import TextEmbedderConfig
 from torch_geometric.loader import NeighborLoader
@@ -26,13 +26,6 @@ from relbench.submit import evaluate_task, write_prediction_table
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-f1")
 parser.add_argument("--task", type=str, default="results-position")
-
-parser.add_argument(
-    "--task_type",
-    type=str,
-    default="REGRESSION",
-    choices=["BINARY_CLASSIFICATION", "REGRESSION"],
-)
 parser.add_argument("--lr", type=float, default=0.005)
 parser.add_argument("--epochs", type=int, default=10)
 parser.add_argument("--batch_size", type=int, default=512)
@@ -50,6 +43,7 @@ parser.add_argument(
     type=str,
     default=os.path.expanduser("~/.cache/relbench_examples"),
 )
+parser.add_argument("--pred_dir", type=str, default="/tmp/relbench_preds")
 args = parser.parse_args()
 
 
@@ -65,7 +59,7 @@ dataset = load_dataset(args.dataset)
 task: EntityTask = dataset.load_task(args.task)
 
 # Materialize the database once and reuse it: `get_db` is uncached, and this is
-# the task\'s view of it (the columns the task must not see are already dropped).
+# the task's view of it (the columns the task must not see are already dropped).
 db = task.get_db(upto_test_timestamp=False)
 
 stypes_cache_path = Path(
@@ -228,11 +222,8 @@ val_metrics = task.evaluate(val_pred, val_table)
 print(f"Best Val metrics: {val_metrics}")
 
 test_pred = test(loader_dict["test"])
-if task.task_type in (TaskType.BINARY_CLASSIFICATION, TaskType.REGRESSION):
-    os.makedirs("/tmp/relbench_preds", exist_ok=True)
-    pred_path = f"/tmp/relbench_preds/{args.dataset}__{args.task}.csv"
-    write_prediction_table(task, test_pred, pred_path)
-    test_metrics = evaluate_task(f"{args.dataset}/{args.task}", pred_path)
-else:
-    test_metrics = task.evaluate(test_pred)
+os.makedirs(args.pred_dir, exist_ok=True)
+pred_path = os.path.join(args.pred_dir, f"{args.dataset}__{args.task}.csv")
+write_prediction_table(task, test_pred, pred_path)
+test_metrics = evaluate_task(f"{args.dataset}/{args.task}", pred_path)
 print(f"Best test metrics: {test_metrics}")

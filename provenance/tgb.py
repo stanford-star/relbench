@@ -1,4 +1,4 @@
-r"""Generate the **relbench/tgb** database family from the Temporal Graph Benchmark.
+r"""Generate the **stanford-star/tgb** database family from the Temporal Graph Benchmark.
 
     python tgb.py DATASET [OUT_DIR]   # one dataset (default OUT_DIR: ./DATASET)
     python tgb.py --all  [OUT_ROOT]   # the whole collection (default OUT_ROOT: ./tgb)

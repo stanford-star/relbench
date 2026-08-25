@@ -34,7 +34,7 @@ A task declares how its labels are produced (`kind` in its `manifest.yaml`):
 
 | kind | labels are… | example |
 |---|---|---|
-| `forecast` | computed by a SQL query over the database — **regenerable**, and CI-checked against the shipped labels | predict total sales of a product in the next month |
+| `forecast` | computed by a SQL query over the database — **regenerable**, and checked against the shipped labels by [`provenance/check_provenance.py`](../provenance/check_provenance.py) | predict total sales of a product in the next month |
 | `autocomplete` | an existing column you predict (the column is masked from the graph) | predict a product's category |
 | `external` | shipped as-is (built by an upstream pipeline) | TGB / 4DBInfer tasks |
 
@@ -48,7 +48,8 @@ Once you have `manifest.yaml` + `db/*.parquet` + `tasks/`, the rest is generated
 published [`stanford-star/relbench-v1/rel-f1`](https://huggingface.co/datasets/stanford-star/relbench-v1) is a
 complete worked example.
 
-**1. Generate the schema diagram and dataset card** from the manifest:
+**1. Generate the schema diagram and dataset card** from the manifest (`render_schema_svg`
+needs `pip install "relbench[schema]"` plus the system `graphviz`/`dot` binary):
 
 ```python
 from relbench.manifest import DatasetManifest
@@ -70,9 +71,11 @@ hf upload <org>/<repo> . --repo-type dataset                  # commit the whole
 
 `<path>` above is `.` for a local dataset folder, but every tool also accepts a Hub repo
 (`stanford-star/relbench-v1`) or a single hosted dataset (`stanford-star/relbench-v1/rel-f1`) — so you can rebuild
-the tables for anything already on the Hub. Only manifests and parquet *footers/labels* are
-read, never the full `db/` tables, so this stays cheap even for repos with thousands of
-datasets.
+the tables for anything already on the Hub. The two overview builders read only manifests
+and parquet *footers/labels*, never the full `db/` tables, so they stay cheap even for
+repos with thousands of datasets. `check_provenance.py` and `compute_regression_stds.py`
+need the full database (the first regenerates labels against it, the second loads each
+dataset), so they cost as much as loading the dataset.
 
 ## The dataset viewer (`STATS/` + two configs)
 
@@ -105,7 +108,9 @@ configs:
 
 `build_databases_overview.py` fills the structural columns but leaves `domain`,
 `description`, `license`, and `source_url` blank — fill those in by hand (`--merge`
-preserves your edits across re-runs). You're encouraged to add your own columns too.
+preserves your edits across re-runs: it carries them over from the repo's existing table,
+or, for a local folder, from the `databases.parquet` already under `--out`). You're
+encouraged to add your own columns too.
 
 ## Tools in this directory
 
@@ -114,6 +119,7 @@ preserves your edits across re-runs). You're encouraged to add your own columns 
 | `build_databases_overview.py` | `STATS/databases.parquet` (one row per database) |
 | `build_tasks_overview.py` | `STATS/tasks.parquet` (one row per task; `--check` cross-checks the paper tables) |
 | `compute_regression_stds.py` | `regression_stds.json` — per-task NMAE normalizers for hosted regression tasks (optional; loading falls back to computing the std from the train split) |
+| `sort_hosted_labels.py` | hosted task labels rewritten in canonical (sorted) order — a repair/check tool that reorders rows only, so no metric changes (dry run by default; 0 files reported means the repo is already canonical) |
 
 Pass `--push` to any of them to upload the result to the repo. Data-provenance tooling —
 how RelBench's own databases were generated, cleaned, and verified — lives in

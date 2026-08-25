@@ -8,7 +8,6 @@ from typing import Dict
 
 import numpy as np
 import pandas as pd
-import torch
 import torch_frame
 from text_embedder import GloveTextEmbedding
 from torch_frame import stype
@@ -41,18 +40,16 @@ parser.add_argument(
     type=str,
     default=os.path.expanduser("~/.cache/relbench_examples"),
 )
+parser.add_argument("--pred_dir", type=str, default="/tmp/relbench_preds")
 args = parser.parse_args()
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-if torch.cuda.is_available():
-    torch.set_num_threads(1)
 seed_everything(args.seed)
 
 dataset: Dataset = load_dataset(args.dataset)
 task: RecommendationTask = dataset.load_task(args.task)
 
 # Materialize the database once and reuse it: `get_db` is uncached, and this is
-# the task\'s view of it (the columns the task must not see are already dropped).
+# the task's view of it (the columns the task must not see are already dropped).
 db = task.get_db()
 target_col_name: str = REC_BASELINE_TARGET_COL_NAME
 
@@ -488,8 +485,8 @@ test_pred = predict_link(
     PRED_SCORE_COL_NAME,
     test_table,
 )
-os.makedirs("/tmp/relbench_preds", exist_ok=True)
-pred_path = f"/tmp/relbench_preds/{args.dataset}__{args.task}.csv"
+os.makedirs(args.pred_dir, exist_ok=True)
+pred_path = os.path.join(args.pred_dir, f"{args.dataset}__{args.task}.csv")
 write_prediction_table(task, test_pred, pred_path)
 test_metrics = evaluate_task(f"{args.dataset}/{args.task}", pred_path)
 print(f"Test: {test_metrics}")

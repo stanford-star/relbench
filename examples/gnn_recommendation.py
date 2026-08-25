@@ -2,7 +2,6 @@ import argparse
 import copy
 import json
 import os
-import sys
 import warnings
 from pathlib import Path
 from typing import Dict, Tuple
@@ -56,12 +55,12 @@ parser.add_argument("--no-use_shallow", dest="use_shallow", action="store_false"
 parser.add_argument("--max_steps_per_epoch", type=int, default=2000)
 parser.add_argument("--num_workers", type=int, default=0)
 parser.add_argument("--seed", type=int, default=42)
-parser.add_argument("--download", action=argparse.BooleanOptionalAction, default=True)
 parser.add_argument(
     "--cache_dir",
     type=str,
     default=os.path.expanduser("~/.cache/relbench_examples"),
 )
+parser.add_argument("--pred_dir", type=str, default="/tmp/relbench_preds")
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -69,16 +68,8 @@ if torch.cuda.is_available():
     torch.set_num_threads(1)
 seed_everything(args.seed)
 
-try:
-    dataset: Dataset = load_dataset(args.dataset)
-    task: RecommendationTask = dataset.load_task(args.task)
-except Exception:
-    if bool(args.download):
-        print(
-            "Download failed. If you already have the dataset cached, re-run with --no-download.",
-            file=sys.stderr,
-        )
-    raise
+dataset: Dataset = load_dataset(args.dataset)
+task: RecommendationTask = dataset.load_task(args.task)
 tune_metric = "map"
 assert task.task_type == TaskType.RECOMMENDATION
 
@@ -263,7 +254,7 @@ val_table = task.get_table("val")  # hoisted: get_table is uncached
 
 for epoch in range(1, args.epochs + 1):
     train_loss = train()
-    if epoch % args.eval_epochs_interval == 0:
+    if epoch % args.eval_epochs_interval == 0 and "val" in eval_loaders_dict:
         val_pred = test(*eval_loaders_dict["val"])
         val_metrics = task.evaluate(val_pred, val_table)
         print(
@@ -282,14 +273,17 @@ else:
     warnings.warn(
         "No best checkpoint was selected (state_dict is None); evaluating with current model weights."
     )
-val_pred = test(*eval_loaders_dict["val"])
-val_metrics = task.evaluate(val_pred, val_table)
-print(f"Best Val metrics: {val_metrics}")
+if "val" in eval_loaders_dict:
+    val_pred = test(*eval_loaders_dict["val"])
+    val_metrics = task.evaluate(val_pred, val_table)
+    print(f"Best Val metrics: {val_metrics}")
+else:
+    print("Best Val metrics: <skipped: empty val split>")
 
 if "test" in eval_loaders_dict:
     test_pred = test(*eval_loaders_dict["test"])
-    os.makedirs("/tmp/relbench_preds", exist_ok=True)
-    pred_path = f"/tmp/relbench_preds/{args.dataset}__{args.task}.csv"
+    os.makedirs(args.pred_dir, exist_ok=True)
+    pred_path = os.path.join(args.pred_dir, f"{args.dataset}__{args.task}.csv")
     write_prediction_table(task, test_pred, pred_path)
     test_metrics = evaluate_task(f"{args.dataset}/{args.task}", pred_path)
     print(f"Best test metrics: {test_metrics}")

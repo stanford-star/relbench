@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import torch
 from torch import Tensor
@@ -28,7 +28,7 @@ class Model(torch.nn.Module):
         aggr: str,
         norm: str,
         # List of node types to add shallow embeddings to input
-        shallow_list: List[NodeType] = [],
+        shallow_list: Optional[List[NodeType]] = None,
         # ID awareness
         id_awareness: bool = False,
         gnn: str = "sage",
@@ -36,6 +36,7 @@ class Model(torch.nn.Module):
         gat_dropout: float = 0.0,
     ):
         super().__init__()
+        shallow_list = shallow_list or []
 
         self.encoder = HeteroEncoder(
             channels=channels,

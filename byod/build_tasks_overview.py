@@ -274,9 +274,9 @@ def _download_one(repo_id: str, name: str) -> Path:
 
 
 def _dataset_manifest(dsdir: Path, name: str) -> DatasetManifest:
-    r"""The database manifest for ``name``: local if this repo holds it, else fetched from
-    whichever RelBench repo does (a repo may host tasks for a database it does not hold).
-    """
+    r"""The database manifest for ``name``: local if this repo holds it, else fetched
+    from whichever RelBench repo does (a repo may host tasks for a database it does not
+    hold)."""
     local = dsdir / "manifest.yaml"
     if local.exists():
         return DatasetManifest.load(local)
@@ -285,7 +285,8 @@ def _dataset_manifest(dsdir: Path, name: str) -> DatasetManifest:
 
     repo_id, subdir = resolve_repo(name)
     path = hf_hub_download(
-        repo_id, f"{subdir}/manifest.yaml" if subdir else "manifest.yaml",
+        repo_id,
+        f"{subdir}/manifest.yaml" if subdir else "manifest.yaml",
         repo_type="dataset",
     )
     return DatasetManifest.load(path)
@@ -304,7 +305,9 @@ def _hub_dataset_names(repo_id: str, subdir: str) -> list[str]:
         return [subdir]
     files = HfApi().list_repo_files(repo_id, repo_type="dataset")
     names = {
-        f.split("/")[0] for f in files if f.endswith("/manifest.yaml") and f.count("/") == 1
+        f.split("/")[0]
+        for f in files
+        if f.endswith("/manifest.yaml") and f.count("/") == 1
     }
     # A repo can host tasks for a database it does not itself hold (the v2-only tasks on
     # the v1 databases): a `<name>/tasks/<task>/manifest.yaml` with no `<name>/manifest.yaml`
@@ -313,7 +316,9 @@ def _hub_dataset_names(repo_id: str, subdir: str) -> list[str]:
     names |= {
         f.split("/")[0]
         for f in files
-        if f.endswith("/manifest.yaml") and f.count("/") == 3 and f.split("/")[1] == "tasks"
+        if f.endswith("/manifest.yaml")
+        and f.count("/") == 3
+        and f.split("/")[1] == "tasks"
     }
     return sorted(names)
 

@@ -1,6 +1,7 @@
 import argparse
 import copy
 import json
+import math
 import os
 import warnings
 from pathlib import Path
@@ -48,6 +49,7 @@ parser.add_argument("--seed", type=int, default=42)
 parser.add_argument(
     "--cache_dir", type=str, default=os.path.expanduser("~/.cache/relbench_examples")
 )
+parser.add_argument("--pred_dir", type=str, default="/tmp/relbench_preds")
 args = parser.parse_args()
 
 
@@ -60,7 +62,7 @@ dataset: Dataset = load_dataset(args.dataset)
 task: RecommendationTask = dataset.load_task(args.task)
 
 # Materialize the database once and reuse it: `get_db` is uncached, and this is
-# the task\'s view of it (the columns the task must not see are already dropped).
+# the task's view of it (the columns the task must not see are already dropped).
 db = task.get_db()
 n_dst_nodes = num_dst_nodes(db, task)
 tune_metric = "map"
@@ -203,7 +205,7 @@ def test(loader: NeighborLoader) -> np.ndarray:
 
 
 state_dict = None
-best_val_metric = 0
+best_val_metric = -math.inf
 for epoch in range(1, args.epochs + 1):
     train_loss = train()
     if epoch % args.eval_epochs_interval == 0:
@@ -214,19 +216,24 @@ for epoch in range(1, args.epochs + 1):
             f"Val metrics: {val_metrics}"
         )
 
-        if val_metrics[tune_metric] > best_val_metric:
+        if val_metrics[tune_metric] >= best_val_metric:
             best_val_metric = val_metrics[tune_metric]
             state_dict = copy.deepcopy(model.state_dict())
 
 
-model.load_state_dict(state_dict)
+if state_dict is not None:
+    model.load_state_dict(state_dict)
+else:
+    warnings.warn(
+        "No best checkpoint was selected (state_dict is None); evaluating with current model weights."
+    )
 val_pred = test(loader_dict["val"])
 val_metrics = task.evaluate(val_pred, val_table)
 print(f"Best Val metrics: {val_metrics}")
 
 test_pred = test(loader_dict["test"])
-os.makedirs("/tmp/relbench_preds", exist_ok=True)
-pred_path = f"/tmp/relbench_preds/{args.dataset}__{args.task}.csv"
+os.makedirs(args.pred_dir, exist_ok=True)
+pred_path = os.path.join(args.pred_dir, f"{args.dataset}__{args.task}.csv")
 write_prediction_table(task, test_pred, pred_path)
 test_metrics = evaluate_task(f"{args.dataset}/{args.task}", pred_path)
 print(f"Best test metrics: {test_metrics}")

@@ -16,7 +16,7 @@ published data uses, `relbench.manifest` for the manifest writer). No `pooch`, n
 downloads cache under `$RELBENCH_RAW_CACHE` (default `~/.cache/relbench-raw`).
 
 Generators for datasets cleaned for issue
-[#373](https://github.com/snap-stanford/relbench/issues/373) apply the same drops at build
+[#373](https://github.com/stanford-star/relbench/issues/373) apply the same drops at build
 time, so they reproduce the *current* published data; the exact per-column list also lives
 in [`clean_databases.py`](clean_databases.py).
 
@@ -33,11 +33,11 @@ in [`clean_databases.py`](clean_databases.py).
 | `event.py` | rel-event | Event Recommendation (Kaggle) | needs Kaggle zip in `$RELBENCH_RAW_CACHE` |
 | `hm.py` | rel-hm | H&M (Kaggle) | needs Kaggle zip in `$RELBENCH_RAW_CACHE` |
 | `dbinfer.py` | `stanford-star/dbinfer` family | 4DBInfer pre-built `db.zip` artifacts | runnable (collection) |
-| `tgb.py` | `relbench/tgb` family | TGB pre-built `db.zip` artifacts | runnable (collection) |
+| `tgb.py` | `stanford-star/tgb` family | TGB pre-built `db.zip` artifacts | runnable (collection) |
 
 ## Verifying and cleaning
 
-Two non-generator scripts round out the data's paper trail:
+Four non-generator scripts round out the data's paper trail:
 
 - **`check_provenance.py`** — for a dataset's `forecast` tasks, regenerate the labels from
   their manifest DuckDB query and assert they match the shipped labels. This is the
@@ -46,11 +46,25 @@ Two non-generator scripts round out the data's paper trail:
       python provenance/check_provenance.py stanford-star/relbench-v1/rel-f1   # Hub repo, subdir, or local path
 
 - **`clean_databases.py`** — the reproducible record of the
-  [#373](https://github.com/snap-stanford/relbench/issues/373) cleanup applied to the
+  [#373](https://github.com/stanford-star/relbench/issues/373) cleanup applied to the
   published databases: the canonical per-column drop list (100%-NaN / preprocessing
   artifacts / future-leakage columns), plus the streaming drop + `schema.svg` refresh. The
   generators above bake these same drops in, so this is the "what and why", not a step you
   re-run.
+
+- **`check_dbinfer.py`** — verify a ported `dbinfer-*` dataset: referential integrity, task
+  joinability, and agreement with the original 4DBInfer archive. `DBINFER_DIR` is one
+  `dbinfer-<name>` folder or a root containing several; with `RAW_ROOT` (default
+  `$DBINFER_RAW_ROOT`), row counts and split sizes are also compared against the archive.
+
+      python provenance/check_dbinfer.py DBINFER_DIR [RAW_ROOT]
+
+- **`push_dbinfer.py`** — publish a locally generated `dbinfer` collection (the output of
+  `dbinfer.py --all`) to its Hugging Face repo, as a single commit that replaces every
+  `dbinfer-*` path.
+
+      python provenance/push_dbinfer.py BUILD_DIR          # dry run: show the plan
+      python provenance/push_dbinfer.py BUILD_DIR --push   # upload
 
 `dbinfer.py` / `tgb.py` mirror the legacy step for those `external` collections: the raw
 temporal-graph / 4DBInfer conversion happens upstream, and RelBench ingested the resulting

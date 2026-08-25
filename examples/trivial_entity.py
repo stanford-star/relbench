@@ -15,9 +15,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-stack")
 parser.add_argument("--task", type=str, default="user-engagement")
 parser.add_argument("--seed", type=int, default=42)
+parser.add_argument("--pred_dir", type=str, default="/tmp/relbench_preds")
 args = parser.parse_args()
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 seed_everything(args.seed)
 
 dataset: Dataset = load_dataset(args.dataset)
@@ -56,7 +56,7 @@ def predict(train_table: Table, pred_table: Table, name: str) -> np.ndarray:
         majority_label = int(past_target.mode().iloc[0])
         pred = torch.full((len(pred_table),), fill_value=majority_label)
     else:
-        raise ValueError("Unknown eval name called {name}.")
+        raise ValueError(f"Unknown eval name called {name}.")
     return pred
 
 
@@ -87,8 +87,8 @@ if task.task_type == TaskType.REGRESSION:
         train_metrics = evaluate(train_table, train_table, name=name)
         val_metrics = evaluate(train_table, val_table, name=name)
         test_pred = predict(trainval_table, test_table, name=name)
-        os.makedirs("/tmp/relbench_preds", exist_ok=True)
-        pred_path = f"/tmp/relbench_preds/{args.dataset}__{args.task}.csv"
+        os.makedirs(args.pred_dir, exist_ok=True)
+        pred_path = os.path.join(args.pred_dir, f"{args.dataset}__{args.task}.csv")
         write_prediction_table(task, test_pred, pred_path)
         test_metrics = evaluate_task(f"{args.dataset}/{args.task}", pred_path)
         print(f"{name}:")
@@ -103,8 +103,8 @@ elif task.task_type == TaskType.BINARY_CLASSIFICATION:
         train_metrics = evaluate(train_table, train_table, name=name)
         val_metrics = evaluate(train_table, val_table, name=name)
         test_pred = predict(trainval_table, test_table, name=name)
-        os.makedirs("/tmp/relbench_preds", exist_ok=True)
-        pred_path = f"/tmp/relbench_preds/{args.dataset}__{args.task}.csv"
+        os.makedirs(args.pred_dir, exist_ok=True)
+        pred_path = os.path.join(args.pred_dir, f"{args.dataset}__{args.task}.csv")
         write_prediction_table(task, test_pred, pred_path)
         test_metrics = evaluate_task(f"{args.dataset}/{args.task}", pred_path)
         print(f"{name}:")

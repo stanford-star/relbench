@@ -25,7 +25,8 @@ A per-type task-count column that is zero for every database is dropped (a task 
 repo doesn't use gets no column).
 
 The descriptive ones can NOT be filled in by a generic script and are left blank for a
-human to complete (``--merge`` preserves any values already present in the repo's table):
+human to complete (``--merge`` preserves any values already present in the repo's table,
+or, for a local folder, in the ``databases.parquet`` already under ``--out``):
 
     domain, description, license, source_url
 
@@ -203,21 +204,10 @@ def _rows_from_local(root: Path) -> list[dict]:
                 if tasks_dir.exists()
                 else set()
             )
-            # Tasks for this database can be hosted in a different RelBench repo (the
-            # v2-only tasks on the v1 databases), and they count towards it all the same.
-            # Only for the RelBench repos: a third-party repo owns its own task list.
-            if repo_id not in hf.RELBENCH_REPOS:
-                return sorted(local)
-            return sorted(local | set(hf.list_task_names(name)))
+            return sorted(local)
 
         def load_tm(task):
-            local = tasks_dir / task / "manifest.yaml"
-            if local.exists():
-                return TaskManifest.load(local)
-            path = hf.download_task_manifest(name, task)
-            if path is None:
-                raise FileNotFoundError(f"no manifest for task {name}/{task}")
-            return TaskManifest.load(path)
+            return TaskManifest.load(tasks_dir / task / "manifest.yaml")
 
         return database_row(name, dm, open_pq, folder_bytes, task_names, load_tm)
 
@@ -348,22 +338,33 @@ def build(spec: str) -> pd.DataFrame:
     return df.sort_values("name").reset_index(drop=True)
 
 
-def merge_existing(df: pd.DataFrame, spec: str) -> pd.DataFrame:
+def merge_existing(df: pd.DataFrame, spec: str, out: Path) -> pd.DataFrame:
     r"""Carry over hand-curated columns from a repo's existing databases.parquet (or the
-    legacy overview.parquet) so re-running doesn't wipe manual edits."""
-    if Path(spec).exists():
-        return df
-    repo_id, _ = resolve_repo(spec)
-    from huggingface_hub import hf_hub_download
-
+    legacy overview.parquet) -- for a local folder, from the databases.parquet already
+    under ``out`` -- so re-running doesn't wipe manual edits."""
     prev = None
-    for fname in ("STATS/databases.parquet", "databases.parquet", "overview.parquet"):
-        try:
-            prev = pd.read_parquet(hf_hub_download(repo_id, fname, repo_type="dataset"))
-            print(f"merging curated columns from existing {fname}", flush=True)
-            break
-        except Exception:
-            continue
+    if Path(spec).exists():
+        prev_path = out / "databases.parquet"
+        if prev_path.exists():
+            prev = pd.read_parquet(prev_path)
+            print(f"merging curated columns from existing {prev_path}", flush=True)
+    else:
+        repo_id, _ = resolve_repo(spec)
+        from huggingface_hub import hf_hub_download
+
+        for fname in (
+            "STATS/databases.parquet",
+            "databases.parquet",
+            "overview.parquet",
+        ):
+            try:
+                prev = pd.read_parquet(
+                    hf_hub_download(repo_id, fname, repo_type="dataset")
+                )
+                print(f"merging curated columns from existing {fname}", flush=True)
+                break
+            except Exception:
+                continue
     if prev is None:
         return df
     prev = prev.set_index("name")
@@ -392,7 +393,7 @@ def main() -> None:
     print(f"building databases overview for {spec!r}", flush=True)
     df = build(spec)
     if do_merge:
-        df = merge_existing(df, spec)
+        df = merge_existing(df, spec, out)
     df = _finalize(df)
     # Drop per-type task-count columns that are zero for every database -- a task type the
     # repo doesn't use shouldn't get a column (e.g. no multiclass tasks -> no
