@@ -311,6 +311,33 @@
   }
  },
  {
+  "name": "Past Visit",
+  "in_context": true,
+  "url": "https://star-project.stanford.edu/relbench",
+  "note": "RelBench baseline",
+  "date": "2026-08-25T04:08:13Z",
+  "author": "rishabh-ranjan",
+  "issue": 389,
+  "boards": {
+   "recommendation": {
+    "results": {
+     "rel-amazon/user-item-purchase": 0.0006272245094988528,
+     "rel-amazon/user-item-rate": 0.0007390584371183299,
+     "rel-amazon/user-item-review": 0.00041882190889376054,
+     "rel-avito/user-ad-visit": 0.019254782661556388,
+     "rel-f1/driver-circuit-compete": 0.1839109347442681,
+     "rel-hm/user-item-purchase": 0.008909512329806949,
+     "rel-stack/user-post-comment": 0.013831538627962055,
+     "rel-stack/post-post-related": 0.01744186046511628,
+     "rel-trial/condition-sponsor-run": 0.08295384514381203,
+     "rel-trial/site-sponsor-run": 0.1733932937574886
+    },
+    "mean": 0.05014808725855213,
+    "cov": 1.0
+   }
+  }
+ },
+ {
   "name": "ID-GNN",
   "in_context": false,
   "url": "https://star-project.stanford.edu/relbench",
