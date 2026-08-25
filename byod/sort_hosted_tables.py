@@ -12,6 +12,7 @@ import argparse
 import tempfile
 from pathlib import Path
 
+import pyarrow as pa
 import pyarrow.compute as pc
 import pyarrow.parquet as pq
 from huggingface_hub import CommitOperationAdd, HfApi, hf_hub_download
@@ -46,9 +47,17 @@ def sort_table(repo: str, name: str, table: str, time_col: str, mirror: Path):
         sort_keys=[(time_col, "ascending")],
         null_placement="at_end",
     )
+    columns = []
+    for field in data.schema:
+        column = data.column(field.name)
+        if pa.types.is_string(field.type):
+            column = column.cast(pa.large_string())
+        columns.append(column.take(order))
+    sorted_table = pa.Table.from_arrays(columns, names=data.schema.names)
+    sorted_table = sorted_table.replace_schema_metadata(data.schema.metadata)
     out = mirror / name / "db" / f"{table}.parquet"
     out.parent.mkdir(parents=True, exist_ok=True)
-    pq.write_table(data.take(order), out)
+    pq.write_table(sorted_table, out)
     return out
 
 
