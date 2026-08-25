@@ -3,7 +3,7 @@ authors = ["Rishabh Ranjan <rishabhranjan0207@gmail.com>"]
 channels = ["conda-forge"]
 name = "relbench"
 platforms = ["linux-64", "osx-arm64"]
-version = "0.1.0"
+version = "3.0.0"
 
 [tasks]
 
@@ -15,7 +15,7 @@ python = "==3.10"
 index-url = "https://pypi.org/simple"
 
 [pypi-dependencies]
-relbench = { path = ".", editable = true, extras = ["example", "dev"] }
+relbench = { path = ".", editable = true, extras = ["schema", "example", "dev"] }
 
 # Two environments select the accelerator for torch + the matching pyg-lib wheels.
 # `default` (= cpu) targets this dev box and CI, which have no GPU. `gpu` pulls CUDA

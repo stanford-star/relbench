@@ -10,7 +10,7 @@ The **data itself is unchanged** for the v1/v2 datasets and tasks: labels, split
 are the same, so numbers from earlier versions remain comparable (see
 [Renames](#renames) for the one metric that changed name only).
 
-If you are not ready to move, pin `relbench==2.1.0`. Note that the v2 download server it
+If you are not ready to move, pin `relbench==2.1.2`. Note that the v2 download server it
 depends on is deprecated in favor of the Hub.
 
 ## Leaderboard submissions
@@ -130,4 +130,3 @@ the loaders, `get_stype_proposal`) keeps its signature. `relbench.modeling` is n
 lazily, so a plain `import relbench` no longer pulls in torch.
 
 Reference scripts in [`examples/`](examples) were renamed: `baseline_*.py` → `trivial_*.py`.
-

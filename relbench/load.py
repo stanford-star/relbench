@@ -2,7 +2,7 @@ r"""Manifest-driven, Hugging Face-backed loader for RelBench datasets and tasks.
 
 This is the whole consumption path: no per-dataset or per-task classes. A dataset is a
 folder of plain parquet + a ``manifest.yaml``; a task is a subdirectory with its own
-``manifest.yaml`` (and, for ``kind="sql"`` tasks, the duckdb query that regenerates its
+``manifest.yaml`` (and, for ``kind="forecast"`` tasks, the duckdb query that regenerates its
 labels). Adding a task later is just adding a directory.
 
 Public API::
@@ -44,7 +44,6 @@ from relbench.manifest import (
     KIND_FORECAST,
     DatasetManifest,
     TaskManifest,
-    validate_dataset_manifest,
 )
 
 # The default metric per task type. RelBench provides evaluators for the three core task
@@ -85,9 +84,7 @@ def _hosted_std(dataset_name: Optional[str], task_name: Optional[str]):
     return None if std is None else float(std)
 
 
-def _resolve_metrics(
-    tm: TaskManifest, task=None, dataset_name: Optional[str] = None
-) -> list:
+def _resolve_metrics(tm: TaskManifest, task=None) -> list:
     # Metrics are not stored in the manifest; they default from the task type. RelBench
     # provides evaluators for the core task types only; multiclass/multilabel tasks are
     # loadable but carry no evaluator -- bring your own via task.evaluate(pred, metrics=).
@@ -288,6 +285,14 @@ class _HostedLabelsMixin:
 
     _task_dir: Optional[Path] = None
     _regenerate: bool = False
+    name: Optional[str] = None
+    kind: Optional[str] = None
+
+    def __repr__(self) -> str:
+        return (
+            f"{type(self).__name__.lstrip('_')}({self.name!r}, "
+            f"dataset={self.dataset!r})"
+        )
 
     def _label_fkeys(self) -> dict[str, str]:
         if isinstance(self, RecommendationTask):
@@ -341,9 +346,7 @@ class _ForecastEntityTask(_HostedLabelsMixin, EntityTask):
         self.time_col = tm.time_col
         self.timedelta = _parse_timedelta(tm.timedelta)
         self.num_eval_timestamps = tm.num_eval_timestamps
-        self.metrics = _resolve_metrics(
-            tm, task=self, dataset_name=_dataset_name(dataset)
-        )
+        self.metrics = _resolve_metrics(tm, task=self)
         self._sql = tm.sql
         self._task_dir = Path(task_dir) if task_dir is not None else None
         self._regenerate = regenerate
@@ -373,9 +376,7 @@ class _ForecastRecommendationTask(_HostedLabelsMixin, RecommendationTask):
         self.timedelta = _parse_timedelta(tm.timedelta)
         self.num_eval_timestamps = tm.num_eval_timestamps
         self.eval_k = tm.eval_k
-        self.metrics = _resolve_metrics(
-            tm, task=self, dataset_name=_dataset_name(dataset)
-        )
+        self.metrics = _resolve_metrics(tm, task=self)
         self._sql = tm.sql
         self._task_dir = Path(task_dir) if task_dir is not None else None
         self._regenerate = regenerate
@@ -458,11 +459,13 @@ class _ExternalEntityTask(_HostedLabelsMixin, EntityTask):
             _parse_timedelta(tm.timedelta) if tm.timedelta else pd.Timedelta(days=1)
         )
         self.num_eval_timestamps = tm.num_eval_timestamps
-        self.metrics = _resolve_metrics(
-            tm, task=self, dataset_name=_dataset_name(dataset)
-        )
+        self.metrics = _resolve_metrics(tm, task=self)
+        if regenerate:
+            raise ValueError(
+                f"task '{tm.name}': external labels are hosted, not regenerable"
+            )
         self._task_dir = Path(task_dir) if task_dir is not None else None
-        self._regenerate = False  # external labels are not regenerable
+        self._regenerate = False
         super().__init__(dataset, remove_columns=tm.remove_columns)
 
     def make_table(self, db: Database, timestamps) -> Table:
@@ -487,9 +490,11 @@ class _ExternalRecommendationTask(_HostedLabelsMixin, RecommendationTask):
         )
         self.num_eval_timestamps = tm.num_eval_timestamps
         self.eval_k = tm.eval_k
-        self.metrics = _resolve_metrics(
-            tm, task=self, dataset_name=_dataset_name(dataset)
-        )
+        self.metrics = _resolve_metrics(tm, task=self)
+        if regenerate:
+            raise ValueError(
+                f"task '{tm.name}': external labels are hosted, not regenerable"
+            )
         self._task_dir = Path(task_dir) if task_dir is not None else None
         self._regenerate = False
         super().__init__(dataset, remove_columns=tm.remove_columns)
@@ -523,20 +528,23 @@ def build_task(
     if tm.kind == KIND_AUTOCOMPLETE:
         # AutoCompleteTask resolves its own std in __init__ (it needs the train split
         # only when there is no hosted value).
-        return _AutoCompleteTask(dataset, tm, task_dir=task_dir, regenerate=regenerate)
-    if tm.kind == KIND_FORECAST:
-        cls = _ForecastRecommendationTask if is_link else _ForecastEntityTask
-    elif tm.kind == KIND_EXTERNAL:
-        cls = _ExternalRecommendationTask if is_link else _ExternalEntityTask
+        task = _AutoCompleteTask(dataset, tm, task_dir=task_dir, regenerate=regenerate)
     else:
-        raise ValueError(f"unknown task kind: {tm.kind!r}")
-    # `remove_columns` is not an autocomplete-only field: a forecast or external task
-    # whose label is derived from a database column has to hide that column too
-    # (dbinfer's `cvr` is `View.added_to_cart`, `charge` is `Dobito.sluzba`). Each task
-    # carries its own removals and applies them in `task.get_db()`, so tasks over one
-    # dataset stay independent.
-    task = cls(dataset, tm, task_dir=task_dir, regenerate=regenerate)
-    _install_nmae_std(task, dataset, tm)
+        if tm.kind == KIND_FORECAST:
+            cls = _ForecastRecommendationTask if is_link else _ForecastEntityTask
+        elif tm.kind == KIND_EXTERNAL:
+            cls = _ExternalRecommendationTask if is_link else _ExternalEntityTask
+        else:
+            raise ValueError(f"unknown task kind: {tm.kind!r}")
+        # `remove_columns` is not an autocomplete-only field: a forecast or external
+        # task whose label is derived from a database column has to hide that column
+        # too (dbinfer's `cvr` is `View.added_to_cart`, `charge` is `Dobito.sluzba`).
+        # Each task carries its own removals and applies them in `task.get_db()`, so
+        # tasks over one dataset stay independent.
+        task = cls(dataset, tm, task_dir=task_dir, regenerate=regenerate)
+        _install_nmae_std(task, dataset, tm)
+    task.name = tm.name
+    task.kind = tm.kind
     return task
 
 
@@ -545,12 +553,24 @@ def build_task(
 # --------------------------------------------------------------------------- #
 
 
+def _looks_like_path(name_or_path: Union[str, Path]) -> bool:
+    if isinstance(name_or_path, Path):
+        return True
+    s = str(name_or_path)
+    return os.path.isabs(s) or s.startswith((".", "~")) or os.path.exists(s)
+
+
 def _resolve_dataset_dir(
     name_or_path: Union[str, Path], revision: Optional[str]
 ) -> Path:
-    p = Path(name_or_path)
-    if p.exists() and (p / "manifest.yaml").exists():
+    p = Path(name_or_path).expanduser()
+    if (p / "manifest.yaml").exists():
         return p
+    if _looks_like_path(name_or_path):
+        raise FileNotFoundError(
+            f"{p} is not a RelBench dataset directory (no manifest.yaml found); "
+            "pass a directory holding manifest.yaml, or a Hub 'org/repo[/subdir]'."
+        )
     return hf.download_dataset_dir(str(name_or_path), revision=revision)
 
 

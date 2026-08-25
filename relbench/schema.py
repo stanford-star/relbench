@@ -117,7 +117,13 @@ def render_schema_svg(
     Hub, avoiding a full download). Tables whose data is unavailable fall back to the
     manifest-named columns so rendering never fails.
     """
-    import graphviz
+    try:
+        import graphviz
+    except ImportError as exc:
+        raise ImportError(
+            "render_schema_svg needs the graphviz package and the `dot` binary: "
+            "pip install 'relbench[schema]' and install graphviz on your system"
+        ) from exc
 
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -368,7 +374,7 @@ def dataset_card(
         "```python",
         "import relbench",
         f'ds = relbench.load_dataset("{addr}")',
-        f'task = ds.load_task("<task>")',
+        'task = ds.load_task("<task>")',
         "```",
         "",
         "## Citation",

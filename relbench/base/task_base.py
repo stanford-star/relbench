@@ -81,7 +81,7 @@ class TaskType(Enum):
         MULTICLASS_CLASSIFICATION: Multi-class classification task.
         BINARY_CLASSIFICATION: Binary classification task.
         MULTILABEL_CLASSIFICATION: Multi-label classification task.
-        RECOMMENDATION: Recommendation task."
+        RECOMMENDATION: Recommendation task.
     """
 
     REGRESSION = "regression"

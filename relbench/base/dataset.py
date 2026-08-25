@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 import pandas as pd
 
@@ -94,16 +96,18 @@ def drop_columns(db: Database, remove_columns) -> Database:
     """
     for table, remove_col in remove_columns:
         if table not in db.table_dict:
-            print(
+            warnings.warn(
                 f"Table {table} not in the database. "
-                f"Skipping removal of column {remove_col}."
+                f"Skipping removal of column {remove_col}.",
+                stacklevel=2,
             )
             continue
         if remove_col in db.table_dict[table].df.columns:
             db.table_dict[table].df = db.table_dict[table].df.drop(columns=[remove_col])
         else:
-            print(
+            warnings.warn(
                 f"Column {remove_col} not found in table {table}. "
-                "Skipping removal from this table."
+                "Skipping removal from this table.",
+                stacklevel=2,
             )
     return db

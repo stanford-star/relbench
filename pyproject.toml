@@ -32,12 +32,15 @@ dependencies=[
 	"pyarrow",
 	"numpy",
 	"duckdb",
-	"scikit-learn<=1.6.1",
+	"scikit-learn",
 	"typing-extensions",
-	"graphviz",
+	"tqdm",
 ]
 
 [project.optional-dependencies]
+schema=[
+	"graphviz",
+]
 example=[
 	"sentence-transformers",
 	"pytorch_frame[full]",
@@ -51,9 +54,15 @@ dev=[
 
 [project.urls]
 Home = "https://star-project.stanford.edu/relbench"
+Repository = "https://github.com/stanford-star/relbench"
+Issues = "https://github.com/stanford-star/relbench/issues"
+Data = "https://huggingface.co/stanford-star"
 
 [tool.flit.module]
 name="relbench"
+
+[tool.black]
+target-version = ["py310"]
 
 [tool.pytest.ini_options]
 addopts = [

@@ -10,9 +10,7 @@ from relbench.base import Database, Table
 
 def to_unix_time(ser: pd.Series) -> np.ndarray:
     r"""Convert a timestamp-like series to UNIX seconds."""
-    if pd.api.types.is_datetime64_any_dtype(
-        ser.dtype
-    ) or pd.api.types.is_datetime64tz_dtype(ser.dtype):
+    if pd.api.types.is_datetime64_any_dtype(ser.dtype):
         ts = pd.to_datetime(ser, utc=True)
         unix_ns = ts.astype("int64").to_numpy(copy=False)
         return (unix_ns // 1_000_000_000).astype(np.int64, copy=False)

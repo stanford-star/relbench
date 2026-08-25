@@ -40,6 +40,7 @@ FORM_FIELDS = {
 }
 IN_CONTEXT_HEADING = "In-context"
 NO_RESPONSE = "_No response_"
+MAX_UNZIPPED_BYTES = 4 << 30
 
 # GitHub handle pinged in the validation report to review the submission. Set via the
 # LEADERBOARD_MAINTAINER repository variable; the workflow falls back to the repo owner.
@@ -69,7 +70,8 @@ def parse_form(body: str) -> dict:
             if current is not None:
                 sections[current] = "\n".join(lines).strip()
             # issue-form labels may carry a parenthetical hint, e.g. "Name (shown on ...)"
-            current = line[4:].split(" (")[0].strip()
+            # or a trailing "?" ("In-context?")
+            current = line[4:].split(" (")[0].strip().rstrip("?")
             lines = []
         else:
             lines.append(line)
@@ -115,6 +117,14 @@ def download_attachments(body: str, dest: Path) -> list[str]:
         if target.suffix == ".zip":
             try:
                 with zipfile.ZipFile(target) as zf:
+                    total = sum(info.file_size for info in zf.infolist())
+                    if total > MAX_UNZIPPED_BYTES:
+                        problems.append(
+                            f"attachment {name} unpacks to {total / 2**30:.1f} GiB, "
+                            f"over the {MAX_UNZIPPED_BYTES >> 30} GiB limit"
+                        )
+                        target.unlink()
+                        continue
                     for info in zf.infolist():
                         base = Path(info.filename).name  # flatten; ignore any dirs
                         if not base.endswith(".csv"):

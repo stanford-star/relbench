@@ -1,7 +1,15 @@
+from importlib.metadata import PackageNotFoundError, version
+
 from relbench import base
 from relbench.load import load_dataset, train_std
 
+try:
+    __version__ = version("relbench")
+except PackageNotFoundError:
+    __version__ = "0.0.0"
+
 __all__ = [
+    "__version__",
     "base",
     "modeling",
     "load_dataset",

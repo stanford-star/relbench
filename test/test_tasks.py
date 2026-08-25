@@ -148,10 +148,24 @@ def test_remove_columns_are_scoped_per_task(dataset, churn_manifest):
     assert "review" in _db_columns(second, "review")
 
 
-def test_stale_remove_columns_entry_warns(dataset, churn_manifest, capsys):
+def test_stale_remove_columns_entry_warns(dataset, churn_manifest):
     tm = dataclasses.replace(
         churn_manifest, remove_columns=[["nosuchtable", "col"], ["review", "nosuchcol"]]
     )
-    build_task(dataset, tm).get_db()
-    out = capsys.readouterr().out
-    assert "nosuchtable" in out and "nosuchcol" in out
+    task = build_task(dataset, tm)
+    with pytest.warns(UserWarning, match="nosuchtable"):
+        with pytest.warns(UserWarning, match="nosuchcol"):
+            task.get_db()
+
+
+def test_external_task_rejects_regenerate(dataset, churn_manifest):
+    tm = dataclasses.replace(churn_manifest, kind="external", sql=None)
+    with pytest.raises(ValueError, match="not regenerable"):
+        build_task(dataset, tm, regenerate=True)
+
+
+def test_task_repr(churn_task, dataset):
+    assert repr(churn_task) == "ForecastEntityTask('user-churn', dataset=FakeDataset())"
+    assert repr(dataset.get_db()).startswith(
+        "Database(product=30, customer=100, review="
+    )

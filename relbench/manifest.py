@@ -29,20 +29,19 @@ import yaml
 
 MANIFEST_VERSION = 1
 
-# Task ``kind`` -- how labels are produced.
-KIND_FORECAST = (
-    "forecast"  # temporal-aggregation labels regenerated via a duckdb SQL query
-)
-KIND_AUTOCOMPLETE = "autocomplete"  # generic column-prediction generator
-KIND_EXTERNAL = (
-    "external"  # labels sourced/built externally, served as-is (TGB / dbinfer)
-)
+# Task ``kind`` -- how labels are produced:
+#   forecast      temporal-aggregation labels regenerated via a duckdb SQL query
+#   autocomplete  an existing column of the entity table is the label
+#   external      labels sourced/built externally, served as-is (TGB / dbinfer)
+KIND_FORECAST = "forecast"
+KIND_AUTOCOMPLETE = "autocomplete"
+KIND_EXTERNAL = "external"
 KINDS = (KIND_FORECAST, KIND_AUTOCOMPLETE, KIND_EXTERNAL)
 
 # Task ``task_type`` -- what is predicted, and therefore which evaluator applies.
 # Spelled out here rather than imported from relbench.base so a manifest can be
 # written and validated without pulling in pandas/numpy; kept in step with
-# :class:`relbench.base.TaskType`, which the round-trip test pins.
+# :class:`relbench.base.TaskType`, which ``test/test_manifest.py`` pins.
 TASK_TYPES = (
     "regression",
     "binary_classification",
@@ -280,24 +279,28 @@ class TaskManifest:
                 f"task '{self.name}': task_type must be one of {TASK_TYPES}, "
                 f"got {self.task_type!r}"
             )
-        if self.kind == KIND_FORECAST and not self.sql:
-            raise ValueError(
-                f"task '{self.name}': kind='forecast' requires a 'sql' field"
-            )
-        if self.task_type == "recommendation" and self.kind == KIND_FORECAST:
-            missing = [
-                k
-                for k in (
-                    "src_entity_table",
-                    "src_entity_col",
-                    "dst_entity_table",
-                    "dst_entity_col",
-                    "eval_k",
-                )
-                if getattr(self, k) is None
+        if self.task_type == "recommendation":
+            required = [
+                "src_entity_table",
+                "src_entity_col",
+                "dst_entity_table",
+                "dst_entity_col",
+                "eval_k",
             ]
-            if missing:
-                raise ValueError(f"task '{self.name}': link task missing {missing}")
+        elif self.kind == KIND_AUTOCOMPLETE:
+            required = ["entity_table", "target_col"]
+        elif self.kind == KIND_FORECAST:
+            required = ["entity_table", "entity_col", "target_col", "time_col"]
+        else:
+            required = ["entity_table"]
+        if self.kind == KIND_FORECAST:
+            required += ["timedelta", "sql"]
+        missing = [k for k in required if not getattr(self, k)]
+        if missing:
+            raise ValueError(
+                f"task '{self.name}': {self.kind} {self.task_type} task is missing "
+                f"{missing}"
+            )
 
 
 def validate_dataset_manifest(

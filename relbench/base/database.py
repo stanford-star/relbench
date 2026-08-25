@@ -16,7 +16,8 @@ class Database:
         self.table_dict = table_dict
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}()"
+        tables = ", ".join(f"{name}={len(t)}" for name, t in self.table_dict.items())
+        return f"{self.__class__.__name__}({tables})"
 
     @property
     def min_timestamp(self) -> pd.Timestamp:

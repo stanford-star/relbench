@@ -4,7 +4,7 @@
   <a href="https://star-project.stanford.edu/relbench"><img src="https://img.shields.io/badge/website-STAR%20Project-3f9e78.svg" alt="Website: STAR Project" /></a>
   <a href="https://huggingface.co/stanford-star"><img src="https://img.shields.io/badge/data-%F0%9F%A4%97%20Hugging%20Face-ffcc00.svg" alt="Data: Hugging Face" /></a>
   <a href="https://pypi.org/project/relbench/"><img src="https://img.shields.io/pypi/v/relbench?color=3f9e78" alt="PyPI" /></a>
-  <a href="https://github.com/snap-stanford/relbench/actions/workflows/testing.yml"><img src="https://github.com/snap-stanford/relbench/actions/workflows/testing.yml/badge.svg" alt="Tests" /></a>
+  <a href="https://github.com/stanford-star/relbench/actions/workflows/testing.yml"><img src="https://github.com/stanford-star/relbench/actions/workflows/testing.yml/badge.svg" alt="Tests" /></a>
   <a href="https://arxiv.org/abs/2407.20060"><img src="https://img.shields.io/badge/arXiv-2407.20060%20(RelBench)-b31b1b.svg" alt="arXiv: RelBench" /></a>
   <a href="https://arxiv.org/abs/2602.12606"><img src="https://img.shields.io/badge/arXiv-2602.12606%20(RelBench%20v2)-b31b1b.svg" alt="arXiv: RelBench v2" /></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-3f9e78.svg" alt="License: MIT" /></a>
@@ -15,14 +15,13 @@
   <a href="#get-started"><b>Get Started</b></a> ·
   <a href="#tutorials"><b>Tutorials</b></a> ·
   <a href="#leaderboard"><b>Leaderboard</b></a> ·
-  <a href="#byod"><b>BYOD</b></a> ·
-  <a href="#cite-relbench"><b>Citations</b></a>
+  <a href="#byod-bring-your-own-data"><b>BYOD</b></a> ·
+  <a href="#citations"><b>Citations</b></a>
 </p>
 
 ## News
 
-- **Aug 2026** - RelBench v3 released with [Hugging Face](https://huggingface.co/stanford-star) integration, a revamped [leaderboard](https://relbench.stanford.edu/leaderboard/) and bug fixes ([migration guide](MIGRATION.md)).
-- **Aug 2026** — New [leaderboard](https://relbench.stanford.edu/leaderboard/), kept up to date and redesigned for relational foundation models.
+- **Aug 2026** — RelBench v3 released: datasets and tasks load straight from [Hugging Face](https://huggingface.co/stanford-star), a new [leaderboard](https://relbench.stanford.edu/leaderboard/) with automated submissions, and bug fixes ([migration guide](MIGRATION.md)).
 - **Jun 2026** — Datasets, models, and community hub migrated to [Hugging Face](https://huggingface.co/stanford-star).
 - **Mar 2026** — [RelBench v2 paper](https://arxiv.org/abs/2602.12606) accepted at the [ICLR 2026 DATA-FM workshop](https://data-fm-iclr2026.github.io/).
 - **Feb 2026** — [Temporal Graph Benchmark](https://tgb.complexdatalab.com/) integration: time-stamped event streams as relational schemas.
@@ -36,8 +35,8 @@
 ## Get Started
 
 ```bash
-pip install relbench           # data + task loading
-pip install relbench[example]  # + PyTorch Geometric & PyTorch Frame, for the GNN examples
+pip install relbench             # data + task loading
+pip install "relbench[example]"  # + PyTorch Geometric & PyTorch Frame, for the GNN examples
 ```
 
 Load a dataset and a task — both come straight from the Hub, with **no per-dataset code**:
@@ -68,8 +67,8 @@ Open these directly in Google Colab — no setup required:
 
 | Tutorial | What it covers | |
 |---|---|---|
-| [**Quickstart**](https://colab.research.google.com/github/rishabh-ranjan/relbench/blob/main/tutorials/quickstart.ipynb) | Load a dataset/task, explore the schema, run a baseline | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/rishabh-ranjan/relbench/blob/main/tutorials/quickstart.ipynb) |
-| [**Training a GNN**](https://colab.research.google.com/github/rishabh-ranjan/relbench/blob/main/tutorials/gnn.ipynb) | A GNN baseline for an entity task (PyG + PyTorch Frame) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/rishabh-ranjan/relbench/blob/main/tutorials/gnn.ipynb) (needs a GPU) |
+| [**Quickstart**](https://colab.research.google.com/github/stanford-star/relbench/blob/main/tutorials/quickstart.ipynb) | Load a dataset/task, explore the schema, run a baseline | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/stanford-star/relbench/blob/main/tutorials/quickstart.ipynb) |
+| [**Training a GNN**](https://colab.research.google.com/github/stanford-star/relbench/blob/main/tutorials/gnn.ipynb) | A GNN baseline for an entity task (PyG + PyTorch Frame) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/stanford-star/relbench/blob/main/tutorials/gnn.ipynb) |
 
 ## Leaderboard
 
@@ -94,7 +93,7 @@ To submit:
    python -m relbench.submit preds/
    ```
 
-3. **[Open a submission issue](https://github.com/rishabh-ranjan/relbench/issues/new?template=submit.yml)**
+3. **[Open a submission issue](https://github.com/stanford-star/relbench/issues/new?template=submit.yml)**
    on this repository: fill in the short form and upload the zip file(s) into it.
 
 The submission is validated automatically and the report is posted on the issue; once a

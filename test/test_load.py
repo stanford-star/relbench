@@ -68,6 +68,19 @@ def test_regression_task_nmae(dataset_dir):
     assert task.evaluate(target + task.nmae_std, val)["nmae"] == pytest.approx(1.0)
 
 
+def test_bad_local_path_errors(tmp_path):
+    with pytest.raises(FileNotFoundError, match="manifest.yaml"):
+        load_dataset(tmp_path / "nope")
+    with pytest.raises(FileNotFoundError, match="manifest.yaml"):
+        load_dataset(str(tmp_path))
+
+
+def test_version():
+    import relbench
+
+    assert relbench.__version__.split(".")[0].isdigit()
+
+
 def test_resolve_repo():
     assert resolve_repo("org/name") == ("org/name", "")
     assert resolve_repo("org/name/a/b") == ("org/name", "a/b")

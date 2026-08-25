@@ -164,8 +164,6 @@ class RecommendationTask(BaseTask):
             "num_rows": num_rows,
         }
         train_uniques = set(self.get_table("train").df[self.src_entity_col].unique())
-        if self.get_table("test") is None:
-            return res
         test_uniques = set(self.get_table("test").df[self.src_entity_col].unique())
         ratio_train_test_entity_overlap = len(
             train_uniques.intersection(test_uniques)

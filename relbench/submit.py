@@ -1046,7 +1046,7 @@ def _markdown_report(result: Dict[str, Any]) -> str:
 # issue on the RelBench repository, created from the submission form with the prediction
 # tables attached. CI validates it and a maintainer approval publishes the entry.
 SUBMISSION_ISSUE_URL = (
-    "https://github.com/rishabh-ranjan/relbench/issues/new?template=submit.yml"
+    "https://github.com/stanford-star/relbench/issues/new?template=submit.yml"
 )
 
 

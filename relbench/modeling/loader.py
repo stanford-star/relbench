@@ -61,7 +61,7 @@ class SparseTensor:
         if not (indices < self.size()[0]).all():
             raise IndexError(
                 f"The index {indices.max()} is out-of-range. Needs to be smaller "
-                f"than {{self.size()[0]}}."
+                f"than {self.size()[0]}."
             )
         count = self._crow_indices[indices + 1] - self._crow_indices[indices]
         row_batch, arange = batched_arange(count)

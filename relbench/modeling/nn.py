@@ -14,6 +14,15 @@ from torch_geometric.nn import (
 )
 from torch_geometric.typing import EdgeType, NodeType
 
+_DEFAULT_TORCH_FRAME_MODEL_KWARGS = {"channels": 128, "num_layers": 4}
+_DEFAULT_STYPE_ENCODER_CLS_KWARGS = {
+    torch_frame.categorical: (torch_frame.nn.EmbeddingEncoder, {}),
+    torch_frame.numerical: (torch_frame.nn.LinearEncoder, {}),
+    torch_frame.multicategorical: (torch_frame.nn.MultiCategoricalEmbeddingEncoder, {}),
+    torch_frame.embedding: (torch_frame.nn.LinearEmbeddingEncoder, {}),
+    torch_frame.timestamp: (torch_frame.nn.TimestampEncoder, {}),
+}
+
 
 class HeteroEncoder(torch.nn.Module):
     r"""HeteroEncoder based on PyTorch Frame.
@@ -43,22 +52,14 @@ class HeteroEncoder(torch.nn.Module):
         node_to_col_names_dict: Dict[NodeType, Dict[torch_frame.stype, List[str]]],
         node_to_col_stats: Dict[NodeType, Dict[str, Dict[StatType, Any]]],
         torch_frame_model_cls=ResNet,
-        torch_frame_model_kwargs: Dict[str, Any] = {
-            "channels": 128,
-            "num_layers": 4,
-        },
-        default_stype_encoder_cls_kwargs: Dict[torch_frame.stype, Any] = {
-            torch_frame.categorical: (torch_frame.nn.EmbeddingEncoder, {}),
-            torch_frame.numerical: (torch_frame.nn.LinearEncoder, {}),
-            torch_frame.multicategorical: (
-                torch_frame.nn.MultiCategoricalEmbeddingEncoder,
-                {},
-            ),
-            torch_frame.embedding: (torch_frame.nn.LinearEmbeddingEncoder, {}),
-            torch_frame.timestamp: (torch_frame.nn.TimestampEncoder, {}),
-        },
+        torch_frame_model_kwargs: Optional[Dict[str, Any]] = None,
+        default_stype_encoder_cls_kwargs: Optional[Dict[torch_frame.stype, Any]] = None,
     ):
         super().__init__()
+        if torch_frame_model_kwargs is None:
+            torch_frame_model_kwargs = _DEFAULT_TORCH_FRAME_MODEL_KWARGS
+        if default_stype_encoder_cls_kwargs is None:
+            default_stype_encoder_cls_kwargs = _DEFAULT_STYPE_ENCODER_CLS_KWARGS
 
         self.encoders = torch.nn.ModuleDict()
 

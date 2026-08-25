@@ -5,7 +5,7 @@ manifest layout (a ``manifest.yaml`` next to ``db/<table>.parquet`` and ``tasks/
 Address it as:
 
 * a local path, e.g. ``/data/rel-f1``;
-* a Hub repo, e.g. ``relbench/rel-f1`` (manifest at the repo root); or
+* a Hub repo, e.g. ``my-org/my-dataset`` (manifest at the repo root); or
 * a Hub sub-path, e.g. ``stanford-star/relbench-v1/rel-f1`` (manifest under ``rel-f1/`` in ``stanford-star/relbench-v1``).
 
 There is no central registry of names and no pinned revisions: the latest ``main`` is used
@@ -90,9 +90,7 @@ def resolve_repo(spec: str, revision: Optional[str] = None) -> tuple[str, str]:
     return f"{parts[0]}/{parts[1]}", "/".join(parts[2:])
 
 
-def download_subdir(
-    repo_id: str, subdir: str, revision: Optional[str] = None
-) -> Path:
+def download_subdir(repo_id: str, subdir: str, revision: Optional[str] = None) -> Path:
     r"""Download one sub-path of a Hub dataset repo and return its local directory."""
     from huggingface_hub import snapshot_download
 
@@ -135,9 +133,7 @@ def download_task_manifest(
     for repo_id in RELBENCH_REPOS:
         if _repo_has(repo_id, path, revision):
             return Path(
-                hf_hub_download(
-                    repo_id, path, repo_type="dataset", revision=revision
-                )
+                hf_hub_download(repo_id, path, repo_type="dataset", revision=revision)
             )
     return None
 

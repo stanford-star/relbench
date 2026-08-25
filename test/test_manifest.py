@@ -62,6 +62,28 @@ def test_validate_link_task_requires_fields(purchase_manifest):
         dataclasses.replace(purchase_manifest, eval_k=None).validate()
 
 
+@pytest.mark.parametrize(
+    "field", ["entity_table", "entity_col", "target_col", "time_col", "timedelta"]
+)
+def test_validate_forecast_entity_task_requires_fields(churn_manifest, field):
+    churn_manifest.validate()
+    with pytest.raises(ValueError, match=field):
+        dataclasses.replace(churn_manifest, **{field: None}).validate()
+
+
+def test_validate_external_and_autocomplete_minimums(churn_manifest, rating_manifest):
+    dataclasses.replace(
+        churn_manifest, kind="external", sql=None, target_col=None, time_col=None
+    ).validate()
+    with pytest.raises(ValueError, match="entity_table"):
+        dataclasses.replace(
+            churn_manifest, kind="external", sql=None, entity_table=None
+        ).validate()
+    rating_manifest.validate()
+    with pytest.raises(ValueError, match="target_col"):
+        dataclasses.replace(rating_manifest, target_col=None).validate()
+
+
 def test_validate_dataset_manifest(dataset_dir):
     manifest = DatasetManifest.load(dataset_dir / "manifest.yaml")
     validate_dataset_manifest(manifest, dataset_dir / "db")
