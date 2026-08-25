@@ -229,6 +229,33 @@
   }
  },
  {
+  "name": "Global Popularity",
+  "in_context": false,
+  "url": "https://star-project.stanford.edu/relbench",
+  "note": "RelBench baseline",
+  "date": "2026-08-25T03:12:25Z",
+  "author": "rishabh-ranjan",
+  "issue": 386,
+  "boards": {
+   "recommendation": {
+    "results": {
+     "rel-amazon/user-item-purchase": 0.0024395144913499944,
+     "rel-amazon/user-item-rate": 0.0014802344167351659,
+     "rel-amazon/user-item-review": 0.0011393861262000333,
+     "rel-avito/user-ad-visit": 3.0677110723610766e-05,
+     "rel-f1/driver-circuit-compete": 0.5011904761904762,
+     "rel-hm/user-item-purchase": 0.0030455769442783946,
+     "rel-stack/user-post-comment": 0.00024697280633956096,
+     "rel-stack/post-post-related": 0.014553986341227418,
+     "rel-trial/condition-sponsor-run": 0.025201041160265763,
+     "rel-trial/site-sponsor-run": 0.03745140001309183
+    },
+    "mean": 0.0586779265600688,
+    "cov": 1.0
+   }
+  }
+ },
+ {
   "name": "Global Zero",
   "in_context": true,
   "url": "https://star-project.stanford.edu/relbench",
