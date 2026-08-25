@@ -127,6 +127,9 @@ own and pass them explicitly: `task.evaluate(pred, metrics=[my_metric])`.
   full database and the one cut at `test_timestamp`; they are now sorted and the
   autocomplete labels regenerated, and `AutoCompleteTask` refuses an unsorted entity
   table without a primary key instead of mis-keying it.
+- `rel-event/user-repeat`'s hosted train labels were regenerated from the task's SQL
+  (3,842 → 2,972 rows); its val and test labels are unchanged, so leaderboard numbers stay
+  comparable.
 - `Database.reindex_pkeys_and_fkeys` is gone: `Dataset.get_db()` expects `make_db()` to
   return tables that already follow the key contract, and `byod/reindex_dataset.py`
   normalizes a dataset folder into it.

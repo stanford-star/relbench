@@ -15,6 +15,10 @@ changes from 2.x.
 - Masked recommendation test tables no longer expose the destination lists.
 - Autocomplete splits include their boundary rows; tables without a primary key are kept
   sorted by time so positional keys are stable; hosted autocomplete labels regenerated.
+- `rel-event/user-repeat`: the label SQL now runs over many timestamps at once, and the
+  hosted train split was regenerated from it (3,842 → 2,972 rows; val/test unchanged).
+  The old train split kept users whose last two *recorded* windows, however long ago,
+  showed attendance rather than the previous two weeks the task defines.
 - Task manifests validate their required fields; external tasks with an upstream
   evaluator (TGB, 4DBInfer) load as data only.
 - `make_pkey_fkey_graph(..., remove_columns=task.hidden_columns())` lets one materialized
