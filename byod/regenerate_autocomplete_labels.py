@@ -45,7 +45,11 @@ def diff(old: pd.DataFrame, new: pd.DataFrame, key: str, target: str) -> tuple:
     o = old.set_index(key)[target]
     n = new.set_index(key)[target]
     common = o.index.intersection(n.index)
-    changed = int((o.loc[common].astype(str) != n.loc[common].astype(str)).sum())
+    a, b = o.loc[common], n.loc[common]
+    if pd.api.types.is_numeric_dtype(a) and pd.api.types.is_numeric_dtype(b):
+        changed = int((a.astype(float).to_numpy() != b.astype(float).to_numpy()).sum())
+    else:
+        changed = int((a.astype(str) != b.astype(str)).sum())
     return len(n.index.difference(o.index)), len(o.index.difference(n.index)), changed
 
 

@@ -1,7 +1,20 @@
 from typing import Dict, Optional
 
+import numpy as np
 import pandas as pd
 from typing_extensions import Self
+
+
+def is_time_sorted(ser: pd.Series) -> bool:
+    r"""True if ``ser`` is non-decreasing with every missing value at the end -- the
+    order in which ``upto`` keeps a prefix of the rows, so row positions survive it."""
+    valid = ser.notna().to_numpy()
+    if valid.all():
+        return bool(ser.is_monotonic_increasing)
+    first_missing = int(np.argmin(valid))
+    return not valid[first_missing:].any() and bool(
+        ser.iloc[:first_missing].is_monotonic_increasing
+    )
 
 
 class Table:

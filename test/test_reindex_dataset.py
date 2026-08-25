@@ -28,10 +28,17 @@ def _string_keyed_db():
             "t": pd.to_datetime(["2020-01-02", "2020-01-01", "2020-01-03"]),
         }
     )
+    clicks = pd.DataFrame(
+        {
+            "uid": ["u0", "u1", "u2"],
+            "t": pd.to_datetime(["2020-01-03", None, "2020-01-01"]),
+        }
+    )
     return Database(
         {
             "users": Table(users, {}, pkey_col="uid"),
             "events": Table(events, {"uid": "users"}, pkey_col="eid", time_col="t"),
+            "clicks": Table(clicks, {"uid": "users"}, time_col="t"),
         }
     )
 
@@ -45,7 +52,13 @@ def test_reindex_maps_keys_and_nulls_dangling(script):
     assert events["t"].is_monotonic_increasing
     assert events["eid"].tolist() == [0, 1, 2]
     assert events["uid"].tolist()[0] is pd.NA and events["uid"].tolist()[1] == 2
-    assert dangling == {"users": 0, "events": 1}
+    assert dangling == {"users": 0, "events": 1, "clicks": 0}
+    clicks = db.table_dict["clicks"].df
+    assert (
+        clicks["t"].tolist()[:2]
+        == pd.to_datetime(["2020-01-01", "2020-01-03"]).tolist()
+    )
+    assert pd.isna(clicks["t"].iloc[-1]) and clicks["uid"].tolist() == [0, 1, 2]
 
 
 def test_reindex_rejects_duplicate_keys(script):

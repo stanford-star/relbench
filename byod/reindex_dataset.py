@@ -1,7 +1,8 @@
 r"""Normalize a dataset folder's keys the way ``relbench.load_dataset`` expects them.
 
-Primary keys become ``0..n-1`` in row order (rows of tables with a time column sorted by
-time), foreign keys are rewritten to those indices (dangling references become null), and
+Every table with a time column is sorted by it (missing times last), primary keys become
+``0..n-1`` in row order, foreign keys are rewritten to those indices (dangling references
+become null), and
 the key columns of ``tasks/*/{train,val,test}.parquet`` are remapped the same way, with a
 stable sort so that re-running on an already normalized folder is a no-op. This is the
 one key-reindexing implementation; the provenance generators use it through
@@ -50,10 +51,12 @@ def remap(ser: pd.Series, index_map: pd.Series) -> pd.Series:
 def reindex(db: Database) -> tuple:
     index_maps = {}
     for name, t in db.table_dict.items():
+        if t.time_col is not None:
+            t.df = t.df.sort_values(
+                t.time_col, kind="stable", na_position="last"
+            ).reset_index(drop=True)
         if t.pkey_col is None:
             continue
-        if t.time_col is not None:
-            t.df = t.df.sort_values(t.time_col, kind="stable").reset_index(drop=True)
         keys = t.df[t.pkey_col]
         if keys.isna().any() or keys.duplicated().any():
             raise RuntimeError(

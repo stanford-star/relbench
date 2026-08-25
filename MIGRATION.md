@@ -121,6 +121,12 @@ own and pass them explicitly: `task.evaluate(pred, metrics=[my_metric])`.
   pass `metrics=[...]`; score them with the upstream evaluator.
 - A dataset loaded from a local path never consults the Hub: bare task names resolve only
   inside its folder, and the NMAE normalizer is the train-split std.
+- Tables with a time column are sorted by it. Three hosted tables without a primary key
+  (`rel-amazon/review`, `rel-avito/SearchStream`, `rel-event/event_interest`) were not,
+  which left their autocomplete labels keyed by row positions that differed between the
+  full database and the one cut at `test_timestamp`; they are now sorted and the
+  autocomplete labels regenerated, and `AutoCompleteTask` refuses an unsorted entity
+  table without a primary key instead of mis-keying it.
 - `Database.reindex_pkeys_and_fkeys` is gone: `Dataset.get_db()` expects `make_db()` to
   return tables that already follow the key contract, and `byod/reindex_dataset.py`
   normalizes a dataset folder into it.

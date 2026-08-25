@@ -147,6 +147,20 @@ def test_autocomplete_task(dataset, rating_manifest):
     assert regression.nmae_std > 0
 
 
+def test_autocomplete_rejects_unsorted_keyless_entity_table(
+    fake_dataset, rating_manifest
+):
+    class Shuffled(fake_dataset):
+        def make_db(self):
+            db = super().make_db()
+            review = db.table_dict["review"]
+            review.df = review.df.iloc[::-1].reset_index(drop=True)
+            return db
+
+    with pytest.raises(RuntimeError, match="not sorted"):
+        build_task(Shuffled(), rating_manifest)
+
+
 def _db_columns(task, table):
     return list(task.get_db().table_dict[table].df.columns)
 

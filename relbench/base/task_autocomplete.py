@@ -7,7 +7,7 @@ from relbench.metrics import make_nmae, roc_auc
 
 from .database import Database
 from .dataset import Dataset
-from .table import Table
+from .table import Table, is_time_sorted
 from .task_base import TaskType, _sort_deterministically
 from .task_entity import EntityTask
 
@@ -20,6 +20,9 @@ class AutoCompleteTask(EntityTask):
     the task, which is what the label table is built from.
 
     The entity table needs to have a time column by which the data is split into training and validation set.
+    An entity table without a primary key is keyed by row position, so it must be
+    sorted by time (rows after ``test_timestamp`` last) for those positions to mean
+    the same thing in every view of the database.
 
     Args:
         dataset: The dataset object.
@@ -86,6 +89,15 @@ class AutoCompleteTask(EntityTask):
         col = self.target_col
 
         if table.pkey_col is None:
+            if table.time_col is not None and not is_time_sorted(
+                table.df[table.time_col]
+            ):
+                raise RuntimeError(
+                    f"table '{self.entity_table}' has no primary key and is not sorted "
+                    f"by '{table.time_col}', so its rows have no identity that survives "
+                    "the time cuts; sort it by time (byod/reindex_dataset.py does) "
+                    "before defining an autocomplete task on it."
+                )
             table.pkey_col = "primary_key"
             table.df["primary_key"] = np.arange(len(table.df))
 

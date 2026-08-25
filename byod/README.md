@@ -33,8 +33,9 @@ required. The schema is defined in [`relbench/manifest.py`](../relbench/manifest
 RelBench reads `db/*.parquet` as-is, so the keys must already be in the form the hosted
 datasets use:
 
-- every table with a `pkey` holds the integers `0..n-1` in row order (rows of a table
-  with a `time_col` sorted by time first);
+- every table with a `time_col` is sorted by it (missing times last), so that cutting the
+  database at a timestamp keeps a prefix of its rows;
+- every table with a `pkey` holds the integers `0..n-1` in row order;
 - every `fkeys` column holds those integer row indices of the referenced table, with
   dangling references stored as null;
 - task label tables use the same integer ids in their entity columns.

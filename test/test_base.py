@@ -4,6 +4,16 @@ import pytest
 from relbench.base import Table
 
 
+def test_is_time_sorted():
+    from relbench.base import is_time_sorted
+
+    t = pd.to_datetime
+    assert is_time_sorted(pd.Series(t(["2020-01-01", "2020-01-01", "2020-01-02"])))
+    assert is_time_sorted(pd.Series(t(["2020-01-01", "2020-01-02", None])))
+    assert not is_time_sorted(pd.Series(t(["2020-01-02", "2020-01-01"])))
+    assert not is_time_sorted(pd.Series(t(["2020-01-01", None, "2020-01-02"])))
+
+
 def test_table_upto_and_bounds():
     df = pd.DataFrame(
         {
