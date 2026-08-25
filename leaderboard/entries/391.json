@@ -1,0 +1,27 @@
+{
+ "name": "ID-GNN",
+ "in_context": false,
+ "url": "https://star-project.stanford.edu/relbench",
+ "note": "RelBench baselins",
+ "date": "2026-08-25T04:10:05Z",
+ "author": "rishabh-ranjan",
+ "issue": 391,
+ "boards": {
+  "recommendation": {
+   "results": {
+    "rel-amazon/user-item-purchase": 0.0010032796248991029,
+    "rel-amazon/user-item-rate": 0.0012075416375450113,
+    "rel-amazon/user-item-review": 0.0009068845800567327,
+    "rel-avito/user-ad-visit": 0.036254438962514304,
+    "rel-f1/driver-circuit-compete": 0.6231863609641387,
+    "rel-hm/user-item-purchase": 0.02806401368890473,
+    "rel-stack/user-post-comment": 0.130336330612114,
+    "rel-stack/post-post-related": 0.10747262792512352,
+    "rel-trial/condition-sponsor-run": 0.003319897518235944,
+    "rel-trial/site-sponsor-run": 0.0013654002629684414
+   },
+   "mean": 0.09331167757765005,
+   "cov": 1.0
+  }
+ }
+}
