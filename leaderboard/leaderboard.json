@@ -203,6 +203,32 @@
   }
  },
  {
+  "name": "Global Median",
+  "in_context": true,
+  "url": "https://star-project.stanford.edu/relbench",
+  "note": "RelBench baseline",
+  "date": "2026-08-25T03:10:42Z",
+  "author": "rishabh-ranjan",
+  "issue": 385,
+  "boards": {
+   "regression": {
+    "results": {
+     "rel-amazon/user-ltv": 0.2918515308729758,
+     "rel-amazon/item-ltv": 0.10870124648561262,
+     "rel-avito/ad-ctr": 0.45013410941757365,
+     "rel-event/user-attendance": 0.34442011252718346,
+     "rel-f1/driver-position": 0.6261411175411443,
+     "rel-hm/item-sales": 0.15361148606895705,
+     "rel-stack/post-votes": 0.13303310099479038,
+     "rel-trial/study-adverse": 0.16965927540481113,
+     "rel-trial/site-success": 0.9713336052031721
+    },
+    "mean": 0.36098728716846895,
+    "cov": 1.0
+   }
+  }
+ },
+ {
   "name": "GNN + LightGBM",
   "in_context": false,
   "url": "https://star-project.stanford.edu/relbench",
