@@ -21,7 +21,7 @@
 
 ## News
 
-- **Aug 2026** - RelBench v3 released with Hugging Face integration, a revamped leaderboard and bug fixes.
+- **Aug 2026** - RelBench v3 released with [Hugging Face](https://huggingface.co/stanford-star) integration, a revamped [leaderboard](https://relbench.stanford.edu/leaderboard/) and bug fixes.
 - **Aug 2026** — New [leaderboard](https://relbench.stanford.edu/leaderboard/), kept up to date and redesigned for relational foundation models.
 - **Jun 2026** — Datasets, models, and community hub migrated to [Hugging Face](https://huggingface.co/stanford-star).
 - **Mar 2026** — [RelBench v2 paper](https://arxiv.org/abs/2602.12606) accepted at the [ICLR 2026 DATA-FM workshop](https://data-fm-iclr2026.github.io/).
