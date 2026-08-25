@@ -5,7 +5,10 @@ name: Publish leaderboard entry
 # issue may have been edited since the last validation), the entry JSON is written to
 # leaderboard/entries/<issue>.json, leaderboard/leaderboard.json is regenerated from all
 # entries, and the issue is closed. Entries are keyed by issue number, so concurrent
-# publishes cannot conflict; the concurrency group serializes the pushes anyway.
+# publishes cannot conflict, and the push below rebases and retries, so runs may safely
+# overlap. Do NOT add a concurrency group here: accepting several submissions at once
+# leaves the extra runs queued, and GitHub cancels a queued run as soon as another
+# arrives, dropping those submissions.
 on:  # yamllint disable-line rule:truthy
   issues:
     types: [labeled]
@@ -13,9 +16,6 @@ on:  # yamllint disable-line rule:truthy
 permissions:
   contents: write
   issues: write
-
-concurrency:
-  group: leaderboard-publish
 
 jobs:
   publish:
@@ -64,11 +64,11 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add leaderboard/
           git commit -m "Leaderboard entry from #${{ github.event.issue.number }}"
-          for i in 1 2 3; do
+          for i in 1 2 3 4 5 6; do
             git push && exit 0
-            git pull --rebase && sleep $i
+            git pull --rebase && sleep $((i * 3))
           done
-          echo "push to main failed after 3 attempts" >&2
+          echo "push to main failed after 6 attempts" >&2
           exit 1
 
       - name: Close issue
