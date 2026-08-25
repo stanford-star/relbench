@@ -5,7 +5,6 @@ from typing import Dict
 
 import numpy as np
 import pandas as pd
-from torch_geometric.seed import seed_everything
 
 from relbench import load_dataset
 from relbench.base import Dataset, RecommendationTask, Table
@@ -19,7 +18,7 @@ parser.add_argument("--pred_dir", type=str, default="/tmp/relbench_preds")
 args = parser.parse_args()
 
 
-seed_everything(args.seed)
+np.random.seed(args.seed)
 
 dataset: Dataset = load_dataset(args.dataset)
 task: RecommendationTask = dataset.load_task(args.task)

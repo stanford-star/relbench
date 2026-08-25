@@ -4,8 +4,6 @@ from typing import Dict
 
 import numpy as np
 import pandas as pd
-import torch
-from torch_geometric.seed import seed_everything
 
 from relbench import load_dataset
 from relbench.base import EntityTask, Table, TaskType
@@ -18,7 +16,7 @@ parser.add_argument("--seed", type=int, default=42)
 parser.add_argument("--pred_dir", type=str, default="/tmp/relbench_preds")
 args = parser.parse_args()
 
-seed_everything(args.seed)
+np.random.seed(args.seed)
 
 dataset = load_dataset(args.dataset)
 
@@ -56,7 +54,7 @@ def predict(train_table: Table, pred_table: Table, name: str) -> np.ndarray:
     elif name == "majority":
         past_target = train_table.df[task.target_col].astype(int)
         majority_label = int(past_target.mode().iloc[0])
-        pred = torch.full((len(pred_table),), fill_value=majority_label)
+        pred = np.full(len(pred_table), majority_label)
     else:
         raise ValueError(f"Unknown eval name called {name}.")
     return pred

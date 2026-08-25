@@ -139,7 +139,7 @@ class AutoCompleteTask(EntityTask):
         db = full_db if split == "test" else full_db.upto(self.dataset.test_timestamp)
 
         if split == "train":
-            start = db.min_timestamp - pd.Timedelta(1, "ns")
+            start = db.min_timestamp - self.timedelta
             end = self.dataset.val_timestamp
         elif split == "val":
             start, end = self.dataset.val_timestamp, self.dataset.test_timestamp

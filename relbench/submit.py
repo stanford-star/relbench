@@ -46,6 +46,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
@@ -806,6 +807,15 @@ def _use_color() -> bool:
         return False
 
 
+def _glyph(unicode: str, ascii_fallback: str) -> str:
+    encoding = getattr(sys.stdout, "encoding", None) or "ascii"
+    try:
+        unicode.encode(encoding)
+    except (UnicodeEncodeError, LookupError):
+        return ascii_fallback
+    return unicode
+
+
 class _Style:
     r"""Tiny ANSI styler; every method degrades to the identity without a TTY."""
 
@@ -933,18 +943,18 @@ def _print_report(result: Dict[str, Any]) -> None:
         for task_name in group_tasks:
             entry = tasks[task_name]
             if entry["status"] == "ok":
-                mark = st.green("✓")
+                mark = st.green(_glyph("✓", "OK"))
                 value = _format_value(entry["metric_name"], entry["metric"])
                 print(f"  {mark} {task_name.ljust(name_w)}  {value.rjust(7)}")
             else:
-                mark = st.red("✗")
+                mark = st.red(_glyph("✗", "X"))
                 print(f"  {mark} {task_name.ljust(name_w)}  {st.red('failed')}")
                 for line in _wrap_text(entry["error"] or "unknown error", indent=6):
                     print(st.dim(line))
         if fam is not None and fam["missing"]:
             for task_name in fam["missing"]:
                 print(
-                    f"  {st.yellow('·')} {task_name.ljust(name_w)}  "
+                    f"  {st.yellow(_glyph('·', '-'))} {task_name.ljust(name_w)}  "
                     + st.dim("missing")
                 )
         if fam is not None and fam["aggregate"] is not None:
@@ -1139,7 +1149,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         st = _Style(_use_color())
         print(
             st.bold_red("Cannot package")
-            + " — no leaderboard was validated; fix the prediction tables first."
+            + f" {_glyph('—', '-')} no leaderboard was validated; fix the prediction tables first."
         )
         print()
         return 1
