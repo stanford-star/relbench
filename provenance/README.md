@@ -43,7 +43,7 @@ Two non-generator scripts round out the data's paper trail:
   their manifest DuckDB query and assert they match the shipped labels. This is the
   guarantee that hosted labels are exactly what their SQL produces.
 
-      python provenance/check_provenance.py stanford-star/relbench/rel-f1   # Hub repo, subdir, or local path
+      python provenance/check_provenance.py stanford-star/relbench-v1/rel-f1   # Hub repo, subdir, or local path
 
 - **`clean_databases.py`** — the reproducible record of the
   [#373](https://github.com/snap-stanford/relbench/issues/373) cleanup applied to the

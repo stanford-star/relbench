@@ -3,7 +3,7 @@ r"""Generate the **rel-ratebeer** database from its raw source (RateBeer dump).
     python ratebeer.py [OUT_DIR]      # default OUT_DIR: ./rel-ratebeer
 
 Source: a processed RateBeer SQL dump (``db.zip``) hosted on Dropbox. Produces the
-Hugging Face layout (manifest.yaml + db/*.parquet) reproducing stanford-star/relbench/rel-ratebeer.
+Hugging Face layout (manifest.yaml + db/*.parquet) reproducing stanford-star/relbench-v2-extra/rel-ratebeer.
 """
 
 import sys

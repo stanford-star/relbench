@@ -37,7 +37,7 @@ from relbench.schema import _short_type, render_schema_svg
 
 # repo -> dataset -> {table: {column: reason}}
 DROP: dict[str, dict[str, dict[str, dict[str, str]]]] = {
-    "stanford-star/relbench": {
+    "stanford-star/relbench-v1": {
         "rel-stack": {"users": {"ProfileImageUrl": "100%-NaN"}},
         "rel-trial": {
             "outcome_analyses": {

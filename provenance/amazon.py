@@ -5,7 +5,7 @@ r"""Generate the **rel-amazon** database from its raw source (Amazon product rev
 Source: the McAuley-group Amazon Review Data (v2) hosted at UCSD -- the per-category
 product metadata (``meta_Books.json.gz``) and 5-core review (``Books_5.json.gz``) dumps.
 Produces the Hugging Face layout (manifest.yaml + db/*.parquet) reproducing
-stanford-star/relbench/rel-amazon.
+stanford-star/relbench-v1/rel-amazon.
 """
 
 import gzip

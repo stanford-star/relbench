@@ -5,7 +5,7 @@ r"""Generate the **rel-salt** database from its raw source (SAP SALT sales data)
 Source: a prebuilt snapshot of the SAP ``sap-ai-research/SALT`` sales-document data
 (salesdocument / salesdocumentitem / customer / address parquet dumps), hosted by
 RelBench. Produces the Hugging Face layout (manifest.yaml + db/*.parquet) reproducing
-stanford-star/relbench/rel-salt.
+stanford-star/relbench-v2-extra/rel-salt.
 """
 
 import sys

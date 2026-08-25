@@ -36,7 +36,7 @@ def make_nmae(get_std: Callable[[], float]) -> Callable[[NDArray, NDArray], floa
     NMAE = MAE / std, where ``std`` is the standard deviation (ddof=1) of the task's
     regression target on its *train* split. ``get_std`` reads the value the task
     resolved when it was built (``task.nmae_std``); see :func:`relbench.train_std` and
-    the hosted ``stanford-star/relbench`` regression-std table.
+    the hosted ``stanford-star/relbench-v1`` regression-std table.
     """
 
     def nmae(true: NDArray[np.float64], pred: NDArray[np.float64]) -> float:

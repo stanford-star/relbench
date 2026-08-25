@@ -3,7 +3,7 @@ r"""Generate the **rel-f1** database from its raw source (Ergast Formula 1 data)
     python f1.py [OUT_DIR]      # default OUT_DIR: ./rel-f1
 
 Source: a static snapshot of the Ergast F1 database, hosted by RelBench. Produces the
-Hugging Face layout (manifest.yaml + db/*.parquet) reproducing stanford-star/relbench/rel-f1.
+Hugging Face layout (manifest.yaml + db/*.parquet) reproducing stanford-star/relbench-v1/rel-f1.
 """
 
 import sys

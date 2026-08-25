@@ -4,7 +4,7 @@ r"""Generate the **rel-trial** database from its raw source (AACT clinical trial
 
 Source: a static snapshot of the AACT (Aggregate Analysis of ClinicalTrials.gov)
 database, hosted by RelBench. Produces the Hugging Face layout (manifest.yaml +
-db/*.parquet) reproducing stanford-star/relbench/rel-trial.
+db/*.parquet) reproducing stanford-star/relbench-v1/rel-trial.
 """
 
 import sys

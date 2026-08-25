@@ -42,7 +42,7 @@ Key points:
   by `huggingface_hub` (`HF_HOME` / `HF_HUB_CACHE`); `RELBENCH_CACHE_DIR` no longer does
   anything.
 - `load_dataset` accepts a bare name (`"rel-f1"`, resolved across the RelBench Hub repos),
-  a Hub address (`"stanford-star/relbench/rel-f1"`, or any `org/repo[/subdir]`), or a local
+  a Hub address (`"stanford-star/relbench-v1/rel-f1"`, or any `org/repo[/subdir]`), or a local
   directory. `load_task` likewise accepts a bare task name, a Hub sub-path, or a local task
   directory — so tasks can live apart from their database.
 - `revision=` pins a Hub revision: `relbench.load_dataset("rel-f1", revision="...")`.

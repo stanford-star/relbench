@@ -5,7 +5,7 @@ Avito context-ad-clicks Kaggle competition data).
 
 Source: a subsampled snapshot of the Avito competition data, hosted by RelBench.
 Produces the Hugging Face layout (manifest.yaml + db/*.parquet) reproducing
-stanford-star/relbench/rel-avito. The search stream ranges from 2015-04-25 to 2015-05-20; rows
+stanford-star/relbench-v1/rel-avito. The search stream ranges from 2015-04-25 to 2015-05-20; rows
 before 2015-04-25 are dropped (the legacy ``Database.from_`` cutoff).
 """
 

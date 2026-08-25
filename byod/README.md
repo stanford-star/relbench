@@ -45,7 +45,7 @@ timestamps), every table as a view by its name, and `{timedelta}` substituted as
 ## Package it for the Hub
 
 Once you have `manifest.yaml` + `db/*.parquet` + `tasks/`, the rest is generated. The
-published [`stanford-star/relbench/rel-f1`](https://huggingface.co/datasets/stanford-star/relbench) is a
+published [`stanford-star/relbench-v1/rel-f1`](https://huggingface.co/datasets/stanford-star/relbench-v1) is a
 complete worked example.
 
 **1. Generate the schema diagram and dataset card** from the manifest:
@@ -69,7 +69,7 @@ hf upload <org>/<repo> . --repo-type dataset                  # commit the whole
 ```
 
 `<path>` above is `.` for a local dataset folder, but every tool also accepts a Hub repo
-(`stanford-star/relbench`) or a single hosted dataset (`stanford-star/relbench/rel-f1`) — so you can rebuild
+(`stanford-star/relbench-v1`) or a single hosted dataset (`stanford-star/relbench-v1/rel-f1`) — so you can rebuild
 the tables for anything already on the Hub. Only manifests and parquet *footers/labels* are
 read, never the full `db/` tables, so this stays cheap even for repos with thousands of
 datasets.

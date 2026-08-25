@@ -4,7 +4,7 @@ r"""Generate the **rel-stack** database from its raw source (Stack Exchange foru
 
 Source: a Stack Exchange forum dump (Users/Posts/Comments/Votes/PostLinks/Badges/
 PostHistory), hosted by RelBench. Produces the Hugging Face layout (manifest.yaml +
-db/*.parquet) reproducing stanford-star/relbench/rel-stack.
+db/*.parquet) reproducing stanford-star/relbench-v1/rel-stack.
 """
 
 import os

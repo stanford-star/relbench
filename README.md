@@ -110,7 +110,7 @@ per table, and a `tasks/` subdirectory — that you publish to the
 `org/repo[/subdir]` address; there is no central registry to register with.
 
 [**`byod/README.md`**](byod/README.md) is the full walkthrough, and the
-published [`stanford-star/relbench/rel-f1`](https://huggingface.co/datasets/stanford-star/relbench) is a
+published [`stanford-star/relbench-v1/rel-f1`](https://huggingface.co/datasets/stanford-star/relbench-v1) is a
 complete worked example. For how RelBench's own databases were built, cleaned, and verified
 from their original sources, see [`provenance/`](provenance).
 

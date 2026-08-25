@@ -4,7 +4,7 @@ categories, and citations).
     python arxiv.py [OUT_DIR]      # default OUT_DIR: ./rel-arxiv
 
 Source: a static snapshot of the arXiv relational data, hosted on Dropbox. Produces the
-Hugging Face layout (manifest.yaml + db/*.parquet) reproducing stanford-star/relbench/rel-arxiv.
+Hugging Face layout (manifest.yaml + db/*.parquet) reproducing stanford-star/relbench-v2-extra/rel-arxiv.
 """
 
 import sys
