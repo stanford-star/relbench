@@ -1,14 +1,42 @@
 # Migration guide: RelBench < 3 → RelBench 3
 
 RelBench 3 replaces the per-dataset Python classes and the `relbench.stanford.edu` download
-server with a **manifest-driven loader backed by the [Hugging Face Hub](https://huggingface.co/stanford-star)**.
+server with a manifest-driven loader backed by the [Hugging Face Hub](https://huggingface.co/stanford-star).
 A dataset is now just a folder — a `manifest.yaml`, one parquet per table, and a `tasks/`
 subdirectory — so there is no registry, no `pooch` cache, and no code to add for a new
 dataset or task.
 
-The data itself is unchanged for the v1/v2 datasets and tasks: labels, splits and metrics
+The **data itself is unchanged** for the v1/v2 datasets and tasks: labels, splits and metrics
 are the same, so numbers from earlier versions remain comparable (see
 [Renames](#renames) for the one metric that changed name only).
+
+If you are not ready to move, pin `relbench==2.1.0`. Note that the v2 download server it
+depends on is deprecated in favor of the Hub.
+
+## Leaderboard submissions
+
+Submitting is now a supported flow in the package rather than a PR against a results file.
+Write one prediction CSV per task, validate and package locally, then open a submission
+issue:
+
+```python
+relbench.submit.write_prediction_table(task, test_pred, "preds/rel-f1__driver-position.csv")
+```
+
+```bash
+python -m relbench.submit preds/
+```
+
+The task lists for the three boards are in `relbench.submit.LEADERBOARD_TASKS`. See the
+[Leaderboard section of the README](README.md#leaderboard).
+
+## Your own data
+
+Custom datasets no longer subclass `Dataset` or call `register_dataset`/`register_task`.
+Express the database as a `manifest.yaml` + parquet folder, express tasks as SQL in a task
+manifest, and publish to the Hub (or keep it local and pass the path).
+[`byod/README.md`](byod/README.md) is the full walkthrough.
+
 
 ## Loading datasets and tasks
 
@@ -103,31 +131,3 @@ lazily, so a plain `import relbench` no longer pulls in torch.
 
 Reference scripts in [`examples/`](examples) were renamed: `baseline_*.py` → `trivial_*.py`.
 
-## Leaderboard submissions
-
-Submitting is now a supported flow in the package rather than a PR against a results file.
-Write one prediction CSV per task, validate and package locally, then open a submission
-issue:
-
-```python
-relbench.submit.write_prediction_table(task, test_pred, "preds/rel-f1__driver-position.csv")
-```
-
-```bash
-python -m relbench.submit preds/
-```
-
-The task lists for the three boards are in `relbench.submit.LEADERBOARD_TASKS`. See the
-[Leaderboard section of the README](README.md#leaderboard).
-
-## Your own data
-
-Custom datasets no longer subclass `Dataset` or call `register_dataset`/`register_task`.
-Express the database as a `manifest.yaml` + parquet folder, express tasks as SQL in a task
-manifest, and publish to the Hub (or keep it local and pass the path).
-[`byod/README.md`](byod/README.md) is the full walkthrough.
-
-## Staying on RelBench 2
-
-If you are not ready to move, pin `relbench==2.1.0`. Note that the v2 download server it
-depends on is deprecated in favor of the Hub.
