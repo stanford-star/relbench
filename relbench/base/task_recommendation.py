@@ -6,13 +6,14 @@ import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
+from .database import Database
 from .dataset import Dataset
 from .table import Table
 from .task_base import BaseTask, TaskType
 
 
 class RecommendationTask(BaseTask):
-    r"""A link prediction task on a dataset.
+    r"""A recommendation task on a dataset.
 
     Attributes:
         src_entity_col: The source entity column.
@@ -39,22 +40,25 @@ class RecommendationTask(BaseTask):
     def __init__(
         self,
         dataset: Dataset,
-        cache_dir: Optional[str] = None,
+        remove_columns: Optional[List[tuple]] = None,
     ):
         if self.num_eval_timestamps != 1:
             raise NotImplementedError(
                 "RecommendationTask currently only supports num_eval_timestamps=1."
             )
-        super().__init__(dataset, cache_dir)
+        super().__init__(dataset, remove_columns)
 
-    def filter_dangling_entities(self, table: Table) -> Table:
+    def filter_dangling_entities(self, table: Table, db: Database) -> Table:
+        num_src_nodes = len(db.table_dict[self.src_entity_table])
+        num_dst_nodes = len(db.table_dict[self.dst_entity_table])
+
         # filter dangling destination entities from a list
         table.df[self.dst_entity_col] = table.df[self.dst_entity_col].apply(
-            lambda x: [i for i in x if i < self.num_dst_nodes]
+            lambda x: [i for i in x if i < num_dst_nodes]
         )
 
         # filter dangling source entities and empty list (after above filtering)
-        filter_mask = (table.df[self.src_entity_col] >= self.num_src_nodes) | (
+        filter_mask = (table.df[self.src_entity_col] >= num_src_nodes) | (
             ~table.df[self.dst_entity_col].map(bool)
         )
 
@@ -100,14 +104,6 @@ class RecommendationTask(BaseTask):
         dst_count = np.array(dst_count_list)
 
         return {fn.__name__: fn(pred_isin, dst_count) for fn in metrics}
-
-    @property
-    def num_src_nodes(self) -> int:
-        return len(self.dataset.get_db().table_dict[self.src_entity_table])
-
-    @property
-    def num_dst_nodes(self) -> int:
-        return len(self.dataset.get_db().table_dict[self.dst_entity_table])
 
     def stats(self) -> Dict[str, Dict[str, int]]:
         r"""Get train / val / test table statistics for each timestamp and the whole

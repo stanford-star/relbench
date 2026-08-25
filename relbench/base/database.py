@@ -1,7 +1,4 @@
-import os
-from functools import lru_cache
-from pathlib import Path
-from typing import Dict, Union
+from typing import Dict
 
 import pandas as pd
 from typing_extensions import Self
@@ -21,28 +18,7 @@ class Database:
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}()"
 
-    def save(self, path: Union[str, os.PathLike]) -> None:
-        r"""Save the database to a directory.
-
-        Simply saves each table individually with the table name as base name of file.
-        """
-
-        for name, table in self.table_dict.items():
-            table.save(f"{path}/{name}.parquet")
-
-    @classmethod
-    def load(cls, path: Union[str, os.PathLike]) -> Self:
-        r"""Load a database from a directory of tables in parquet files."""
-
-        table_dict = {}
-        for table_path in Path(path).glob("*.parquet"):
-            table = Table.load(table_path)
-            table_dict[table_path.stem] = table
-
-        return cls(table_dict)
-
     @property
-    @lru_cache(maxsize=None)
     def min_timestamp(self) -> pd.Timestamp:
         r"""Return the earliest timestamp in the database."""
 
@@ -53,7 +29,6 @@ class Database:
         )
 
     @property
-    @lru_cache(maxsize=None)
     def max_timestamp(self) -> pd.Timestamp:
         r"""Return the latest timestamp in the database."""
 
@@ -69,15 +44,6 @@ class Database:
         return Database(
             table_dict={
                 name: table.upto(timestamp) for name, table in self.table_dict.items()
-            }
-        )
-
-    def from_(self, timestamp: pd.Timestamp) -> Self:
-        r"""Return a database with all rows from timestamp."""
-
-        return Database(
-            table_dict={
-                name: table.from_(timestamp) for name, table in self.table_dict.items()
             }
         )
 

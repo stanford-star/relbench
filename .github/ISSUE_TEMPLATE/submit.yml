@@ -1,0 +1,48 @@
+name: Submit to the RelBench leaderboard
+description: Submit your method to the RelBench leaderboard by uploading test set predictions.
+title: "Leaderboard submission"
+labels: ["submit"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for your interest in RelBench! Please see [this](https://github.com/rishabh-ranjan/relbench#submitting-to-the-leaderboard) for how to prepare and validate your submission if you haven't already.
+  - type: input
+    id: method-name
+    attributes:
+      label: Name
+      description: Display name shown on the leaderboard.
+      placeholder: My awesome method
+    validations:
+      required: true
+  - type: textarea
+    id: note
+    attributes:
+      label: Note
+      description: Anything you'd like to add, shown on hover (optional).
+  - type: dropdown
+    id: in-context
+    attributes:
+      label: In-context?
+      description: The method did NOT train on the target DATABASE in any form.
+      options:
+        - "No"
+        - "Yes"
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: URL
+      description: Project / code / paper link.
+      placeholder: https://github.com/...
+    validations:
+      required: true
+  - type: textarea
+    id: files
+    attributes:
+      label: File(s)
+      description: As written by `python -m relbench.submit`.
+      placeholder: See attach button below to add files.
+    validations:
+      required: true

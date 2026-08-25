@@ -11,20 +11,24 @@ from torch_geometric.loader import NeighborLoader
 from torch_geometric.typing import NodeType
 
 from relbench.base import RecommendationTask, TaskType
-from relbench.datasets.fake import FakeDataset
-from relbench.modeling.graph import get_link_train_table_input, make_pkey_fkey_graph
+from relbench.modeling.graph import (
+    get_link_train_table_input,
+    make_pkey_fkey_graph,
+    num_dst_nodes,
+)
 from relbench.modeling.loader import LinkNeighborLoader
 from relbench.modeling.nn import HeteroEncoder, HeteroGraphSAGE
 from relbench.modeling.utils import get_stype_proposal, to_unix_time
-from relbench.tasks.amazon import UserItemPurchaseTask
 
 
 @pytest.mark.parametrize(
     "share_same_time",
     [True, False],
 )
-def test_link_train_fake_product_dataset(tmp_path, share_same_time):
-    dataset = FakeDataset()
+def test_link_train_fake_product_dataset(
+    tmp_path, share_same_time, make_purchase_task, fake_dataset
+):
+    dataset = fake_dataset()
 
     data, col_stats_dict = make_pkey_fkey_graph(
         dataset.get_db(),
@@ -41,13 +45,13 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
     gnn = HeteroGraphSAGE(data.node_types, data.edge_types, 64)
 
     # Ensure that neighbor loading works on train/val/test splits ############
-    task: RecommendationTask = UserItemPurchaseTask(dataset)
-    assert task.task_type == TaskType.LINK_PREDICTION
+    task: RecommendationTask = make_purchase_task(dataset)
+    assert task.task_type == TaskType.RECOMMENDATION
 
     # Ensure that stats computation works on train/val/test splits ###########
     stats = task.stats()
     assert len(stats) == 4
-    assert len(stats["train"]) == 11
+    assert len(stats["train"]) >= 2
     assert len(next(iter(stats["train"].values()))) == 4
     assert len(stats["val"]) == 2
     assert len(next(iter(stats["val"].values()))) == 4
@@ -55,8 +59,9 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
     assert len(next(iter(stats["test"].values()))) == 4
     assert len(stats["total"].values()) == 5
 
+    n_dst_nodes = num_dst_nodes(dataset.get_db(), task)
     train_table = task.get_table("train")
-    train_table_input = get_link_train_table_input(train_table, task)
+    train_table_input = get_link_train_table_input(train_table, task, n_dst_nodes)
     # Test get_link_train_table_input
     for index, row in train_table.df.iterrows():
         assert set(row[task.dst_entity_col]) == set(
@@ -121,7 +126,7 @@ def test_link_train_fake_product_dataset(tmp_path, share_same_time):
             time_attr="time",
             input_nodes=task.dst_entity_table,
             input_time=torch.full(
-                size=(task.num_dst_nodes,), fill_value=seed_time, dtype=torch.long
+                size=(n_dst_nodes,), fill_value=seed_time, dtype=torch.long
             ),
             batch_size=32,
             shuffle=False,

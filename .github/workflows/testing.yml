@@ -28,8 +28,8 @@ jobs:
 
       - name: Install main package
         run: |
-          pip install .[test]
+          pip install .[dev]
 
       - name: Run tests
         run: |
-          pytest test/base test/datasets
+          pytest test/base test/test_metrics.py

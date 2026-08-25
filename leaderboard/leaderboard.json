@@ -1,0 +1,31 @@
+[
+ {
+  "name": "Random",
+  "in_context": false,
+  "url": "https://github.com/stanford-star/relbench",
+  "note": "RelBench baseline",
+  "date": "2026-07-23T06:25:37Z",
+  "author": "rishabh-ranjan",
+  "issue": 4,
+  "boards": {
+   "binary_classification": {
+    "results": {
+     "rel-amazon/user-churn": 0.5013687207723396,
+     "rel-amazon/item-churn": 0.49922219327753925,
+     "rel-avito/user-visits": 0.5052135823592232,
+     "rel-avito/user-clicks": 0.5042714724628132,
+     "rel-event/user-repeat": 0.5161764705882352,
+     "rel-event/user-ignore": 0.5189872543262755,
+     "rel-f1/driver-dnf": 0.46022544283413847,
+     "rel-f1/driver-top3": 0.5023777173913043,
+     "rel-hm/user-churn": 0.49797742374976833,
+     "rel-stack/user-engagement": 0.5065984152358018,
+     "rel-stack/user-badge": 0.49948798689749824,
+     "rel-trial/study-outcome": 0.4643190100856005
+    },
+    "mean": 0.49801880749837807,
+    "cov": 1.0
+   }
+  }
+ }
+]

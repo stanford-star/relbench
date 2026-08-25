@@ -17,10 +17,11 @@ from torch_geometric.loader import NeighborLoader
 from torch_geometric.seed import seed_everything
 from tqdm import tqdm
 
-from relbench.base import Dataset, EntityTask, TaskType
+from relbench import load_dataset
+from relbench.base import EntityTask, TaskType
 from relbench.modeling.graph import get_node_train_table_input, make_pkey_fkey_graph
 from relbench.modeling.utils import get_stype_proposal
-from relbench.tasks import get_task
+from relbench.submit import evaluate_task, write_prediction_table
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-f1")
@@ -30,7 +31,7 @@ parser.add_argument(
     "--task_type",
     type=str,
     default="REGRESSION",
-    choices=["BINARY_CLASSIFICATION", "REGRESSION", "MULTILABEL_CLASSIFICATION"],
+    choices=["BINARY_CLASSIFICATION", "REGRESSION"],
 )
 parser.add_argument("--lr", type=float, default=0.005)
 parser.add_argument("--epochs", type=int, default=10)
@@ -58,8 +59,14 @@ if torch.cuda.is_available():
 seed_everything(args.seed)
 
 
-task: EntityTask = get_task(args.dataset, args.task)
-dataset: Dataset = task.dataset
+dataset = load_dataset(args.dataset)
+
+
+task: EntityTask = dataset.load_task(args.task)
+
+# Materialize the database once and reuse it: `get_db` is uncached, and this is
+# the task\'s view of it (the columns the task must not see are already dropped).
+db = task.get_db(upto_test_timestamp=False)
 
 stypes_cache_path = Path(
     f"{args.cache_dir}/{args.dataset}/tasks/{args.task}/stypes.json"
@@ -71,7 +78,7 @@ try:
         for col, stype_str in col_to_stype.items():
             col_to_stype[col] = stype(stype_str)
 except FileNotFoundError:
-    col_to_stype_dict = get_stype_proposal(dataset.get_db())
+    col_to_stype_dict = get_stype_proposal(db)
     Path(stypes_cache_path).parent.mkdir(parents=True, exist_ok=True)
     with open(stypes_cache_path, "w") as f:
         json.dump(col_to_stype_dict, f, indent=2, default=str)
@@ -79,19 +86,17 @@ except FileNotFoundError:
 # Remove the target column from the col_to_stype_dict if it exists
 if task.target_col in col_to_stype_dict[task.entity_table]:
     del col_to_stype_dict[task.entity_table][task.target_col]
-for col in dataset.remove_columns:
-    if col in col_to_stype_dict[task.entity_table]:
-        del col_to_stype_dict[task.entity_table][col]
+for table, col in task.remove_columns:
+    if col in col_to_stype_dict.get(table, {}):
+        del col_to_stype_dict[table][col]
 
 data, col_stats_dict = make_pkey_fkey_graph(
     # NOTE: Important!: Do not use `upto_test_timestamp=True` here, as this will
     # cause task rows with timestamps after the test timestamp to dangle.
-    dataset.get_db(
-        upto_test_timestamp=False,
-    ),
+    db,
     col_to_stype_dict=col_to_stype_dict,
     text_embedder_cfg=TextEmbedderConfig(
-        text_embedder=GloveTextEmbedding(device=device), batch_size=256
+        text_embedder=GloveTextEmbedding(device="cpu"), batch_size=256
     ),
     cache_dir=f"{args.cache_dir}/{args.dataset}/tasks/{args.task}/materialized",
 )
@@ -105,25 +110,17 @@ if task.task_type == TaskType.BINARY_CLASSIFICATION:
 elif task.task_type == TaskType.REGRESSION:
     out_channels = 1
     loss_fn = L1Loss()
-    tune_metric = "mae"
+    tune_metric = "nmae"
     higher_is_better = False
     # Get the clamp value at inference time
     train_table = task.get_table("train")
     clamp_min, clamp_max = np.percentile(
         train_table.df[task.target_col].to_numpy(), [2, 98]
     )
-elif task.task_type == TaskType.MULTILABEL_CLASSIFICATION:
-    out_channels = task.num_labels
-    loss_fn = BCEWithLogitsLoss()
-    tune_metric = "multilabel_auprc_macro"
-    higher_is_better = True
-elif task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
-    out_channels = task.num_classes
-    loss_fn = CrossEntropyLoss()
-    tune_metric = "mrr"  # "macro_f1"
-    higher_is_better = True
 else:
-    raise ValueError(f"Task type {task.task_type} is unsupported")
+    raise ValueError(f"Unsupported task type: {task.task_type}")
+
+val_table = task.get_table("val")  # hoisted: get_table is uncached
 
 loader_dict: Dict[str, NeighborLoader] = {}
 for split in ["train", "val", "test"]:
@@ -161,10 +158,7 @@ def train() -> float:
             task.entity_table,
         )
         pred = pred.view(-1) if pred.size(1) == 1 else pred
-        if task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
-            loss = loss_fn(pred.float(), batch[entity_table].y)
-        else:
-            loss = loss_fn(pred.float(), batch[entity_table].y.float())
+        loss = loss_fn(pred.float(), batch[entity_table].y.float())
         loss.backward()
         optimizer.step()
 
@@ -195,13 +189,8 @@ def test(loader: NeighborLoader) -> np.ndarray:
             assert clamp_max is not None
             pred = torch.clamp(pred, clamp_min, clamp_max)
 
-        if task.task_type in [
-            TaskType.BINARY_CLASSIFICATION,
-            TaskType.MULTILABEL_CLASSIFICATION,
-        ]:
+        if task.task_type == TaskType.BINARY_CLASSIFICATION:
             pred = torch.sigmoid(pred)
-        elif task.task_type == TaskType.MULTICLASS_CLASSIFICATION:
-            pred = torch.softmax(pred, dim=1)
 
         pred = pred.view(-1) if pred.size(1) == 1 else pred
         pred_list.append(pred.detach().cpu())
@@ -223,7 +212,7 @@ best_val_metric = -math.inf if higher_is_better else math.inf
 for epoch in range(1, args.epochs + 1):
     train_loss = train()
     val_pred = test(loader_dict["val"])
-    val_metrics = task.evaluate(val_pred, task.get_table("val"))
+    val_metrics = task.evaluate(val_pred, val_table)
     print(f"Epoch: {epoch:02d}, Train loss: {train_loss}, Val metrics: {val_metrics}")
 
     if (higher_is_better and val_metrics[tune_metric] >= best_val_metric) or (
@@ -235,9 +224,15 @@ for epoch in range(1, args.epochs + 1):
 
 model.load_state_dict(state_dict)
 val_pred = test(loader_dict["val"])
-val_metrics = task.evaluate(val_pred, task.get_table("val"))
+val_metrics = task.evaluate(val_pred, val_table)
 print(f"Best Val metrics: {val_metrics}")
 
 test_pred = test(loader_dict["test"])
-test_metrics = task.evaluate(test_pred)
+if task.task_type in (TaskType.BINARY_CLASSIFICATION, TaskType.REGRESSION):
+    os.makedirs("/tmp/relbench_preds", exist_ok=True)
+    pred_path = f"/tmp/relbench_preds/{args.dataset}__{args.task}.csv"
+    write_prediction_table(task, test_pred, pred_path)
+    test_metrics = evaluate_task(f"{args.dataset}/{args.task}", pred_path)
+else:
+    test_metrics = task.evaluate(test_pred)
 print(f"Best test metrics: {test_metrics}")

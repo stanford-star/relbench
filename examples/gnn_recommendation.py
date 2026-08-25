@@ -19,12 +19,16 @@ from torch_geometric.loader import NeighborLoader
 from torch_geometric.seed import seed_everything
 from tqdm import tqdm
 
+from relbench import load_dataset
 from relbench.base import Dataset, RecommendationTask, TaskType
-from relbench.datasets import get_dataset
-from relbench.modeling.graph import get_link_train_table_input, make_pkey_fkey_graph
+from relbench.modeling.graph import (
+    get_link_train_table_input,
+    make_pkey_fkey_graph,
+    num_dst_nodes,
+)
 from relbench.modeling.loader import LinkNeighborLoader
 from relbench.modeling.utils import get_stype_proposal
-from relbench.tasks import get_task
+from relbench.submit import evaluate_task, write_prediction_table
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, default="rel-hm")
@@ -66,10 +70,8 @@ if torch.cuda.is_available():
 seed_everything(args.seed)
 
 try:
-    dataset: Dataset = get_dataset(args.dataset, download=bool(args.download))
-    task: RecommendationTask = get_task(
-        args.dataset, args.task, download=bool(args.download)
-    )
+    dataset: Dataset = load_dataset(args.dataset)
+    task: RecommendationTask = dataset.load_task(args.task)
 except Exception:
     if bool(args.download):
         print(
@@ -77,8 +79,13 @@ except Exception:
             file=sys.stderr,
         )
     raise
-tune_metric = "link_prediction_map"
-assert task.task_type == TaskType.LINK_PREDICTION
+tune_metric = "map"
+assert task.task_type == TaskType.RECOMMENDATION
+
+# Materialize the database once and reuse it: `get_db` is uncached, and this is the
+# task's view of it (the columns the task must not see are already dropped).
+db = task.get_db()
+n_dst_nodes = num_dst_nodes(db, task)
 
 stypes_cache_path = Path(f"{args.cache_dir}/{args.dataset}/stypes.json")
 try:
@@ -88,23 +95,25 @@ try:
         for col, stype_str in col_to_stype.items():
             col_to_stype[col] = stype(stype_str)
 except FileNotFoundError:
-    col_to_stype_dict = get_stype_proposal(dataset.get_db())
+    col_to_stype_dict = get_stype_proposal(db)
     Path(stypes_cache_path).parent.mkdir(parents=True, exist_ok=True)
     with open(stypes_cache_path, "w") as f:
         json.dump(col_to_stype_dict, f, indent=2, default=str)
 
 data, col_stats_dict = make_pkey_fkey_graph(
-    dataset.get_db(),
+    db,
     col_to_stype_dict=col_to_stype_dict,
     text_embedder_cfg=TextEmbedderConfig(
-        text_embedder=GloveTextEmbedding(device=device), batch_size=256
+        text_embedder=GloveTextEmbedding(device="cpu"), batch_size=256
     ),
     cache_dir=f"{args.cache_dir}/{args.dataset}/materialized",
 )
 
 num_neighbors = [int(args.num_neighbors // 2**i) for i in range(args.num_layers)]
 
-train_table_input = get_link_train_table_input(task.get_table("train"), task)
+train_table_input = get_link_train_table_input(
+    task.get_table("train"), task, n_dst_nodes
+)
 train_loader = LinkNeighborLoader(
     data=data,
     num_neighbors=num_neighbors,
@@ -148,7 +157,7 @@ for split in ["val", "test"]:
         time_attr="time",
         input_nodes=task.dst_entity_table,
         input_time=torch.full(
-            size=(task.num_dst_nodes,), fill_value=seed_time, dtype=torch.long
+            size=(n_dst_nodes,), fill_value=seed_time, dtype=torch.long
         ),
         batch_size=args.batch_size,
         shuffle=False,
@@ -250,11 +259,13 @@ def test(src_loader: NeighborLoader, dst_loader: NeighborLoader) -> np.ndarray:
 
 state_dict = None
 best_val_metric = 0
+val_table = task.get_table("val")  # hoisted: get_table is uncached
+
 for epoch in range(1, args.epochs + 1):
     train_loss = train()
     if epoch % args.eval_epochs_interval == 0:
         val_pred = test(*eval_loaders_dict["val"])
-        val_metrics = task.evaluate(val_pred, task.get_table("val"))
+        val_metrics = task.evaluate(val_pred, val_table)
         print(
             f"Epoch: {epoch:02d}, Train loss: {train_loss}, "
             f"Val metrics: {val_metrics}"
@@ -272,12 +283,15 @@ else:
         "No best checkpoint was selected (state_dict is None); evaluating with current model weights."
     )
 val_pred = test(*eval_loaders_dict["val"])
-val_metrics = task.evaluate(val_pred, task.get_table("val"))
+val_metrics = task.evaluate(val_pred, val_table)
 print(f"Best Val metrics: {val_metrics}")
 
 if "test" in eval_loaders_dict:
     test_pred = test(*eval_loaders_dict["test"])
-    test_metrics = task.evaluate(test_pred, task.get_table("test"))
+    os.makedirs("/tmp/relbench_preds", exist_ok=True)
+    pred_path = f"/tmp/relbench_preds/{args.dataset}__{args.task}.csv"
+    write_prediction_table(task, test_pred, pred_path)
+    test_metrics = evaluate_task(f"{args.dataset}/{args.task}", pred_path)
     print(f"Best test metrics: {test_metrics}")
 else:
     print("Best test metrics: <skipped: empty test split>")

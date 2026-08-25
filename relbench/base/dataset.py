@@ -1,8 +1,3 @@
-import time
-from functools import lru_cache
-from pathlib import Path
-from typing import Optional
-
 import numpy as np
 import pandas as pd
 
@@ -19,35 +14,17 @@ class Dataset:
     Validation split of a task involves predicting the target variable for a
     time period after val_timestamp (exclusive) using data upto val_timestamp.
     Similarly for test_timestamp.
+
+    ``get_db`` is a pure function of the underlying data: it holds no state, caches
+    nothing, and never depends on which tasks have been loaded. Materializing a
+    database is expensive, so **callers should keep the object they get back** rather
+    than calling ``get_db`` repeatedly. For a view with the columns a task must not
+    see removed, use :meth:`relbench.base.BaseTask.get_db`.
     """
 
     # To be set by subclass.
     val_timestamp: pd.Timestamp
     test_timestamp: pd.Timestamp
-
-    # For predict column task.
-    target_col: Optional[str]
-    entity_table: Optional[str]
-    remove_columns: list[tuple[str, str]]
-
-    def __init__(
-        self,
-        cache_dir: Optional[str] = None,
-    ) -> None:
-        r"""Create a dataset object.
-
-        Args:
-            cache_dir: A directory for caching the database object. If specified,
-                we will either process and cache the file (if not available) or use
-                the cached file. If None, we will not use cached file and re-process
-                everything from scratch without saving the cache.
-        """
-
-        self.cache_dir = cache_dir
-
-        self.target_col = None
-        self.entity_table = None
-        self.remove_columns = []
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}()"
@@ -77,133 +54,27 @@ class Dataset:
                 if mask.any():
                     table.df.loc[mask, fkey_col] = None
 
-    @lru_cache(maxsize=None)
-    def get_db(self, upto_test_timestamp=True) -> Database:
-        r"""Return the database object.
-
-        The returned database object is cached in memory.
+    def get_db(self, upto_test_timestamp: bool = True) -> Database:
+        r"""Build and return the database object.
 
         Args:
             upto_test_timestamp: If True, only return rows upto test_timestamp.
 
         Returns:
-            Database: The database object.
+            Database: A freshly built database object.
 
         `upto_test_timestamp` is True by default to prevent test leakage.
+
+        Nothing is cached: every call rebuilds the database. Hold on to the returned
+        object instead of calling this repeatedly.
         """
-
-        db_path = f"{self.cache_dir}/db"
-        if self.cache_dir and Path(db_path).exists() and any(Path(db_path).iterdir()):
-            print(f"Loading Database object from {db_path}...")
-            tic = time.time()
-            db = Database.load(db_path)
-            toc = time.time()
-            print(f"Done in {toc - tic:.2f} seconds.")
-
-        else:
-            print("Making Database object from scratch...")
-            print(
-                "(You can also use `get_dataset(..., download=True)` "
-                "for datasets prepared by the RelBench team.)"
-            )
-            tic = time.time()
-            db = self.make_db()
-            db.reindex_pkeys_and_fkeys()
-            toc = time.time()
-            print(f"Done in {toc - tic:.2f} seconds.")
-
-            if self.cache_dir:
-                print(f"Caching Database object to {db_path}...")
-                tic = time.time()
-                db.save(db_path)
-                toc = time.time()
-                print(f"Done in {toc - tic:.2f} seconds.")
+        db = self.make_db()
+        db.reindex_pkeys_and_fkeys()
 
         if upto_test_timestamp:
             db = db.upto(self.test_timestamp)
 
         self.validate_and_correct_db(db)
-
-        if self.target_col:
-            # Get the modified db with the target column removed
-            db = self.get_modified_db(db)
-
-        return db
-
-    def get_modified_db(self, db) -> Database:
-        r"""Get the modified db with the target column removed.
-
-        The target columns is saved to `db.table_dict[table_name].removed_cols`
-        and the column is dropped from the table.
-        Args:
-            db: The database object.
-
-        Returns:
-            Database: The modified database object.
-        """
-
-        # Remove the target column from the source entity table
-        # Ensure the entity table has a primary key if not add one
-        # Remove any other columns marked for removal
-        if self.target_col:
-            table_name = self.entity_table
-            col = self.target_col
-
-            if db.table_dict[table_name].pkey_col is None:
-                db.table_dict[table_name].pkey_col = "primary_key"
-                db.table_dict[table_name].df["primary_key"] = np.arange(
-                    len(db.table_dict[table_name].df)
-                )
-
-            if col not in db.table_dict[table_name].df.columns:
-                raise ValueError(f"Column {col} not found in table {table_name}.")
-            if col in db.table_dict[table_name].fkey_col_to_pkey_table.keys():
-                raise ValueError(
-                    f"Column {col} is a foreign key in table {table_name}. Only feature columns can be removed."
-                )
-            if col == db.table_dict[table_name].pkey_col:
-                raise ValueError(
-                    f"Column {col} is the primary key in table {table_name}. Only feature columns can be removed."
-                )
-
-            # save the columns to be dropped
-            id_keys = []
-            if db.table_dict[table_name].pkey_col:
-                id_keys.append(db.table_dict[table_name].pkey_col)
-            else:
-                # add primary key to table_name if it doesn't have one
-                db.table_dict[table_name].df["primary_key"] = np.arange(
-                    len(db.table_dict[table_name].df)
-                )
-                id_keys.append("primary_key")
-                db.table_dict[table_name].pkey_col = "primary_key"
-
-            # Save the target column to be dropped
-            db.table_dict[table_name].removed_cols = db.table_dict[table_name].df[
-                id_keys + [col]
-            ]
-            # drop the columns
-            db.table_dict[table_name].df = db.table_dict[table_name].df.drop(
-                columns=[col]
-            )
-
-            for table, remove_col in self.remove_columns:
-                if remove_col in db.table_dict[table].df.columns:
-                    # If the column is in the table, remove it
-                    db.table_dict[table].df = db.table_dict[table].df.drop(
-                        columns=[remove_col]
-                    )
-                else:
-                    print(
-                        f"Column {remove_col} not found in table {table}. "
-                        "Skipping removal from this table."
-                    )
-
-        # Clear the get_dataset cache as the dataset instance was modified.
-        from relbench.datasets import get_dataset
-
-        get_dataset.cache_clear()
-
         return db
 
     def make_db(self) -> Database:
@@ -212,3 +83,27 @@ class Dataset:
         To be implemented by subclass.
         """
         raise NotImplementedError
+
+
+def drop_columns(db: Database, remove_columns) -> Database:
+    r"""Drop ``(table, column)`` pairs from ``db`` in place, and return it.
+
+    These are the columns a task must not see -- the ones its label is, or is derived
+    from. Applied per task in :meth:`relbench.base.BaseTask.get_db`, never stored on
+    the dataset, so two tasks over one dataset cannot disturb each other.
+    """
+    for table, remove_col in remove_columns:
+        if table not in db.table_dict:
+            print(
+                f"Table {table} not in the database. "
+                f"Skipping removal of column {remove_col}."
+            )
+            continue
+        if remove_col in db.table_dict[table].df.columns:
+            db.table_dict[table].df = db.table_dict[table].df.drop(columns=[remove_col])
+        else:
+            print(
+                f"Column {remove_col} not found in table {table}. "
+                "Skipping removal from this table."
+            )
+    return db

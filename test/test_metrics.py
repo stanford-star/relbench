@@ -1,23 +1,27 @@
 import numpy as np
 
-from relbench.metrics import (
-    link_prediction_map,
-    link_prediction_ndcg,
-    link_prediction_precision,
-    link_prediction_recall,
-)
+from relbench.metrics import make_nmae, map, roc_auc
 
 
-def test_link_prediction_metrics():
+def test_roc_auc():
+    true = np.array([0, 0, 1, 1])
+    pred = np.array([0.1, 0.4, 0.35, 0.8])
+    assert 0 <= roc_auc(true, pred) <= 1
+
+
+def test_nmae():
+    true = np.array([1.0, 2.0, 3.0, 4.0])
+    pred = np.array([1.5, 2.5, 2.5, 3.5])
+    std = float(np.std(true, ddof=1))
+    nmae = make_nmae(lambda: std)
+    expected = np.mean(np.abs(true - pred)) / std
+    assert np.isclose(nmae(true, pred), expected)
+
+
+def test_map():
     num_src_nodes = 100
     eval_k = 10
-    pred_isin = np.random.randint(0, 2, size=(num_src_nodes, eval_k), dtype=bool)
-    dst_count = pred_isin.sum(axis=1) + np.random.randint(0, 5, size=(num_src_nodes,))
-    recall = link_prediction_recall(pred_isin, dst_count)
-    precision = link_prediction_precision(pred_isin, dst_count)
-    map = link_prediction_map(pred_isin, dst_count)
-    ndcg = link_prediction_ndcg(pred_isin, dst_count)
-    assert 0 <= recall <= 1
-    assert 0 <= precision <= 1
-    assert 0 <= map <= 1
-    assert 0 <= ndcg <= 1
+    rng = np.random.default_rng(0)
+    pred_isin = rng.integers(0, 2, size=(num_src_nodes, eval_k)).astype(bool)
+    dst_count = pred_isin.sum(axis=1) + rng.integers(0, 5, size=(num_src_nodes,))
+    assert 0 <= map(pred_isin, dst_count) <= 1

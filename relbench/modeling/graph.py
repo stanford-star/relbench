@@ -179,7 +179,7 @@ def get_node_train_table_input(
 
 
 class LinkTrainTableInput(NamedTuple):
-    r"""Training table input for link prediction.
+    r"""Training table input for recommendation.
 
     - src_nodes is a Tensor of source node indices.
     - dst_nodes is PyTorch sparse tensor in csr format.
@@ -196,11 +196,25 @@ class LinkTrainTableInput(NamedTuple):
     src_time: Optional[Tensor]
 
 
+def num_dst_nodes(db: Database, task: RecommendationTask) -> int:
+    r"""Number of destination entities of ``task`` in ``db``.
+
+    Used for negative sampling and to size the score matrix. It lives here rather than
+    on the task because only the modeling path needs it, and because it is a property of
+    a particular database -- pass the one you already built.
+    """
+    return len(db.table_dict[task.dst_entity_table])
+
+
 def get_link_train_table_input(
     table: Table,
     task: RecommendationTask,
+    num_dst_nodes: int,
 ) -> LinkTrainTableInput:
-    r"""Get the training table input for link prediction."""
+    r"""Get the training table input for recommendation.
+
+    ``num_dst_nodes`` sizes the destination space; see :func:`num_dst_nodes`.
+    """
 
     src_node_idx: Tensor = torch.from_numpy(
         table.df[task.src_entity_col].astype(int).values
@@ -212,7 +226,7 @@ def get_link_train_table_input(
     sparse_coo = torch.sparse_coo_tensor(
         coo_indices,
         torch.ones(coo_indices.size(1), dtype=bool),
-        (len(src_node_idx), task.num_dst_nodes),
+        (len(src_node_idx), num_dst_nodes),
     )
     dst_node_indices = sparse_coo.to_sparse_csr()
 
@@ -223,6 +237,6 @@ def get_link_train_table_input(
     return LinkTrainTableInput(
         src_nodes=(task.src_entity_table, src_node_idx),
         dst_nodes=(task.dst_entity_table, dst_node_indices),
-        num_dst_nodes=task.num_dst_nodes,
+        num_dst_nodes=num_dst_nodes,
         src_time=time,
     )

@@ -4,54 +4,53 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "relbench"
-version = "2.1.2"
+version = "3.0.0"
 description = "RelBench: Relational Deep Learning Benchmark"
 authors = [{name = "RelBench Team", email = "relbench@cs.stanford.edu"}]
 readme = "README.md"
 license = {file = "LICENSE"}
 classifiers = [
 	"License :: OSI Approved :: MIT License",
+	"Programming Language :: Python :: 3.10",
+	"Programming Language :: Python :: 3.11",
+	"Programming Language :: Python :: 3.12",
+	"Programming Language :: Python :: 3.13",
+	"Programming Language :: Python :: 3",
 ]
 requires-python=">=3.10"
-keywords=[]
+keywords=[
+	"relational deep learning",
+	"graph neural networks",
+	"relational databases",
+	"benchmark",
+	"machine learning",
+]
 dependencies=[
 	"pandas",
-	"pooch",
+	"huggingface_hub",
+	"pyyaml",
 	"pyarrow",
 	"numpy",
 	"duckdb",
 	"scikit-learn<=1.6.1",
 	"typing-extensions",
-	"datasets",
+	"graphviz",
 ]
 
 [project.optional-dependencies]
-full=[
-	"pytorch_frame>=0.2.3",
-	"torch_geometric",
-]
 example=[
 	"sentence-transformers",
 	"pytorch_frame[full]",
 	"torch_geometric",
 	"tqdm",
 ]
-test=[
-	"pytest",
-]
 dev=[
+	"pytest",
 	"pre-commit",
-]
-dbinfer=[
-	"dbinfer-relbench-adapter",
-	"db-dtypes",
-]
-ctu=[
-	"redelex",
 ]
 
 [project.urls]
-Home = "https://relbench.stanford.edu"
+Home = "https://star-project.stanford.edu/relbench"
 
 [tool.flit.module]
 name="relbench"
