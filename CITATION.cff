@@ -1,0 +1,69 @@
+cff-version: 1.2.0
+message: If you use RelBench, please cite the benchmark papers below.
+title: RelBench
+type: software
+repository-code: https://github.com/stanford-star/relbench
+url: https://star-project.stanford.edu/relbench
+license: MIT
+authors:
+  - name: RelBench Team
+    email: relbench@cs.stanford.edu
+preferred-citation:
+  type: conference-paper
+  title: "RelBench: A Benchmark for Deep Learning on Relational Databases"
+  authors:
+    - family-names: Robinson
+      given-names: Joshua
+    - family-names: Ranjan
+      given-names: Rishabh
+    - family-names: Hu
+      given-names: Weihua
+    - family-names: Huang
+      given-names: Kexin
+    - family-names: Han
+      given-names: Jiaqi
+    - family-names: Dobles
+      given-names: Alejandro
+    - family-names: Fey
+      given-names: Matthias
+    - family-names: Lenssen
+      given-names: Jan Eric
+    - family-names: Yuan
+      given-names: Yiwen
+    - family-names: Zhang
+      given-names: Zecheng
+    - family-names: He
+      given-names: Xinwei
+    - family-names: Leskovec
+      given-names: Jure
+  collection-title: Advances in Neural Information Processing Systems
+  year: 2024
+  url: https://arxiv.org/abs/2407.20060
+references:
+  - type: article
+    title: "RelBench v2: A Large-Scale Benchmark and Repository for Relational Data"
+    authors:
+      - family-names: Gu
+        given-names: Justin
+      - family-names: Ranjan
+        given-names: Rishabh
+      - family-names: Kanatsoulis
+        given-names: Charilaos
+      - family-names: Tang
+        given-names: Haiming
+      - family-names: Jurkovic
+        given-names: Martin
+      - family-names: Hudovernik
+        given-names: Valter
+      - family-names: Znidar
+        given-names: Mark
+      - family-names: Chaturvedi
+        given-names: Pranshu
+      - family-names: Shroff
+        given-names: Parth
+      - family-names: Li
+        given-names: Fengyu
+      - family-names: Leskovec
+        given-names: Jure
+    year: 2026
+    url: https://arxiv.org/abs/2602.12606

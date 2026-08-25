@@ -33,3 +33,38 @@ jobs:
       - name: Run tests
         run: |
           pytest test --ignore=test/modeling
+
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install main package
+        run: |
+          pip install .[dev] nbclient nbformat ipykernel
+
+      - name: Cache RelBench data
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: relbench-smoke-hf-cache
+
+      - name: Run a data-only example
+        run: |
+          python examples/trivial_entity.py --dataset rel-f1 --task driver-dnf --pred_dir /tmp/preds
+
+      - name: Execute the quickstart notebook
+        run: |
+          python - <<'PY'
+          import nbformat
+          from nbclient import NotebookClient
+          nb = nbformat.read("tutorials/quickstart.ipynb", as_version=4)
+          nb.cells = [c for c in nb.cells if "pip install" not in c.source]
+          NotebookClient(nb, timeout=600, kernel_name="python3").execute()
+          PY
