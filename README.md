@@ -11,12 +11,26 @@
 </p>
 
 <p align="center">
+  <a href="#news"><b>News</b></a> ·
   <a href="#get-started"><b>Get Started</b></a> ·
   <a href="#tutorials"><b>Tutorials</b></a> ·
   <a href="#leaderboard"><b>Leaderboard</b></a> ·
   <a href="#byod"><b>BYOD</b></a> ·
   <a href="#cite-relbench"><b>Citations</b></a>
 </p>
+
+## News
+
+- **Jun 2026** — New [leaderboard](https://relbench.stanford.edu/leaderboard/), kept up to date and redesigned for relational foundation models.
+- **Jun 2026** — Datasets, models, and community hub migrated to [Hugging Face](https://huggingface.co/relbench).
+- **Mar 2026** — [RelBench v2 paper](https://arxiv.org/abs/2602.12606) accepted at the [ICLR 2026 DATA-FM workshop](https://data-fm-iclr2026.github.io/).
+- **Feb 2026** — [Temporal Graph Benchmark](https://tgb.complexdatalab.com/) integration: time-stamped event streams as relational schemas.
+- **Jan 2026** — RelBench v2 released: four new databases (SALT, RateBeer, arXiv, MIMIC-IV), 36 new tasks, and a new *Autocomplete* task type; plus 70+ CTU datasets via [ReDeLEx](https://github.com/jakubpeleska/redelex) and 7 from [4DBInfer](https://github.com/awslabs/multi-table-benchmark).
+- **Jan 2026** — [ReDeLEx](https://arxiv.org/abs/2506.22199) integration: 70+ [CTU](https://relational.fel.cvut.cz/) relational databases via `relbench[ctu]`.
+- **Sep 2024** — [RelBench paper](https://arxiv.org/abs/2407.20060) accepted at NeurIPS 2024 Datasets & Benchmarks Track.
+- **Jul 2024** — RelBench released: the first open benchmark for predictive ML on relational databases.
+- **May 2024** — [Relational Deep Learning position paper](https://arxiv.org/abs/2312.04615) accepted at ICML 2024.
+- **Nov 2023** — Relational Deep Learning introduced in a keynote by Jure Leskovec at the [LoG Conference](https://logconference.org/) ([slides](https://drive.google.com/file/d/1Uk1y6c8z265G0wiRPpGT1cd5lts5lnKq/view)).
 
 ## Get Started
 
