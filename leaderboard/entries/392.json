@@ -2,7 +2,7 @@
  "name": "GNN + LightGBM",
  "in_context": false,
  "url": "https://star-project.stanford.edu/relbench",
- "note": null,
+ "note": "RelBench implementation",
  "date": "2026-08-25T04:10:42Z",
  "author": "rishabh-ranjan",
  "issue": 392,
