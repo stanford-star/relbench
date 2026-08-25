@@ -65,9 +65,11 @@ jobs:
           git add leaderboard/
           git commit -m "Leaderboard entry from #${{ github.event.issue.number }}"
           for i in 1 2 3; do
-            git push && break
+            git push && exit 0
             git pull --rebase && sleep $i
           done
+          echo "push to main failed after 3 attempts" >&2
+          exit 1
 
       - name: Close issue
         env:
