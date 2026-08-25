@@ -85,6 +85,19 @@ def test_local_dataset_never_touches_hub(dataset_dir, monkeypatch):
     assert "hosted" not in str(err.value)
 
 
+def test_hub_cache_snapshot_counts_as_hosted(dataset_dir, tmp_path, monkeypatch):
+    import shutil
+
+    cache = tmp_path / "hub"
+    shutil.copytree(
+        dataset_dir, cache / "datasets--org--repo" / "snapshots" / "abc" / "fakeds"
+    )
+    monkeypatch.setattr("relbench.load._hf_hub_cache", lambda: cache)
+    ds = load_dataset(cache / "datasets--org--repo" / "snapshots" / "abc" / "fakeds")
+    assert not ds.is_local
+    assert load_dataset(dataset_dir).is_local
+
+
 def test_hosted_recommendation_test_table_is_masked(dataset_dir):
     task = load_dataset(dataset_dir).load_task("user-item-purchase")
     assert list(task.get_table("test").df.columns) == [

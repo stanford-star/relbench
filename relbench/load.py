@@ -104,8 +104,9 @@ def _resolve_metrics(tm: TaskManifest, task=None) -> list:
 def _hosted_name(dataset) -> Optional[str]:
     r"""The dataset's name if it was resolved from the Hub, else ``None``.
 
-    Only Hub-resolved datasets consult the Hub for tasks hosted apart from the database
-    and for precomputed regression stds. A dataset loaded from a local path -- or a plain
+    Only Hub-resolved datasets -- addressed by a Hub spec, or by a directory inside the
+    Hub cache such as the one :func:`relbench.submit.evaluate_task` fetches -- consult
+    the Hub for tasks hosted apart from the database and for precomputed regression stds. A dataset loaded from a local path -- or a plain
     in-memory :class:`~relbench.base.Dataset` such as the test fixtures -- stays local:
     ``None`` makes the NMAE normalizer fall back to the train split and confines bare
     task names to the dataset's own folder.
@@ -157,7 +158,8 @@ class RelBenchDataset(Dataset):
     ) -> None:
         self.name_or_path = name_or_path
         self.revision = revision
-        self.is_local = (Path(name_or_path).expanduser() / "manifest.yaml").exists()
+        p = Path(name_or_path).expanduser()
+        self.is_local = (p / "manifest.yaml").exists() and not _in_hf_cache(p)
         self.dataset_dir = _resolve_dataset_dir(name_or_path, revision)
         self.db_dir = self.dataset_dir / "db"
         self.manifest = DatasetManifest.load(self.dataset_dir / "manifest.yaml")
@@ -554,6 +556,20 @@ def build_task(
 # --------------------------------------------------------------------------- #
 # Public entry points
 # --------------------------------------------------------------------------- #
+
+
+def _hf_hub_cache() -> Path:
+    from huggingface_hub.constants import HF_HUB_CACHE
+
+    return Path(HF_HUB_CACHE)
+
+
+def _in_hf_cache(p: Path) -> bool:
+    try:
+        p.resolve().relative_to(_hf_hub_cache().resolve())
+    except ValueError:
+        return False
+    return True
 
 
 def _looks_like_path(name_or_path: Union[str, Path]) -> bool:
