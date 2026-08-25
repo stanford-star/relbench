@@ -21,8 +21,9 @@
 
 ## News
 
-- **Jun 2026** — New [leaderboard](https://relbench.stanford.edu/leaderboard/), kept up to date and redesigned for relational foundation models.
-- **Jun 2026** — Datasets, models, and community hub migrated to [Hugging Face](https://huggingface.co/relbench).
+- **Aug 2026** - RelBench v3 released with Hugging Face integration, a revamped leaderboard and bug fixes.
+- **Aug 2026** — New [leaderboard](https://relbench.stanford.edu/leaderboard/), kept up to date and redesigned for relational foundation models.
+- **Jun 2026** — Datasets, models, and community hub migrated to [Hugging Face](https://huggingface.co/stanford-star).
 - **Mar 2026** — [RelBench v2 paper](https://arxiv.org/abs/2602.12606) accepted at the [ICLR 2026 DATA-FM workshop](https://data-fm-iclr2026.github.io/).
 - **Feb 2026** — [Temporal Graph Benchmark](https://tgb.complexdatalab.com/) integration: time-stamped event streams as relational schemas.
 - **Jan 2026** — RelBench v2 released: four new databases (SALT, RateBeer, arXiv, MIMIC-IV), 36 new tasks, and a new *Autocomplete* task type; plus 70+ CTU datasets via [ReDeLEx](https://github.com/jakubpeleska/redelex) and 7 from [4DBInfer](https://github.com/awslabs/multi-table-benchmark).
@@ -72,7 +73,7 @@ Open these directly in Google Colab — no setup required:
 
 ## Leaderboard
 
-The [**RelBench leaderboard**](https://star-project.stanford.edu/relbench/leaderboard/)
+The [**RelBench leaderboard**](https://relbench.stanford.edu/leaderboard/)
 ranks methods by their test-set performance, averaged over a fixed task set. There are
 three independent leaderboards — **classification** (12 tasks), **regression** (9), and
 **recommendation** (10); the task lists are in `relbench.submit.LEADERBOARD_TASKS`.
@@ -105,7 +106,7 @@ You can easily express your own databases and tasks in the **RelBench format**.
 A dataset is a self-describing folder — a
 `manifest.yaml` (tables, keys, the foreign-key graph, the time splits), one plain parquet
 per table, and a `tasks/` subdirectory — that you publish to the
-[Hugging Face Hub](https://huggingface.co). RelBench loads it straight from its
+[Hugging Face Hub](https://huggingface.co/stanford-star). RelBench loads it straight from its
 `org/repo[/subdir]` address; there is no central registry to register with.
 
 [**`byod/README.md`**](byod/README.md) is the full walkthrough, and the
