@@ -256,7 +256,7 @@
   }
  },
  {
-  "name": "Global Zero",
+  "name": "Zero",
   "in_context": true,
   "url": "https://star-project.stanford.edu/relbench",
   "note": "RelBench baseline",
