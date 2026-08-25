@@ -1,0 +1,26 @@
+{
+ "name": "Global Mean",
+ "in_context": true,
+ "url": "https://star-project.stanford.edu/relbench",
+ "note": "RelBench baseline",
+ "date": "2026-08-25T03:07:25Z",
+ "author": "rishabh-ranjan",
+ "issue": 384,
+ "boards": {
+  "regression": {
+   "results": {
+    "rel-amazon/user-ltv": 0.3846848929722627,
+    "rel-amazon/item-ltv": 0.1385164466435005,
+    "rel-avito/ad-ctr": 0.5347141683812362,
+    "rel-event/user-attendance": 0.6136081745935585,
+    "rel-f1/driver-position": 0.6423358173653105,
+    "rel-hm/item-sales": 0.2699590765199332,
+    "rel-stack/post-votes": 0.2927805798098862,
+    "rel-trial/study-adverse": 0.21757346589948728,
+    "rel-trial/site-success": 0.9827381653897167
+   },
+   "mean": 0.45299008750832137,
+   "cov": 1.0
+  }
+ }
+}
