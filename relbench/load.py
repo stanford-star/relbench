@@ -168,21 +168,63 @@ class RelBenchDataset(Dataset):
         return f"RelBenchDataset({str(self.name_or_path)!r})"
 
     def get_task_names(self) -> list[str]:
-        r"""List tasks available for this dataset (``tasks/*/manifest.yaml``)."""
+        r"""List tasks available for this dataset.
+
+        Local ``tasks/*/manifest.yaml`` directories, plus -- for a dataset resolved from
+        the Hub -- every task hosted for this dataset name in any RelBench repo. Tasks
+        can live apart from their database (the v2-only tasks on the v1 datasets), and a
+        name listed here is a name :meth:`load_task` accepts.
+        """
+        names = set()
         tasks_dir = self.dataset_dir / "tasks"
-        if not tasks_dir.exists():
-            return []
-        return sorted(
-            d.name for d in tasks_dir.iterdir() if (d / "manifest.yaml").exists()
+        if tasks_dir.exists():
+            names |= {
+                d.name for d in tasks_dir.iterdir() if (d / "manifest.yaml").exists()
+            }
+        name = _dataset_name(self)
+        if name is not None and not Path(self.name_or_path).exists():
+            names |= set(hf.list_task_names(name, revision=self.revision))
+        return sorted(names)
+
+    def _resolve_task_dir(self, task_name: Union[str, Path]) -> Path:
+        r"""The directory holding ``task_name``'s manifest.
+
+        Accepts, in order: a local path to a task directory; a task of this dataset's own
+        folder; a Hub ``org/repo/<subdir>`` spec pointing at a task directory; and a bare
+        task name hosted for this dataset in any RelBench repo.
+        """
+        p = Path(task_name)
+        if (p / "manifest.yaml").exists():
+            return p
+        local = self.dataset_dir / "tasks" / str(task_name)
+        if (local / "manifest.yaml").exists():
+            return local
+        spec = str(task_name)
+        if "/" in spec:
+            return hf.download_dataset_dir(spec, revision=self.revision)
+        name = _dataset_name(self)
+        if name is not None:
+            found = hf.find_task_dir(name, spec, revision=self.revision)
+            if found is not None:
+                return found
+        raise ValueError(
+            f"no task '{task_name}' for dataset {self.name_or_path!r}: no manifest at "
+            f"{local}, and no such task hosted in {', '.join(hf.RELBENCH_REPOS)}. "
+            f"Available: {', '.join(self.get_task_names()) or '(none)'}."
         )
 
-    def load_task(self, task_name: str, *, regenerate: bool = False):
-        r"""Load one of this dataset's tasks.
+    def load_task(self, task_name: Union[str, Path], *, regenerate: bool = False):
+        r"""Load a task against this dataset's database.
+
+        ``task_name`` is a bare task name (resolved in this dataset's folder, then across
+        the hosted RelBench repos), a Hub ``org/repo/<dataset>/tasks/<task>`` spec, or a
+        local task directory -- so a task built or hosted anywhere runs against this
+        database.
 
         Uses hosted labels when present; ``regenerate=True`` recomputes them from the
         database via the task manifest's SQL (the provenance check used in CI).
         """
-        task_dir = self.dataset_dir / "tasks" / task_name
+        task_dir = self._resolve_task_dir(task_name)
         tm = TaskManifest.load(task_dir / "manifest.yaml")
         return build_task(self, tm, task_dir=task_dir, regenerate=regenerate)
 
