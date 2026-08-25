@@ -1,8 +1,8 @@
 name: Publish to PyPI
 
 # Builds and publishes the package when a `v<version>` tag is pushed (the tag must match
-# pyproject.toml's version). Uses PyPI trusted publishing: the `pypi` environment of this
-# repository must be registered as a trusted publisher on https://pypi.org/manage/project/relbench/.
+# pyproject.toml's version). Authenticates with the PYPI_API_TOKEN repository secret (a
+# PyPI API token scoped to the relbench project).
 on:  # yamllint disable-line rule:truthy
   push:
     tags:
@@ -10,12 +10,10 @@ on:  # yamllint disable-line rule:truthy
 
 permissions:
   contents: read
-  id-token: write
 
 jobs:
   publish:
     runs-on: ubuntu-latest
-    environment: pypi
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -40,3 +38,5 @@ jobs:
 
       - name: Publish
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
