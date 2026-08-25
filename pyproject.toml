@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "relbench"
-version = "3.0.0"
+version = "3.0.1"
 description = "RelBench: Relational Deep Learning Benchmark"
 authors = [{name = "RelBench Team", email = "relbench@cs.stanford.edu"}]
 readme = "README.md"

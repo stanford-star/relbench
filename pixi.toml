@@ -3,7 +3,7 @@ authors = ["Rishabh Ranjan <rishabhranjan0207@gmail.com>"]
 channels = ["conda-forge"]
 name = "relbench"
 platforms = ["linux-64", "osx-arm64"]
-version = "3.0.0"
+version = "3.0.1"
 
 [tasks]
 

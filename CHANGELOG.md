@@ -1,5 +1,18 @@
 # Changelog
 
+## 3.0.1 — 2026-08
+
+- `python -m relbench.submit` no longer crashes on Windows consoles that cannot print
+  the report's check-mark glyphs (ASCII fallback).
+- Autocomplete train splits start a whole `timedelta` before the earliest row, so the
+  first rows are included on every duckdb version.
+- The trivial example scripts no longer import torch; CI runs one of them and the
+  quickstart notebook on every push.
+- `provenance/check_provenance.py` checks several datasets in one run, skips external and
+  autocomplete tasks, and fails loudly on drift.
+- Hosted labels regenerated where the provenance check found drift (`rel-event/user-repeat`,
+  `rel-stack/post-votes`, `rel-stack/user-post-comment`); see the 3.0.0 notes below.
+
 ## 3.0.0 — 2026-08
 
 RelBench 3 replaces the per-dataset Python classes and the download server with a
