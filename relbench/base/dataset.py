@@ -70,11 +70,14 @@ class Dataset:
 
         `upto_test_timestamp` is True by default to prevent test leakage.
 
+        ``make_db`` must return tables whose keys already follow the RelBench key
+        contract (primary keys ``0..n-1`` in row order, foreign keys holding those
+        indices); ``byod/reindex_dataset.py`` normalizes a dataset folder into it.
+
         Nothing is cached: every call rebuilds the database. Hold on to the returned
         object instead of calling this repeatedly.
         """
         db = self.make_db()
-        db.reindex_pkeys_and_fkeys()
 
         if upto_test_timestamp:
             db = db.upto(self.test_timestamp)
@@ -83,7 +86,8 @@ class Dataset:
         return db
 
     def make_db(self) -> Database:
-        r"""Make the database object from scratch, i.e. using raw data sources.
+        r"""Make the database object from scratch, i.e. using raw data sources, with keys
+        already normalized (see :meth:`get_db`).
 
         To be implemented by subclass.
         """

@@ -43,7 +43,7 @@ Port decisions
    referencing column (database *and* task). Without them the foreign-key graph would have
    to be amputated -- and ``avs``/``retailrocket``'s entity tasks would have no entity
    table.
-3. *Key reindexing*: ``Database.reindex_pkeys_and_fkeys`` semantics -- a table with a
+3. *Key reindexing*: ``byod/reindex_dataset.py`` semantics -- a table with a
    primary key is ordered by its time column (when it has one), its key becomes ``0..n-1``,
    and every referencing foreign key is remapped through that same mapping. The mapping is
    applied to the **task** tables too, so a task's entity column indexes its entity table.
@@ -463,7 +463,7 @@ def _coerce(df: pd.DataFrame, specs: dict) -> pd.DataFrame:
 
 class KeyMap:
     r"""``original key -> 0..n-1`` for one primary-key table, in that table's final row
-    order (``Database.reindex_pkeys_and_fkeys`` semantics).
+    order (``byod/reindex_dataset.py`` semantics).
 
     Keys may be integers or
     strings (``outbrain-small`` links on user uuids, ``diginetica`` on name tokens).

@@ -2,9 +2,8 @@ r"""Minimal helpers shared by the source -> RelBench database generators in this
 directory.
 
 Dependencies are kept deliberately small: the Python stdlib (``urllib``, ``zipfile``,
-``hashlib``), ``pandas``, and ``relbench`` itself (``relbench.base`` for the canonical
-primary/foreign-key reindexing the published data was built with, and ``relbench.manifest``
-for the ``manifest.yaml`` writer). No ``pooch``, no legacy ``Dataset`` machinery.
+``hashlib``), ``pandas``, ``relbench`` itself (``relbench.manifest`` for the ``manifest.yaml`` writer), and
+``byod/reindex_dataset.py`` for the canonical primary/foreign-key reindexing. No ``pooch``, no legacy ``Dataset`` machinery.
 
 Each generator: ``fetch()`` the raw source, build a few pandas DataFrames, wrap them in
 ``relbench`` ``Table`` objects (declaring ``pkey`` / ``fkeys`` / ``time_col``), and call
@@ -25,6 +24,7 @@ from __future__ import annotations
 import hashlib
 import http.client
 import os
+import sys
 import tarfile
 import urllib.request
 import zipfile
@@ -35,6 +35,9 @@ from relbench.base import (  # noqa: F401  (Table re-exported for generators)
     Table,
 )
 from relbench.manifest import DatasetManifest, TableSpec
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "byod"))
+from reindex_dataset import reindex  # noqa: E402
 
 CACHE = Path(
     os.environ.get("RELBENCH_RAW_CACHE", Path.home() / ".cache" / "relbench-raw")
@@ -144,7 +147,7 @@ def write_hf(
     r"""Reindex keys and write ``tables`` ({name: ``relbench`` ``Table``}) as the HF
     layout."""
     db = Database(tables)
-    db.reindex_pkeys_and_fkeys()  # pkeys -> 0..n-1 (by time order); remap fkeys
+    reindex(db)
     out = Path(out)
     (out / "db").mkdir(parents=True, exist_ok=True)
     specs = {}

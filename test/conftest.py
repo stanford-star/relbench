@@ -46,7 +46,7 @@ class FakeDataset(Dataset):
 
         product_df = pd.DataFrame(
             {
-                "product_id": [f"product_id_{i}" for i in range(num_products)],
+                "product_id": pd.array(np.arange(num_products), dtype="Int64"),
                 "category": [None, [], ["toy", "health"]] * (num_products // 3),
                 "title": [_random_string(rng, 5, 15) for _ in range(num_products)],
                 "price": nprng.rand(num_products) * 10,
@@ -54,21 +54,21 @@ class FakeDataset(Dataset):
         )
         customer_df = pd.DataFrame(
             {
-                "customer_id": [f"customer_id_{i}" for i in range(num_customers)],
+                "customer_id": pd.array(np.arange(num_customers), dtype="Int64"),
                 "age": nprng.randint(10, 50, size=(num_customers,)),
                 "gender": ["male", "female"] * (num_customers // 2),
             }
         )
         review_df = pd.DataFrame(
             {
-                "customer_id": [
-                    f"customer_id_{rng.randint(0, num_customers + 5)}"
-                    for _ in range(num_reviews)
-                ],
-                "product_id": [
-                    f"product_id_{rng.randint(0, num_products - 1)}"
-                    for _ in range(num_reviews)
-                ],
+                "customer_id": pd.array(
+                    [rng.randint(0, num_customers + 5) for _ in range(num_reviews)],
+                    dtype="Int64",
+                ),
+                "product_id": pd.array(
+                    [rng.randint(0, num_products - 1) for _ in range(num_reviews)],
+                    dtype="Int64",
+                ),
                 "review_time": pd.to_datetime(2 * np.arange(num_reviews), unit="D"),
                 "rating": nprng.randint(1, 6, size=(num_reviews,)),
             }
@@ -78,14 +78,14 @@ class FakeDataset(Dataset):
         )
         relations_df = pd.DataFrame(
             {
-                "customer_id": [
-                    f"customer_id_{rng.randint(0, num_customers + 5)}"
-                    for _ in range(num_relations)
-                ],
-                "product_id": [
-                    f"product_id_{rng.randint(0, num_products - 1)}"
-                    for _ in range(num_relations)
-                ],
+                "customer_id": pd.array(
+                    [rng.randint(0, num_customers + 5) for _ in range(num_relations)],
+                    dtype="Int64",
+                ),
+                "product_id": pd.array(
+                    [rng.randint(0, num_products - 1) for _ in range(num_relations)],
+                    dtype="Int64",
+                ),
             }
         )
         return Database(

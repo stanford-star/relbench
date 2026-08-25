@@ -142,7 +142,6 @@ encouraged to add your own columns too.
 | `build_databases_overview.py` | `STATS/databases.parquet` (one row per database) |
 | `build_tasks_overview.py` | `STATS/tasks.parquet` (one row per task; `--check` cross-checks the paper tables) |
 | `compute_regression_stds.py` | `regression_stds.json` — per-task NMAE normalizers for hosted regression tasks (optional; loading falls back to computing the std from the train split) |
-| `fix_task_manifests.py` | hosted task manifests repaired for RelBench 3 (`task_type: link_prediction` → `recommendation`, the `evaluator` / `entity_col` a few external tasks lack) and re-serialized in canonical YAML — a one-off (dry run by default; one commit per repo) |
 | `regenerate_autocomplete_labels.py` | hosted `autocomplete` task labels regenerated from their databases with the library's current split boundaries, compared split by split with the hosted tables (rows added / removed; dry run by default; `--list` just names the tasks) |
 | `reindex_dataset.py` | a dataset folder normalized for `relbench.load_dataset`: primary keys `0..n-1` (time-sorted), foreign keys remapped (dangling ones nulled), task label keys remapped alike — in place, or a copy under `--out` (local only, no `--push`) |
 | `sort_hosted_labels.py` | hosted task labels rewritten in canonical (sorted) order — a repair/check tool that reorders rows only, so no metric changes (dry run by default; 0 files reported means the repo is already canonical) |

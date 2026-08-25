@@ -10,9 +10,9 @@ format. The collection spans three families -- ``tgbl-*`` (bipartite link), ``th
 ``DATASETS`` below).
 
 Provenance note: each TGB dataset is distributed as a *pre-built* RelBench database
-(``<name>/db.zip``, a directory of ``db/*.parquet``) produced by the upstream TGB ->
-RelBench export pipeline (https://github.com/pc0618/TGB2, ``scripts/export_to_relbench.py``)
--- which uses the ``tgb`` package to read the raw temporal-graph events. The original
+(``<name>/db.zip``, a directory of ``db/*.parquet``) produced by an upstream TGB ->
+RelBench export script that uses the ``tgb`` package to read the raw temporal-graph
+events. The original
 ``make_db`` here therefore did not rebuild from the raw events; it loaded that pre-built
 database (the legacy ``Database.load``). This generator reproduces that step verbatim from the
 hosted ``db.zip`` artifacts -- no ``tgb`` package, no ``pooch``/legacy-relbench machinery

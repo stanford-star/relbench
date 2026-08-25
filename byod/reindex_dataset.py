@@ -2,9 +2,10 @@ r"""Normalize a dataset folder's keys the way ``relbench.load_dataset`` expects 
 
 Primary keys become ``0..n-1`` in row order (rows of tables with a time column sorted by
 time), foreign keys are rewritten to those indices (dangling references become null), and
-the key columns of ``tasks/*/{train,val,test}.parquet`` are remapped the same way. Same
-semantics as ``Database.reindex_pkeys_and_fkeys``, with a stable sort so that re-running
-on an already normalized folder is a no-op.
+the key columns of ``tasks/*/{train,val,test}.parquet`` are remapped the same way, with a
+stable sort so that re-running on an already normalized folder is a no-op. This is the
+one key-reindexing implementation; the provenance generators use it through
+``provenance/_lib.write_hf``.
 
     python byod/reindex_dataset.py <dataset_dir>              # in place
     python byod/reindex_dataset.py <dataset_dir> --out <dir>  # normalized copy

@@ -145,8 +145,8 @@ def _load_database(db_dir: Path, manifest: DatasetManifest) -> Database:
 class RelBenchDataset(Dataset):
     r"""A dataset loaded from a manifest + parquet folder.
 
-    Reads relational metadata from the manifest instead of parquet, and does **not**
-    reindex: hosted artifacts are already reindexed at build time, so load is pure I/O.
+    Reads relational metadata from the manifest instead of parquet; hosted artifacts
+    already follow the key contract, so load is pure I/O.
 
     Construction resolves the dataset directory and reads the manifest, so everything
     but the data itself is a plain attribute -- nothing here is cached or lazy. The
@@ -241,10 +241,9 @@ class RelBenchDataset(Dataset):
         return _load_database(self.db_dir, self.manifest)
 
     def get_db(self, upto_test_timestamp: bool = True) -> Database:
-        r"""Build the database. Pure and uncached -- keep what you get back.
+        r"""Build the database.
 
-        Hosted artifacts are already reindexed at build time, so this skips the
-        reindexing step of the base implementation; load is pure I/O.
+        Pure and uncached -- keep what you get back.
         """
         db = self.make_db()
         if upto_test_timestamp:
