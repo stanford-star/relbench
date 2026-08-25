@@ -255,6 +255,35 @@
   }
  },
  {
+  "name": "Majority",
+  "in_context": true,
+  "url": "https://star-project.stanford.edu/relbench",
+  "note": "RelBench baseline",
+  "date": "2026-08-25T04:07:32Z",
+  "author": "rishabh-ranjan",
+  "issue": 388,
+  "boards": {
+   "binary_classification": {
+    "results": {
+     "rel-amazon/user-churn": 0.5,
+     "rel-amazon/item-churn": 0.5,
+     "rel-avito/user-visits": 0.5,
+     "rel-avito/user-clicks": 0.5,
+     "rel-event/user-repeat": 0.5,
+     "rel-event/user-ignore": 0.5,
+     "rel-f1/driver-dnf": 0.5,
+     "rel-f1/driver-top3": 0.5,
+     "rel-hm/user-churn": 0.5,
+     "rel-stack/user-engagement": 0.5,
+     "rel-stack/user-badge": 0.5,
+     "rel-trial/study-outcome": 0.5
+    },
+    "mean": 0.5,
+    "cov": 1.0
+   }
+  }
+ },
+ {
   "name": "ID-GNN",
   "in_context": false,
   "url": "https://star-project.stanford.edu/relbench",
