@@ -32,4 +32,4 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest test/base test/test_metrics.py
+          pytest test --ignore=test/modeling

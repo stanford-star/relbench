@@ -1,12 +1,3 @@
-r"""Shared test fixtures.
-
-Provides the synthetic ``FakeDataset`` (the in-memory test database) and new-system
-(manifest-driven) tasks built on it via :func:`relbench.load.build_task`, replacing the
-removed legacy dataset/task classes. A `forecast` churn (entity) task and purchase (link)
-task over the fake schema (customer / product / review) give the modeling tests entity and
-link task tables.
-"""
-
 import dataclasses
 import random
 import string
@@ -16,27 +7,23 @@ import pandas as pd
 import pytest
 
 from relbench.base import Database, Dataset, Table
-from relbench.load import build_task
-from relbench.manifest import TaskManifest
+from relbench.load import build_task, load_dataset
+from relbench.manifest import DatasetManifest, TableSpec, TaskManifest
 
 
-def _generate_random_string(
-    rng: random.Random, min_length: int, max_length: int
-) -> str:
+def _random_string(rng, min_length, max_length):
     length = rng.randint(min_length, max_length)
     return "".join(rng.choice(string.ascii_letters) for _ in range(length))
 
 
 class FakeDataset(Dataset):
-    r"""A small synthetic dataset (customers / products / reviews) for tests."""
-
     def __init__(
         self,
-        num_products: int = 30,
-        num_customers: int = 100,
-        num_reviews: int = 600,
-        num_relations: int = 20,
-        seed: int = 42,
+        num_products=30,
+        num_customers=100,
+        num_reviews=600,
+        num_relations=20,
+        seed=42,
     ):
         self.seed = seed
         self.num_products = num_products
@@ -48,25 +35,20 @@ class FakeDataset(Dataset):
         max_timestamp = pd.Timestamp(2 * (num_reviews - 1), unit="D")
         self.val_timestamp = min_timestamp + 0.8 * (max_timestamp - min_timestamp)
         self.test_timestamp = min_timestamp + 0.9 * (max_timestamp - min_timestamp)
-        super().__init__()
 
-    def make_db(self) -> Database:
-        # Seeded per call: `make_db` must be a pure function of the dataset, so that
-        # repeated `get_db()` calls (which are uncached) yield identical databases.
+    def make_db(self):
         rng = random.Random(self.seed)
         nprng = np.random.RandomState(self.seed)
-
         num_products = self.num_products
         num_customers = self.num_customers
         num_reviews = self.num_reviews
         num_relations = self.num_relations
+
         product_df = pd.DataFrame(
             {
                 "product_id": [f"product_id_{i}" for i in range(num_products)],
                 "category": [None, [], ["toy", "health"]] * (num_products // 3),
-                "title": [
-                    _generate_random_string(rng, 5, 15) for _ in range(num_products)
-                ],
+                "title": [_random_string(rng, 5, 15) for _ in range(num_products)],
                 "price": nprng.rand(num_products) * 10,
             }
         )
@@ -77,7 +59,6 @@ class FakeDataset(Dataset):
                 "gender": ["male", "female"] * (num_customers // 2),
             }
         )
-        # Add some dangling foreign keys:
         review_df = pd.DataFrame(
             {
                 "customer_id": [
@@ -92,7 +73,7 @@ class FakeDataset(Dataset):
                 "rating": nprng.randint(1, 6, size=(num_reviews,)),
             }
         )
-        review_df["review"] = review_df["rating"].apply(
+        review_df["review"] = review_df["rating"].map(
             lambda x: "positive" if x > 3 else "negative"
         )
         relations_df = pd.DataFrame(
@@ -107,18 +88,13 @@ class FakeDataset(Dataset):
                 ],
             }
         )
-
         return Database(
             table_dict={
                 "product": Table(
-                    df=product_df,
-                    fkey_col_to_pkey_table={},
-                    pkey_col="product_id",
+                    df=product_df, fkey_col_to_pkey_table={}, pkey_col="product_id"
                 ),
                 "customer": Table(
-                    df=customer_df,
-                    fkey_col_to_pkey_table={},
-                    pkey_col="customer_id",
+                    df=customer_df, fkey_col_to_pkey_table={}, pkey_col="customer_id"
                 ),
                 "review": Table(
                     df=review_df,
@@ -154,6 +130,21 @@ LEFT JOIN review fut
 GROUP BY t.timestamp, past.customer_id
 """.strip()
 
+_LTV_SQL = """
+SELECT
+    t.timestamp AS timestamp,
+    past.customer_id AS customer_id,
+    CAST(COUNT(fut.review_time) AS DOUBLE) AS ltv
+FROM timestamps t
+JOIN review past
+    ON past.review_time <= t.timestamp AND past.customer_id IS NOT NULL
+LEFT JOIN review fut
+    ON fut.customer_id = past.customer_id
+    AND fut.review_time > t.timestamp
+    AND fut.review_time <= t.timestamp + INTERVAL '{timedelta}'
+GROUP BY t.timestamp, past.customer_id
+""".strip()
+
 _PURCHASE_SQL = """
 SELECT
     t.timestamp AS timestamp,
@@ -167,8 +158,8 @@ JOIN review r
 GROUP BY t.timestamp, r.customer_id
 """.strip()
 
-_CHURN = TaskManifest(
-    name="churn",
+CHURN = TaskManifest(
+    name="user-churn",
     kind="forecast",
     task_type="binary_classification",
     entity_table="customer",
@@ -176,11 +167,21 @@ _CHURN = TaskManifest(
     target_col="churn",
     time_col="timestamp",
     timedelta="100 days",
-    num_eval_timestamps=1,
     sql=_CHURN_SQL,
 )
-_PURCHASE = TaskManifest(
-    name="purchase",
+LTV = TaskManifest(
+    name="user-ltv",
+    kind="forecast",
+    task_type="regression",
+    entity_table="customer",
+    entity_col="customer_id",
+    target_col="ltv",
+    time_col="timestamp",
+    timedelta="100 days",
+    sql=_LTV_SQL,
+)
+PURCHASE = TaskManifest(
+    name="user-item-purchase",
     kind="forecast",
     task_type="recommendation",
     src_entity_table="customer",
@@ -191,41 +192,96 @@ _PURCHASE = TaskManifest(
     time_col="timestamp",
     timedelta="100 days",
     eval_k=10,
-    num_eval_timestamps=1,
     sql=_PURCHASE_SQL,
 )
+RATING = TaskManifest(
+    name="review-rating",
+    kind="autocomplete",
+    task_type="regression",
+    entity_table="review",
+    target_col="rating",
+    remove_columns=[["review", "review"]],
+)
+TASKS = (CHURN, LTV, PURCHASE, RATING)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _offline():
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr("relbench.hf._repo_has", lambda *a, **k: False)
+        mp.setattr("relbench.hf.list_task_names", lambda *a, **k: [])
+        mp.setattr("relbench.hf.load_core_regression_stds", lambda *a, **k: {})
+        yield
 
 
 @pytest.fixture
 def fake_dataset():
-    r"""Return the :class:`FakeDataset` class (call it to build a synthetic dataset)."""
     return FakeDataset
 
 
 @pytest.fixture
-def make_churn_task():
-    r"""Return a builder: dataset -> forecast binary-classification (churn) task."""
-    return lambda dataset: build_task(dataset, _CHURN)
+def task_manifests():
+    return TASKS
 
 
-@pytest.fixture
-def make_purchase_task():
-    r"""Return a builder: dataset -> forecast recommendation (purchase) task."""
-    return lambda dataset: build_task(dataset, _PURCHASE)
+@pytest.fixture(scope="session")
+def dataset():
+    return FakeDataset()
+
+
+@pytest.fixture(scope="session")
+def churn_task(dataset):
+    return build_task(dataset, CHURN)
+
+
+@pytest.fixture(scope="session")
+def purchase_task(dataset):
+    return build_task(dataset, PURCHASE)
 
 
 @pytest.fixture
 def churn_manifest():
-    r"""The churn task manifest itself, for tests that vary one field.
-
-    Use ``dataclasses.replace(churn_manifest, ...)`` -- the fixture hands out a copy, so a
-    test cannot perturb another's manifest.
-    """
-    return dataclasses.replace(_CHURN)
+    return dataclasses.replace(CHURN)
 
 
 @pytest.fixture
 def purchase_manifest():
-    r"""The purchase (recommendation) task manifest itself, for tests that vary one
-    field."""
-    return dataclasses.replace(_PURCHASE)
+    return dataclasses.replace(PURCHASE)
+
+
+@pytest.fixture
+def rating_manifest():
+    return dataclasses.replace(RATING)
+
+
+@pytest.fixture(scope="session")
+def dataset_dir(tmp_path_factory):
+    root = tmp_path_factory.mktemp("fakeds")
+    ds = FakeDataset()
+    db = ds.get_db(upto_test_timestamp=False)
+    (root / "db").mkdir()
+    tables = {}
+    for name, table in db.table_dict.items():
+        table.df.to_parquet(root / "db" / f"{name}.parquet")
+        tables[name] = TableSpec(
+            pkey=table.pkey_col,
+            time_col=table.time_col,
+            fkeys=dict(table.fkey_col_to_pkey_table),
+        )
+    DatasetManifest(
+        name="fakeds",
+        val_timestamp=str(ds.val_timestamp),
+        test_timestamp=str(ds.test_timestamp),
+        tables=tables,
+    ).save(root / "manifest.yaml")
+    for tm in TASKS:
+        tm.save(root / "tasks" / tm.name / "manifest.yaml")
+    loaded = load_dataset(root)
+    for tm in TASKS:
+        task = loaded.load_task(tm.name, regenerate=True)
+        db = task.get_db(upto_test_timestamp=False)
+        for split in ("train", "val", "test"):
+            task.get_table(split, mask_input_cols=False, db=db).df.to_parquet(
+                root / "tasks" / tm.name / f"{split}.parquet"
+            )
+    return root
