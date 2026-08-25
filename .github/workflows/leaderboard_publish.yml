@@ -52,21 +52,35 @@ jobs:
         run: |
           python .github/scripts/leaderboard_submission.py \
             --body /tmp/issue_body.md --report /tmp/report.md \
-            --entry leaderboard/entries/${{ github.event.issue.number }}.json \
-            --aggregate leaderboard/leaderboard.json \
+            --entry /tmp/entry.json \
             --issue ${{ github.event.issue.number }} \
             --author "${{ github.event.issue.user.login }}" \
             --created-at "${{ github.event.issue.created_at }}"
 
+      # Each attempt starts from the newest main, drops this entry file in, and rebuilds
+      # leaderboard.json from all entries. Never rebase or merge: the aggregate is a
+      # generated file and a concurrent publish conflicts in it every time.
       - name: Commit entry
+        env:
+          ENTRY: leaderboard/entries/${{ github.event.issue.number }}.json
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add leaderboard/
-          git commit -m "Leaderboard entry from #${{ github.event.issue.number }}"
           for i in 1 2 3 4 5 6; do
+            git fetch -q origin main
+            git reset -q --hard origin/main
+            mkdir -p leaderboard/entries
+            cp /tmp/entry.json "$ENTRY"
+            python .github/scripts/leaderboard_submission.py \
+              --rebuild leaderboard/entries --aggregate leaderboard/leaderboard.json
+            git add leaderboard/
+            if git diff --cached --quiet; then
+              echo "entry already published; nothing to do"
+              exit 0
+            fi
+            git commit -q -m "Leaderboard entry from #${{ github.event.issue.number }}"
             git push && exit 0
-            git pull --rebase && sleep $((i * 3))
+            sleep $((i * 3 + RANDOM % 5))
           done
           echo "push to main failed after 6 attempts" >&2
           exit 1

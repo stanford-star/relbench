@@ -195,8 +195,12 @@ def rebuild_aggregate(entries_dir: Path, out: Path) -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--body", required=True, help="file holding the issue body")
-    ap.add_argument("--report", required=True, help="output markdown report path")
+    ap.add_argument("--body", help="file holding the issue body")
+    ap.add_argument(
+        "--rebuild",
+        help="regenerate --aggregate from this entries dir and exit; no validation",
+    )
+    ap.add_argument("--report", help="output markdown report path")
     ap.add_argument("--entry", help="publish mode: write entries/<issue>.json here")
     ap.add_argument(
         "--aggregate", help="publish mode: regenerate this leaderboard.json"
@@ -210,6 +214,16 @@ def main() -> int:
     )
     ap.add_argument("--num-workers", type=int, default=None)
     args = ap.parse_args()
+
+    # Rebuild-only: regenerate the aggregate from whatever entry files are on disk. The
+    # publish workflow uses this to rebase its result onto a moved main without ever
+    # merging the generated leaderboard.json, which cannot be merged.
+    if args.rebuild:
+        rebuild_aggregate(Path(args.rebuild), Path(args.aggregate))
+        return 0
+
+    if not args.body or not args.report:
+        ap.error("--body and --report are required unless --rebuild is given")
 
     body = Path(args.body).read_text()
     fields, problems = form_metadata(parse_form(body))
