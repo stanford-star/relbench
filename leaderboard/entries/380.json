@@ -1,0 +1,60 @@
+{
+ "name": "GNN",
+ "in_context": false,
+ "url": "https://star-project.stanford.edu/relbench/",
+ "note": "RelBench implementation",
+ "date": "2026-08-25T01:23:01Z",
+ "author": "rishabh-ranjan",
+ "issue": 380,
+ "boards": {
+  "binary_classification": {
+   "results": {
+    "rel-amazon/user-churn": 0.6051869901121383,
+    "rel-amazon/item-churn": 0.8076981211175235,
+    "rel-avito/user-visits": 0.602871576733647,
+    "rel-avito/user-clicks": 0.6656486492205766,
+    "rel-event/user-repeat": 0.6856617647058822,
+    "rel-event/user-ignore": 0.8037718904355634,
+    "rel-f1/driver-dnf": 0.7260674376616405,
+    "rel-f1/driver-top3": 0.6801120923913044,
+    "rel-hm/user-churn": 0.6988562627672481,
+    "rel-stack/user-engagement": 0.9055688751017936,
+    "rel-stack/user-badge": 0.8882570034223118,
+    "rel-trial/study-outcome": 0.6693363844393593
+   },
+   "mean": 0.7282530873424157,
+   "cov": 1.0
+  },
+  "regression": {
+   "results": {
+    "rel-amazon/user-ltv": 0.2485440157282786,
+    "rel-amazon/item-ltv": 0.08510284003281304,
+    "rel-avito/ad-ctr": 0.428941587372302,
+    "rel-event/user-attendance": 0.3259045780397604,
+    "rel-f1/driver-position": 0.5781924738528031,
+    "rel-hm/item-sales": 0.11207731456996685,
+    "rel-stack/post-votes": 0.12761418139213365,
+    "rel-trial/study-adverse": 0.12930230507973253,
+    "rel-trial/site-success": 0.7811991156843695
+   },
+   "mean": 0.31298649019468444,
+   "cov": 1.0
+  },
+  "recommendation": {
+   "results": {
+    "rel-amazon/user-item-purchase": 0.008221787606968074,
+    "rel-amazon/user-item-rate": 0.007905999032603115,
+    "rel-amazon/user-item-review": 0.0044106658104549725,
+    "rel-avito/user-ad-visit": 0.036254438962514304,
+    "rel-f1/driver-circuit-compete": 0.20690231236527537,
+    "rel-hm/user-item-purchase": 0.008164509801871318,
+    "rel-stack/user-post-comment": 0.00039812954097184376,
+    "rel-stack/post-post-related": 0.001151267546616384,
+    "rel-trial/condition-sponsor-run": 0.03500846619639591,
+    "rel-trial/site-sponsor-run": 0.10593774645942615
+   },
+   "mean": 0.041435532332309746,
+   "cov": 1.0
+  }
+ }
+}
