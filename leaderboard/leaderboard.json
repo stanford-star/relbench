@@ -338,6 +338,66 @@
   }
  },
  {
+  "name": "LightGBM",
+  "in_context": true,
+  "url": "https://star-project.stanford.edu/relbench",
+  "note": "RelBench baseline",
+  "date": "2026-08-25T04:09:15Z",
+  "author": "rishabh-ranjan",
+  "issue": 390,
+  "boards": {
+   "binary_classification": {
+    "results": {
+     "rel-amazon/user-churn": 0.5249564459408598,
+     "rel-amazon/item-churn": 0.6259194797502536,
+     "rel-avito/user-visits": 0.531499176862116,
+     "rel-avito/user-clicks": 0.5475904818607333,
+     "rel-event/user-repeat": 0.6892379679144386,
+     "rel-event/user-ignore": 0.7731937872036659,
+     "rel-f1/driver-dnf": 0.7254916312887328,
+     "rel-f1/driver-top3": 0.6492801525919732,
+     "rel-hm/user-churn": 0.5530781217781084,
+     "rel-stack/user-engagement": 0.6274081806635328,
+     "rel-stack/user-badge": 0.630850532867669,
+     "rel-trial/study-outcome": 0.6885450340827916
+    },
+    "mean": 0.6305875827337396,
+    "cov": 1.0
+   },
+   "regression": {
+    "results": {
+     "rel-amazon/user-ltv": 0.2918515308729758,
+     "rel-amazon/item-ltv": 0.10267597295232703,
+     "rel-avito/ad-ctr": 0.42606503139935203,
+     "rel-event/user-attendance": 0.34442011252718346,
+     "rel-f1/driver-position": 0.6018914765578253,
+     "rel-hm/item-sales": 0.15361148606895705,
+     "rel-stack/post-votes": 0.13303310099479038,
+     "rel-trial/study-adverse": 0.129303382193032,
+     "rel-trial/site-success": 0.8800909340511697
+    },
+    "mean": 0.3403270030686236,
+    "cov": 1.0
+   },
+   "recommendation": {
+    "results": {
+     "rel-amazon/user-item-purchase": 0.0013434080421156013,
+     "rel-amazon/user-item-rate": 0.0016812128478757718,
+     "rel-amazon/user-item-review": 0.0012373445503222318,
+     "rel-avito/user-ad-visit": 0.0005707262545788432,
+     "rel-f1/driver-circuit-compete": 0.5955612244897959,
+     "rel-hm/user-item-purchase": 0.0037138165693964293,
+     "rel-stack/user-post-comment": 0.00018762818458967838,
+     "rel-stack/post-post-related": 0.016787442656140156,
+     "rel-trial/condition-sponsor-run": 0.04800440370516128,
+     "rel-trial/site-sponsor-run": 0.09037686683944178
+    },
+    "mean": 0.07594640741394175,
+    "cov": 1.0
+   }
+  }
+ },
+ {
   "name": "ID-GNN",
   "in_context": false,
   "url": "https://star-project.stanford.edu/relbench",
