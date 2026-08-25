@@ -109,6 +109,19 @@ own and pass them explicitly: `task.evaluate(pred, metrics=[my_metric])`.
 
 `task.evaluate(pred, target_table=None, metrics=None)` is otherwise unchanged.
 
+## Behaviour changes
+
+- Masked test tables of recommendation tasks (`task.get_table("test")`) now hold only the
+  time and source-entity columns; earlier versions kept the destination lists in them.
+- Autocomplete splits include their boundary rows: train is every row with
+  `time <= val_timestamp`, val is `(val_timestamp, test_timestamp]`, test is
+  `> test_timestamp`. The hosted autocomplete label tables are regenerated accordingly.
+- External tasks that declare an upstream `evaluator` (TGB's negative-sampled MRR/NDCG,
+  4DBInfer's candidate-ranking MRR) load as data only: `task.evaluate()` raises unless you
+  pass `metrics=[...]`; score them with the upstream evaluator.
+- A dataset loaded from a local path never consults the Hub: bare task names resolve only
+  inside its folder, and the NMAE normalizer is the train-split std.
+
 ## Modeling code (`relbench.modeling`)
 
 `RecommendationTask.num_dst_nodes` no longer exists — it is a property of a particular
@@ -126,7 +139,11 @@ train_input = get_link_train_table_input(train_table, task, n)
 ```
 
 Everything else in `relbench.modeling` (`make_pkey_fkey_graph`, `get_node_train_table_input`,
-the loaders, `get_stype_proposal`) keeps its signature. `relbench.modeling` is now imported
+the loaders, `get_stype_proposal`) keeps its signature. Two additions:
+`make_pkey_fkey_graph(..., remove_columns=task.hidden_columns())` drops a task's hidden
+columns after materialization, so one cache built from `dataset.get_db()` serves every task
+on that dataset; and `get_link_train_table_input` returns `dst_nodes=None` for a masked
+(test) table. `relbench.modeling` is now imported
 lazily, so a plain `import relbench` no longer pulls in torch.
 
 Reference scripts in [`examples/`](examples) were renamed: `baseline_*.py` → `trivial_*.py`.

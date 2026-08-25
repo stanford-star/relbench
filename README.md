@@ -21,7 +21,17 @@
 
 ## News
 
-- **Aug 2026** — RelBench v3 released: datasets and tasks load straight from [Hugging Face](https://huggingface.co/stanford-star), a new [leaderboard](https://relbench.stanford.edu/leaderboard/) with automated submissions, and bug fixes ([migration guide](MIGRATION.md)).
+RelBench 3 loads every dataset family below from the Hugging Face Hub with one call —
+`relbench.load_dataset("<org>/<repo>/<name>")` — the core databases
+([`stanford-star/relbench-v1`](https://huggingface.co/datasets/stanford-star/relbench-v1),
+[`stanford-star/relbench-v2-extra`](https://huggingface.co/datasets/stanford-star/relbench-v2-extra)),
+CTU/ReDeLEx ([`stanford-star/redelex`](https://huggingface.co/datasets/stanford-star/redelex)),
+4DBInfer ([`stanford-star/dbinfer`](https://huggingface.co/datasets/stanford-star/dbinfer)) and
+TGB ([`stanford-star/tgb`](https://huggingface.co/datasets/stanford-star/tgb)); the `[ctu]` extra is
+gone. MIMIC-IV requires PhysioNet credentials and is not hosted. TGB and 4DBInfer tasks that
+use their own scoring protocols load as data only (see [`MIGRATION.md`](MIGRATION.md)).
+
+- **Aug 2026** — RelBench v3 released: datasets and tasks load straight from [Hugging Face](https://huggingface.co/stanford-star), a new [leaderboard](https://star-project.stanford.edu/relbench/leaderboard/) with automated submissions, and bug fixes ([migration guide](MIGRATION.md)).
 - **Jun 2026** — Datasets, models, and community hub migrated to [Hugging Face](https://huggingface.co/stanford-star).
 - **Mar 2026** — [RelBench v2 paper](https://arxiv.org/abs/2602.12606) accepted at the [ICLR 2026 DATA-FM workshop](https://data-fm-iclr2026.github.io/).
 - **Feb 2026** — [Temporal Graph Benchmark](https://tgb.complexdatalab.com/) integration: time-stamped event streams as relational schemas.
@@ -37,6 +47,7 @@
 ```bash
 pip install relbench             # data + task loading
 pip install "relbench[example]"  # + PyTorch Geometric & PyTorch Frame, for the GNN examples
+pip install pyg-lib -f https://data.pyg.org/whl/torch-2.9.0+cpu.html  # neighbor sampling; use the index matching your torch/CUDA build
 ```
 
 Load a dataset and a task — both come straight from the Hub, with **no per-dataset code**:
@@ -72,7 +83,7 @@ Open these directly in Google Colab — no setup required:
 
 ## Leaderboard
 
-The [**RelBench leaderboard**](https://relbench.stanford.edu/leaderboard/)
+The [**RelBench leaderboard**](https://star-project.stanford.edu/relbench/leaderboard/)
 ranks methods by their test-set performance, averaged over a fixed task set. There are
 three independent leaderboards — **classification** (12 tasks), **regression** (9), and
 **recommendation** (10); the task lists are in `relbench.submit.LEADERBOARD_TASKS`.

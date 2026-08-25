@@ -37,7 +37,6 @@ from relbench.base import (
     Table,
     TaskType,
 )
-from relbench.base.task_base import _sort_deterministically
 from relbench.manifest import (
     KIND_AUTOCOMPLETE,
     KIND_EXTERNAL,
@@ -102,15 +101,18 @@ def _resolve_metrics(tm: TaskManifest, task=None) -> list:
     return out
 
 
-def _dataset_name(dataset) -> Optional[str]:
-    r"""The dataset's name if it carries a manifest (a hosted ``RelBenchDataset``), else
-    ``None``.
+def _hosted_name(dataset) -> Optional[str]:
+    r"""The dataset's name if it was resolved from the Hub, else ``None``.
 
-    Tasks can be built on a plain in-memory :class:`~relbench.base.Dataset` (e.g. the test
-    fixtures) that has no manifest and no hosted regression std; ``None`` makes the NMAE
-    normalizer fall back to computing the std from the train split.
+    Only Hub-resolved datasets consult the Hub for tasks hosted apart from the database
+    and for precomputed regression stds. A dataset loaded from a local path -- or a plain
+    in-memory :class:`~relbench.base.Dataset` such as the test fixtures -- stays local:
+    ``None`` makes the NMAE normalizer fall back to the train split and confines bare
+    task names to the dataset's own folder.
     """
-    return getattr(getattr(dataset, "manifest", None), "name", None)
+    if getattr(dataset, "is_local", True):
+        return None
+    return dataset.manifest.name
 
 
 def _coerce_string_dtype(df: pd.DataFrame) -> pd.DataFrame:
@@ -155,6 +157,7 @@ class RelBenchDataset(Dataset):
     ) -> None:
         self.name_or_path = name_or_path
         self.revision = revision
+        self.is_local = (Path(name_or_path).expanduser() / "manifest.yaml").exists()
         self.dataset_dir = _resolve_dataset_dir(name_or_path, revision)
         self.db_dir = self.dataset_dir / "db"
         self.manifest = DatasetManifest.load(self.dataset_dir / "manifest.yaml")
@@ -170,7 +173,8 @@ class RelBenchDataset(Dataset):
         Local ``tasks/*/manifest.yaml`` directories, plus -- for a dataset resolved from
         the Hub -- every task hosted for this dataset name in any RelBench repo. Tasks
         can live apart from their database (the v2-only tasks on the v1 datasets), and a
-        name listed here is a name :meth:`load_task` accepts.
+        name listed here is a name :meth:`load_task` accepts. A dataset loaded from a
+        local path lists only its own folder.
         """
         names = set()
         tasks_dir = self.dataset_dir / "tasks"
@@ -178,8 +182,8 @@ class RelBenchDataset(Dataset):
             names |= {
                 d.name for d in tasks_dir.iterdir() if (d / "manifest.yaml").exists()
             }
-        name = _dataset_name(self)
-        if name is not None and not Path(self.name_or_path).exists():
+        name = _hosted_name(self)
+        if name is not None:
             names |= set(hf.list_task_names(name, revision=self.revision))
         return sorted(names)
 
@@ -187,8 +191,9 @@ class RelBenchDataset(Dataset):
         r"""The directory holding ``task_name``'s manifest.
 
         Accepts, in order: a local path to a task directory; a task of this dataset's own
-        folder; a Hub ``org/repo/<subdir>`` spec pointing at a task directory; and a bare
-        task name hosted for this dataset in any RelBench repo.
+        folder; a Hub ``org/repo/<subdir>`` spec pointing at a task directory; and -- for
+        a dataset resolved from the Hub -- a bare task name hosted for this dataset in any
+        RelBench repo. A local dataset never consults the Hub for a bare name.
         """
         p = Path(task_name)
         if (p / "manifest.yaml").exists():
@@ -199,14 +204,19 @@ class RelBenchDataset(Dataset):
         spec = str(task_name)
         if "/" in spec:
             return hf.download_dataset_dir(spec, revision=self.revision)
-        name = _dataset_name(self)
+        name = _hosted_name(self)
         if name is not None:
             found = hf.find_task_dir(name, spec, revision=self.revision)
             if found is not None:
                 return found
+        where = (
+            f"no manifest at {local}"
+            if name is None
+            else f"no manifest at {local}, and no such task hosted in "
+            f"{', '.join(hf.RELBENCH_REPOS)}"
+        )
         raise ValueError(
-            f"no task '{task_name}' for dataset {self.name_or_path!r}: no manifest at "
-            f"{local}, and no such task hosted in {', '.join(hf.RELBENCH_REPOS)}. "
+            f"no task '{task_name}' for dataset {self.name_or_path!r}: {where}. "
             f"Available: {', '.join(self.get_task_names()) or '(none)'}."
         )
 
@@ -339,6 +349,7 @@ class _ForecastEntityTask(_HostedLabelsMixin, EntityTask):
     def __init__(
         self, dataset: Dataset, tm: TaskManifest, task_dir=None, regenerate=False
     ):
+        self.name, self.kind = tm.name, tm.kind
         self.task_type = TaskType(tm.task_type)
         self.entity_table = tm.entity_table
         self.entity_col = tm.entity_col
@@ -366,6 +377,7 @@ class _ForecastRecommendationTask(_HostedLabelsMixin, RecommendationTask):
     def __init__(
         self, dataset: Dataset, tm: TaskManifest, task_dir=None, regenerate=False
     ):
+        self.name, self.kind = tm.name, tm.kind
         self.task_type = TaskType(tm.task_type)
         self.src_entity_table = tm.src_entity_table
         self.src_entity_col = tm.src_entity_col
@@ -399,6 +411,7 @@ class _AutoCompleteTask(_HostedLabelsMixin, AutoCompleteTask):
     def __init__(
         self, dataset: Dataset, tm: TaskManifest, task_dir=None, regenerate=False
     ):
+        self.name, self.kind = tm.name, tm.kind
         self._task_dir = Path(task_dir) if task_dir is not None else None
         self._regenerate = regenerate
         super().__init__(
@@ -407,49 +420,37 @@ class _AutoCompleteTask(_HostedLabelsMixin, AutoCompleteTask):
             entity_table=tm.entity_table,
             target_col=tm.target_col,
             remove_columns=tm.remove_columns,
-            nmae_std=_hosted_std(_dataset_name(dataset), tm.name),
+            nmae_std=_hosted_std(_hosted_name(dataset), tm.name),
         )
 
-    def _get_table(self, split: str, db: Optional[Database] = None) -> Table:
-        # Efficient autocomplete window. The legacy AutoCompleteTask materializes
-        # pd.date_range at 1-second freq across the whole split span (~1.7B entries /
-        # OOM on wide val/test gaps like rel-f1's 60 years). make_table only uses the
-        # min/max of that range, so we pass just the two bounds -- identical labels,
-        # no giant allocation.
-        full_db = db if db is not None else self.get_db(upto_test_timestamp=False)
-        db = full_db if split == "test" else full_db.upto(self.dataset.test_timestamp)
-        if split == "train":
-            start, end = self.dataset.val_timestamp - self.timedelta, db.min_timestamp
-        elif split == "val":
-            if self.dataset.val_timestamp + self.timedelta > db.max_timestamp:
-                raise RuntimeError("val timestamp + timedelta exceeds db max timestamp")
-            start, end = (
-                self.dataset.test_timestamp - self.timedelta,
-                self.dataset.val_timestamp,
+
+class _ExternalEvaluatorMixin:
+    r"""External tasks that declare a custom ``evaluator`` (TGB's negative-sampled MRR /
+    NDCG, 4DBInfer's candidate-ranking MRR) are served as data only: RelBench 3 does not
+    implement those protocols, so :meth:`evaluate` refuses unless explicit ``metrics``
+    are passed."""
+
+    evaluator: Optional[str] = None
+
+    def evaluate(self, pred, target_table=None, metrics=None):
+        if self.evaluator and metrics is None:
+            raise NotImplementedError(
+                f"task '{self.name}' is scored with the '{self.evaluator}' protocol, "
+                "which RelBench does not implement; its label tables are served as-is. "
+                "Use the upstream evaluator, or pass metrics=[...] for your own."
             )
-        elif split == "test":
-            # Read once: `max_timestamp` is uncached and scans every table.
-            db_max_timestamp = db.max_timestamp
-            if self.dataset.test_timestamp + self.timedelta > db_max_timestamp:
-                raise RuntimeError(
-                    "test timestamp + timedelta exceeds db max timestamp"
-                )
-            start, end = db_max_timestamp, self.dataset.test_timestamp
-        else:
-            raise ValueError(f"unknown split: {split!r}")
-        table = self.make_table(db, pd.DatetimeIndex([start, end]))
-        return _sort_deterministically(
-            self.filter_dangling_entities(table, full_db), self
-        )
+        return super().evaluate(pred, target_table, metrics)
 
 
-class _ExternalEntityTask(_HostedLabelsMixin, EntityTask):
+class _ExternalEntityTask(_ExternalEvaluatorMixin, _HostedLabelsMixin, EntityTask):
     r"""Entity task whose labels are built externally (e.g. dbinfer) and served as-
     is."""
 
     def __init__(
         self, dataset: Dataset, tm: TaskManifest, task_dir=None, regenerate=False
     ):
+        self.name, self.kind = tm.name, tm.kind
+        self.evaluator = tm.evaluator
         self.task_type = TaskType(tm.task_type)
         self.entity_table = tm.entity_table
         self.entity_col = tm.entity_col
@@ -472,12 +473,16 @@ class _ExternalEntityTask(_HostedLabelsMixin, EntityTask):
         raise NotImplementedError("external task labels are hosted, not regenerable")
 
 
-class _ExternalRecommendationTask(_HostedLabelsMixin, RecommendationTask):
+class _ExternalRecommendationTask(
+    _ExternalEvaluatorMixin, _HostedLabelsMixin, RecommendationTask
+):
     r"""Link task whose labels/eval are built externally (e.g. TGB) and served as-is."""
 
     def __init__(
         self, dataset: Dataset, tm: TaskManifest, task_dir=None, regenerate=False
     ):
+        self.name, self.kind = tm.name, tm.kind
+        self.evaluator = tm.evaluator
         self.task_type = TaskType(tm.task_type)
         self.src_entity_table = tm.src_entity_table
         self.src_entity_col = tm.src_entity_col
@@ -511,7 +516,7 @@ def _install_nmae_std(task, dataset: Dataset, tm: TaskManifest) -> None:
     """
     if TaskType(tm.task_type) != TaskType.REGRESSION:
         return
-    std = _hosted_std(_dataset_name(dataset), tm.name)
+    std = _hosted_std(_hosted_name(dataset), tm.name)
     task.nmae_std = train_std(task) if std is None else std
 
 
@@ -543,8 +548,6 @@ def build_task(
         # tasks over one dataset stay independent.
         task = cls(dataset, tm, task_dir=task_dir, regenerate=regenerate)
         _install_nmae_std(task, dataset, tm)
-    task.name = tm.name
-    task.kind = tm.kind
     return task
 
 

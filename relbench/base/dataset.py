@@ -44,7 +44,10 @@ class Dataset:
                 if not (ser.values == np.arange(len(ser))).all():
                     raise RuntimeError(
                         f"The primary key column {table.pkey_col} of table "
-                        f"{table_name} is not consecutively index."
+                        f"{table_name} is not consecutively indexed (0..n-1 in row "
+                        "order), which RelBench requires. Hosted datasets are; for your "
+                        "own data run `python byod/reindex_dataset.py <dataset_dir>` "
+                        "(see byod/README.md)."
                     )
 
         # Discard any foreign keys that are larger than primary key table as

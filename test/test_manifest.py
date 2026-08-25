@@ -60,6 +60,9 @@ def test_validate_link_task_requires_fields(purchase_manifest):
     purchase_manifest.validate()
     with pytest.raises(ValueError, match="eval_k"):
         dataclasses.replace(purchase_manifest, eval_k=None).validate()
+    dataclasses.replace(
+        purchase_manifest, kind="external", sql=None, eval_k=None, evaluator="dbinfer"
+    ).validate()
 
 
 @pytest.mark.parametrize(

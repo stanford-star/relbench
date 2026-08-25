@@ -43,6 +43,16 @@ def test_recommendation_task_splits(purchase_task, dataset):
     assert dst.map(lambda v: list(v) == sorted(v)).all()
     assert all(0 <= i < dataset.num_products for row in dst for i in row)
     assert train.df[purchase_task.src_entity_col].lt(dataset.num_customers).all()
+    masked = purchase_task.get_table("test")
+    assert list(masked.df.columns) == [
+        purchase_task.time_col,
+        purchase_task.src_entity_col,
+    ]
+    assert masked.fkey_col_to_pkey_table == {purchase_task.src_entity_col: "customer"}
+    assert (
+        purchase_task.dst_entity_col
+        in purchase_task.get_table("test", mask_input_cols=False).df
+    )
 
 
 def test_tables_are_deterministic(churn_task, purchase_task):
@@ -76,11 +86,31 @@ def test_timedelta_larger_than_split_gap_raises(dataset, churn_manifest):
         build_task(dataset, dataclasses.replace(churn_manifest, timedelta="1000 days"))
 
 
-def test_stats(churn_task):
+def test_stats(churn_task, purchase_task):
     stats = churn_task.stats()
     assert set(stats) == {"train", "val", "test", "total"}
     assert {"num_positives", "num_negatives"} <= set(stats["total"])
     assert 0 <= stats["total"]["ratio_train_test_entity_overlap"] <= 1
+    stats = purchase_task.stats()
+    assert {"num_unique_src_entities", "num_dst_entities"} <= set(stats["total"])
+
+
+def test_external_task_with_custom_evaluator_is_data_only(
+    dataset, churn_manifest, churn_task
+):
+    tm = dataclasses.replace(churn_manifest, kind="external", sql=None, evaluator="tgb")
+    task = build_task(dataset, tm)
+    val = churn_task.get_table("val")
+    pred = val.df[churn_task.target_col].to_numpy(dtype=float)
+    with pytest.raises(NotImplementedError, match="tgb"):
+        task.evaluate(pred, val)
+    assert task.evaluate(pred, val, metrics=churn_task.metrics) == {"roc_auc": 1.0}
+
+
+def test_hidden_columns(churn_task, dataset, rating_manifest):
+    assert churn_task.hidden_columns() == []
+    task = build_task(dataset, rating_manifest)
+    assert task.hidden_columns() == [("review", "review"), ("review", "rating")]
 
 
 def test_autocomplete_task(dataset, rating_manifest):
@@ -98,12 +128,15 @@ def test_autocomplete_task(dataset, rating_manifest):
         for split in ("train", "val", "test")
     ]
     assert all(t.df["rating"].notna().all() for t in tables)
+    assert sum(len(t) for t in tables) == dataset.num_reviews
+    assert tables[0].df["primary_key"].min() == 0
     assert tables[2].df["primary_key"].max() == pks.max()
     assert pd.concat([t.df for t in tables])["primary_key"].isin(pks).all()
-    assert tables[0].df["review_time"].lt(dataset.val_timestamp).all()
+    assert tables[0].df["review_time"].le(dataset.val_timestamp).all()
     assert tables[1].df["review_time"].gt(dataset.val_timestamp).all()
-    assert tables[1].df["review_time"].lt(dataset.test_timestamp).all()
+    assert tables[1].df["review_time"].le(dataset.test_timestamp).all()
     assert tables[2].df["review_time"].gt(dataset.test_timestamp).all()
+    assert all(t.df.index.tolist() == list(range(len(t))) for t in tables)
     assert list(task.get_table("test", db=db).df.columns) == [
         "review_time",
         "primary_key",

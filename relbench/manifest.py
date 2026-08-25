@@ -221,8 +221,10 @@ class TaskManifest:
     # Label generation (kind="forecast").
     sql: Optional[str] = None
 
-    # External tasks (labels shipped as-is).
-    evaluator: Optional[str] = None  # named evaluator for custom eval (e.g. tgb)
+    # External tasks (labels shipped as-is). An ``evaluator`` names an upstream scoring
+    # protocol (``tgb``, ``dbinfer``) that RelBench does not implement: the task loads,
+    # but ``evaluate()`` refuses unless explicit metrics are passed.
+    evaluator: Optional[str] = None
     extra_files: list = field(default_factory=list)
 
     manifest_version: int = MANIFEST_VERSION
@@ -285,8 +287,9 @@ class TaskManifest:
                 "src_entity_col",
                 "dst_entity_table",
                 "dst_entity_col",
-                "eval_k",
             ]
+            if not (self.kind == KIND_EXTERNAL and self.evaluator):
+                required.append("eval_k")
         elif self.kind == KIND_AUTOCOMPLETE:
             required = ["entity_table", "target_col"]
         elif self.kind == KIND_FORECAST:

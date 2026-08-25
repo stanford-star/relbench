@@ -56,6 +56,27 @@ def test_graph_cache_roundtrip(graph, dataset, cache_dir, make_graph):
         assert again[node_type].tf.col_names_dict == data[node_type].tf.col_names_dict
 
 
+def test_remove_columns_from_cached_graph(graph, dataset, cache_dir, make_graph):
+    full, _ = graph
+    hidden = [
+        ("review", "rating"),
+        ("product", "category"),
+        ("product", "title"),
+        ("product", "price"),
+    ]
+    data, col_stats = make_graph(dataset.get_db(), cache_dir, remove_columns=hidden)
+    data.validate()
+    assert data["review"].tf.col_names_dict[stype.categorical] == ["review"]
+    assert data["review"].tf.feat_dict[stype.categorical].size() == (540, 1)
+    assert data["review"].tf.col_names_dict[stype.timestamp] == ["review_time"]
+    assert "rating" not in col_stats["review"] and "review" in col_stats["review"]
+    assert data["product"].tf.col_names_dict == {stype.numerical: ["__const__"]}
+    assert data["product"].num_nodes == full["product"].num_nodes
+    assert set(col_stats["product"]) == {"__const__"}
+    assert data["customer"].tf.col_names_dict == full["customer"].tf.col_names_dict
+    assert full["review"].tf.col_names_dict[stype.categorical] == ["rating", "review"]
+
+
 def test_node_train_table_input(churn_task):
     table = churn_task.get_table("train")
     inp = get_node_train_table_input(table, churn_task)
@@ -82,3 +103,7 @@ def test_link_train_table_input(purchase_task, dataset):
     assert inp.dst_nodes[1].size() == (len(table), n_dst)
     for i, row in enumerate(table.df[purchase_task.dst_entity_col].head(20)):
         assert inp.dst_nodes[1][i].indices()[0].tolist() == sorted(row)
+    masked = get_link_train_table_input(
+        purchase_task.get_table("test"), purchase_task, n_dst
+    )
+    assert masked.dst_nodes is None and masked.src_time is not None

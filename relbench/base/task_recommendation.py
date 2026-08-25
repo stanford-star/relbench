@@ -48,6 +48,15 @@ class RecommendationTask(BaseTask):
             )
         super().__init__(dataset, remove_columns)
 
+    def _mask_input_cols(self, table: Table) -> Table:
+        input_cols = [c for c in (table.time_col, self.src_entity_col) if c is not None]
+        return Table(
+            df=table.df[input_cols],
+            fkey_col_to_pkey_table={self.src_entity_col: self.src_entity_table},
+            pkey_col=table.pkey_col,
+            time_col=table.time_col,
+        )
+
     def filter_dangling_entities(self, table: Table, db: Database) -> Table:
         num_src_nodes = len(db.table_dict[self.src_entity_table])
         num_dst_nodes = len(db.table_dict[self.dst_entity_table])
@@ -145,13 +154,8 @@ class RecommendationTask(BaseTask):
             res[split] = split_stats
         total_df = pd.concat(
             [
-                table.df
-                for table in [
-                    self.get_table("train"),
-                    self.get_table("val"),
-                    self.get_table("test"),
-                ]
-                if table is not None
+                self.get_table(split, mask_input_cols=False).df
+                for split in ["train", "val", "test"]
             ]
         )
         num_unique_src_entities, num_unique_dst_entities, num_dst_entities, num_rows = (
@@ -164,7 +168,11 @@ class RecommendationTask(BaseTask):
             "num_rows": num_rows,
         }
         train_uniques = set(self.get_table("train").df[self.src_entity_col].unique())
-        test_uniques = set(self.get_table("test").df[self.src_entity_col].unique())
+        test_uniques = set(
+            self.get_table("test", mask_input_cols=False)
+            .df[self.src_entity_col]
+            .unique()
+        )
         ratio_train_test_entity_overlap = len(
             train_uniques.intersection(test_uniques)
         ) / len(test_uniques)

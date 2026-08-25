@@ -140,6 +140,11 @@ class BaseTask:
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(dataset={repr(self.dataset)})"
 
+    def hidden_columns(self) -> List[tuple]:
+        r"""The ``(table, column)`` pairs :meth:`get_db` removes from the dataset's
+        database for this task."""
+        return list(self.remove_columns)
+
     def get_db(self, upto_test_timestamp: bool = True) -> Database:
         r"""The database as this task is allowed to see it.
 

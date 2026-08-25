@@ -8,7 +8,7 @@ from relbench.metrics import make_nmae, roc_auc
 from .database import Database
 from .dataset import Dataset
 from .table import Table
-from .task_base import TaskType
+from .task_base import TaskType, _sort_deterministically
 from .task_entity import EntityTask
 
 
@@ -70,6 +70,9 @@ class AutoCompleteTask(EntityTask):
             # ``task.evaluate(pred, metrics=[...])``.
             self.metrics = []
 
+    def hidden_columns(self) -> List[tuple]:
+        return [*self.remove_columns, (self.entity_table, self.target_col)]
+
     def get_db(self, upto_test_timestamp: bool = True) -> Database:
         r"""The database with the target column (this task's label) taken out.
 
@@ -113,61 +116,32 @@ class AutoCompleteTask(EntityTask):
         return table
 
     def _get_table(self, split: str, db: Optional[Database] = None) -> Table:
-        r"""Helper function to get a table for a split.
+        r"""The label table of ``split``: every row of the entity table whose time falls
+        in the split's window, with the target column as the label.
 
-        This function overrides the `_get_table` method in `EntityTask`.
-        Because we predict all values in the target column, we only look at the min and max timestamp
-        for each split and take all rows in the table between them.
+        train: ``time <= val_timestamp``; val: ``(val_timestamp, test_timestamp]``;
+        test: ``> test_timestamp``. ``make_table`` selects ``(start, end]``, so the
+        train window starts just before the earliest row in the database.
         """
-
-        # One build serves both roles: labels come from the split's view, dangling
-        # entities are filtered against the full database (every split).
         full_db = db if db is not None else self.get_db(upto_test_timestamp=False)
         db = full_db if split == "test" else full_db.upto(self.dataset.test_timestamp)
 
         if split == "train":
-            start = self.dataset.val_timestamp - self.timedelta
-            end = db.min_timestamp
-            freq = -self.timedelta
-
-        elif split == "val":
-            if self.dataset.val_timestamp + self.timedelta > db.max_timestamp:
-                raise RuntimeError(
-                    "val timestamp + timedelta is larger than max timestamp! "
-                    "This would cause val labels to be generated with "
-                    "insufficient aggregation time."
-                )
-
-            start = self.dataset.test_timestamp - self.timedelta
+            start = db.min_timestamp - pd.Timedelta(1, "ns")
             end = self.dataset.val_timestamp
-            freq = -self.timedelta
-
+        elif split == "val":
+            start, end = self.dataset.val_timestamp, self.dataset.test_timestamp
         elif split == "test":
-            # Read once: `max_timestamp` is uncached and scans every table.
             db_max_timestamp = db.max_timestamp
-            if self.dataset.test_timestamp + self.timedelta > db_max_timestamp:
-                raise RuntimeError(
-                    "test timestamp + timedelta is larger than max timestamp! "
-                    "This would cause test labels to be generated with "
-                    "insufficient aggregation time."
-                )
+            if db_max_timestamp <= self.dataset.test_timestamp:
+                raise RuntimeError("the database has no rows after test_timestamp")
+            start, end = self.dataset.test_timestamp, db_max_timestamp
+        else:
+            raise ValueError(f"unknown split: {split!r}")
 
-            start = db_max_timestamp
-            end = self.dataset.test_timestamp
-            freq = -self.timedelta
-
-        timestamps = pd.date_range(start=start, end=end, freq=freq)
-
-        if split == "train" and len(timestamps) < 3:
-            raise RuntimeError(
-                f"The number of training time frames is too few. "
-                f"({len(timestamps)} given)"
-            )
-
-        table = self.make_table(db, timestamps)
+        table = self.make_table(db, pd.DatetimeIndex([start, end]))
         table = self.filter_dangling_entities(table, full_db)
-
-        return table
+        return _sort_deterministically(table, self)
 
     def make_table(self, db: Database, timestamps: "pd.Series[pd.Timestamp]") -> Table:
         entity_table = db.table_dict[self.entity_table].df  # noqa: F841

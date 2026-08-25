@@ -6,12 +6,13 @@ from relbench.modeling.graph import make_pkey_fkey_graph
 from relbench.modeling.utils import get_stype_proposal
 
 
-def _make_graph(db, cache_dir=None):
+def _make_graph(db, cache_dir=None, remove_columns=None):
     return make_pkey_fkey_graph(
         db,
         get_stype_proposal(db),
         text_embedder_cfg=TextEmbedderConfig(HashTextEmbedder(8), batch_size=None),
         cache_dir=cache_dir,
+        remove_columns=remove_columns,
     )
 
 

@@ -5,10 +5,10 @@ import numpy as np
 import pandas as pd
 import torch
 from torch import Tensor
-from torch_frame import stype
+from torch_frame import TensorFrame, stype
 from torch_frame.config import TextEmbedderConfig
 from torch_frame.data import Dataset
-from torch_frame.data.stats import StatType
+from torch_frame.data.stats import StatType, compute_col_stats
 from torch_geometric.data import HeteroData
 from torch_geometric.typing import NodeType
 from torch_geometric.utils import sort_edge_index
@@ -17,11 +17,41 @@ from relbench.base import Database, EntityTask, RecommendationTask, Table, TaskT
 from relbench.modeling.utils import remove_pkey_fkey, to_unix_time
 
 
+def drop_tensor_frame_columns(
+    tf: TensorFrame, col_stats: Dict[str, Dict[StatType, Any]], cols
+) -> Tuple[TensorFrame, Dict[str, Dict[StatType, Any]]]:
+    r"""Return ``tf`` and ``col_stats`` without the columns named in ``cols``.
+
+    A table left with no feature columns gets a constant ``__const__`` column, as
+    :func:`make_pkey_fkey_graph` does for feature-less tables.
+    """
+    cols = set(cols)
+    feat_dict, col_names_dict = {}, {}
+    for stype_, names in tf.col_names_dict.items():
+        keep = [i for i, name in enumerate(names) if name not in cols]
+        if not keep:
+            continue
+        feat = tf.feat_dict[stype_]
+        feat_dict[stype_] = feat if len(keep) == len(names) else feat[:, keep]
+        col_names_dict[stype_] = [names[i] for i in keep]
+    col_stats = {name: s for name, s in col_stats.items() if name not in cols}
+    if not feat_dict:
+        feat_dict = {stype.numerical: torch.ones(tf.num_rows, 1)}
+        col_names_dict = {stype.numerical: ["__const__"]}
+        col_stats = {
+            "__const__": compute_col_stats(
+                pd.Series(np.ones(tf.num_rows)), stype.numerical
+            )
+        }
+    return TensorFrame(feat_dict, col_names_dict, y=tf.y), col_stats
+
+
 def make_pkey_fkey_graph(
     db: Database,
     col_to_stype_dict: Dict[str, Dict[str, stype]],
     text_embedder_cfg: Optional[TextEmbedderConfig] = None,
     cache_dir: Optional[str] = None,
+    remove_columns=None,
 ) -> Tuple[HeteroData, Dict[str, Dict[str, Dict[StatType, Any]]]]:
     r"""Given a :class:`Database` object, construct a heterogeneous graph with primary-
     foreign key relationships, together with the column stats of each table.
@@ -35,6 +65,10 @@ def make_pkey_fkey_graph(
             frames. If specified, we will either cache the file or use the
             cached file. If not specified, we will not use cached file and
             re-process everything from scratch without saving the cache.
+        remove_columns: ``(table, column)`` pairs to leave out of the node features
+            (a task's :meth:`~relbench.base.BaseTask.hidden_columns`). They are dropped
+            *after* materialization, so a cache built from the dataset-level database
+            (``dataset.get_db()``) can be shared by every task on that dataset.
 
     Returns:
         HeteroData: The heterogeneous :class:`PyG` object with
@@ -44,6 +78,7 @@ def make_pkey_fkey_graph(
     col_stats_dict = dict()
     if cache_dir is not None:
         os.makedirs(cache_dir, exist_ok=True)
+    remove_columns = [tuple(pair) for pair in (remove_columns or [])]
 
     for table_name, table in db.table_dict.items():
         # Materialize the tables into tensor frames:
@@ -74,8 +109,12 @@ def make_pkey_fkey_graph(
             col_to_text_embedder_cfg=text_embedder_cfg,
         ).materialize(path=path)
 
-        data[table_name].tf = dataset.tensor_frame
-        col_stats_dict[table_name] = dataset.col_stats
+        tf, col_stats = dataset.tensor_frame, dataset.col_stats
+        drop = {col for t, col in remove_columns if t == table_name}
+        if drop:
+            tf, col_stats = drop_tensor_frame_columns(tf, col_stats, drop)
+        data[table_name].tf = tf
+        col_stats_dict[table_name] = col_stats
 
         # Add time attribute:
         if table.time_col is not None:
@@ -184,14 +223,15 @@ class LinkTrainTableInput(NamedTuple):
     - src_nodes is a Tensor of source node indices.
     - dst_nodes is PyTorch sparse tensor in csr format.
         dst_nodes[src_node_idx] gives a tensor of destination node
-        indices for src_node_idx.
+        indices for src_node_idx. None for a masked (test) table, which
+        carries no destination lists.
     - num_dst_nodes is the total number of destination nodes.
         (used to perform negative sampling).
     - src_time is a Tensor of time for src_nodes
     """
 
     src_nodes: Tuple[NodeType, Tensor]
-    dst_nodes: Tuple[NodeType, Tensor]
+    dst_nodes: Optional[Tuple[NodeType, Tensor]]
     num_dst_nodes: int
     src_time: Optional[Tensor]
 
@@ -219,16 +259,18 @@ def get_link_train_table_input(
     src_node_idx: Tensor = torch.from_numpy(
         table.df[task.src_entity_col].astype(int).values
     )
-    exploded = table.df[task.dst_entity_col].explode()
-    coo_indices = torch.from_numpy(
-        np.stack([exploded.index.values, exploded.values.astype(int)])
-    )
-    sparse_coo = torch.sparse_coo_tensor(
-        coo_indices,
-        torch.ones(coo_indices.size(1), dtype=bool),
-        (len(src_node_idx), num_dst_nodes),
-    )
-    dst_node_indices = sparse_coo.to_sparse_csr()
+    dst_nodes = None
+    if task.dst_entity_col in table.df:
+        exploded = table.df[task.dst_entity_col].explode()
+        coo_indices = torch.from_numpy(
+            np.stack([exploded.index.values, exploded.values.astype(int)])
+        )
+        sparse_coo = torch.sparse_coo_tensor(
+            coo_indices,
+            torch.ones(coo_indices.size(1), dtype=bool),
+            (len(src_node_idx), num_dst_nodes),
+        )
+        dst_nodes = (task.dst_entity_table, sparse_coo.to_sparse_csr())
 
     time: Optional[Tensor] = None
     if table.time_col is not None:
@@ -236,7 +278,7 @@ def get_link_train_table_input(
 
     return LinkTrainTableInput(
         src_nodes=(task.src_entity_table, src_node_idx),
-        dst_nodes=(task.dst_entity_table, dst_node_indices),
+        dst_nodes=dst_nodes,
         num_dst_nodes=num_dst_nodes,
         src_time=time,
     )
