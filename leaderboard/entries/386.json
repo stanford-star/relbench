@@ -1,6 +1,6 @@
 {
  "name": "Global Popularity",
- "in_context": false,
+ "in_context": true,
  "url": "https://star-project.stanford.edu/relbench",
  "note": "RelBench baseline",
  "date": "2026-08-25T03:12:25Z",

@@ -1,7 +1,7 @@
 [
  {
   "name": "Random",
-  "in_context": false,
+  "in_context": true,
   "url": "https://github.com/stanford-star/relbench",
   "note": "RelBench baseline",
   "date": "2026-07-23T06:25:37Z",
@@ -90,7 +90,7 @@
  },
  {
   "name": "Entity Mean",
-  "in_context": false,
+  "in_context": true,
   "url": "https://star-project.stanford.edu/relbench/",
   "note": "RelBench baseline",
   "date": "2026-08-25T01:24:26Z",
@@ -134,7 +134,7 @@
  },
  {
   "name": "Entity Median",
-  "in_context": false,
+  "in_context": true,
   "url": "https://star-project.stanford.edu/relbench",
   "note": "RelBench baseline",
   "date": "2026-08-25T03:02:19Z",
@@ -230,7 +230,7 @@
  },
  {
   "name": "Global Popularity",
-  "in_context": false,
+  "in_context": true,
   "url": "https://star-project.stanford.edu/relbench",
   "note": "RelBench baseline",
   "date": "2026-08-25T03:12:25Z",
@@ -339,7 +339,7 @@
  },
  {
   "name": "LightGBM",
-  "in_context": true,
+  "in_context": false,
   "url": "https://star-project.stanford.edu/relbench",
   "note": "RelBench baseline",
   "date": "2026-08-25T04:09:15Z",

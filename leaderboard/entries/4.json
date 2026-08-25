@@ -1,6 +1,6 @@
 {
  "name": "Random",
- "in_context": false,
+ "in_context": true,
  "url": "https://github.com/stanford-star/relbench",
  "note": "RelBench baseline",
  "date": "2026-07-23T06:25:37Z",

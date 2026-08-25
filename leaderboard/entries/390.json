@@ -1,6 +1,6 @@
 {
  "name": "LightGBM",
- "in_context": true,
+ "in_context": false,
  "url": "https://star-project.stanford.edu/relbench",
  "note": "RelBench baseline",
  "date": "2026-08-25T04:09:15Z",
