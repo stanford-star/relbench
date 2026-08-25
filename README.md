@@ -21,16 +21,6 @@
 
 ## News
 
-RelBench 3 loads every dataset family below from the Hugging Face Hub with one call —
-`relbench.load_dataset("<org>/<repo>/<name>")` — the core databases
-([`stanford-star/relbench-v1`](https://huggingface.co/datasets/stanford-star/relbench-v1),
-[`stanford-star/relbench-v2-extra`](https://huggingface.co/datasets/stanford-star/relbench-v2-extra)),
-CTU/ReDeLEx ([`stanford-star/redelex`](https://huggingface.co/datasets/stanford-star/redelex)),
-4DBInfer ([`stanford-star/dbinfer`](https://huggingface.co/datasets/stanford-star/dbinfer)) and
-TGB ([`stanford-star/tgb`](https://huggingface.co/datasets/stanford-star/tgb)); the `[ctu]` extra is
-gone. MIMIC-IV requires PhysioNet credentials and is not hosted. TGB and 4DBInfer tasks that
-use their own scoring protocols load as data only (see [`MIGRATION.md`](MIGRATION.md)).
-
 - **Aug 2026** — RelBench v3 released: datasets and tasks load straight from [Hugging Face](https://huggingface.co/stanford-star), a new [leaderboard](https://star-project.stanford.edu/relbench/leaderboard/) with automated submissions, and bug fixes ([migration guide](MIGRATION.md)).
 - **Jun 2026** — Datasets, models, and community hub migrated to [Hugging Face](https://huggingface.co/stanford-star).
 - **Mar 2026** — [RelBench v2 paper](https://arxiv.org/abs/2602.12606) accepted at the [ICLR 2026 DATA-FM workshop](https://data-fm-iclr2026.github.io/).
