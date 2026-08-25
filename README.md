@@ -85,7 +85,7 @@ Open these directly in Google Colab — no setup required:
 
 The [**RelBench leaderboard**](https://star-project.stanford.edu/relbench/leaderboard/)
 ranks methods by their test-set performance, averaged over a fixed task set. There are
-three independent leaderboards — **classification** (12 tasks), **regression** (9), and
+three independent boards — **classification** (12 tasks), **regression** (9), and
 **recommendation** (10); the task lists are in `relbench.submit.LEADERBOARD_TASKS`.
 You can submit to any of them; each requires predictions for *all* of its tasks.
 
