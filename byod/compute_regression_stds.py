@@ -31,11 +31,11 @@ from relbench.hf import (
 from relbench.manifest import TaskManifest
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", type=Path, default=Path("."))
     parser.add_argument("--push", action="store_true", help="upload to RELBENCH_HF")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     api = HfApi()
 

@@ -82,10 +82,9 @@ of the same logic.
 ## Mirroring raw sources
 
 `arxiv.py` and `ratebeer.py` try the `stanford-star/relbench-raw` mirror first and fall
-back to the original Dropbox links. A maintainer uploads the mirror files once, from the
-sha256-verified `db.zip` that `fetch` cached under `$RELBENCH_RAW_CACHE`:
+back to the original Dropbox links. `mirror_raw.py` downloads the originals, verifies the
+pinned sha256 and uploads them under `<dataset>/db.zip`:
 
-    hf upload stanford-star/relbench-raw <local db.zip> rel-arxiv/db.zip --repo-type dataset
-    hf upload stanford-star/relbench-raw <local db.zip> rel-ratebeer/db.zip --repo-type dataset
+    python provenance/mirror_raw.py --push
 
-Until then the mirror URL 404s and the Dropbox fallback is used.
+Until a source is mirrored, its mirror URL 404s and the fallback is used.

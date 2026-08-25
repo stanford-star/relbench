@@ -140,11 +140,11 @@ def write_normalized(src: Path, dest: Path, db: Database, rewrites: dict) -> Non
         )
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("dataset_dir", type=Path)
     parser.add_argument("--out", type=Path, default=None, help="default: in place")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     src = args.dataset_dir.resolve()
     manifest = DatasetManifest.load(src / "manifest.yaml")

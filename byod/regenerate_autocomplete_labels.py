@@ -70,13 +70,13 @@ def regenerate(repo: str, tasks: list, mirror: Path) -> None:
                 )
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo", default=RELBENCH_EXTRA_HF)
     parser.add_argument("--dataset", nargs="+", default=None, help="limit to these")
     parser.add_argument("--list", action="store_true", help="list the tasks and exit")
     parser.add_argument("--push", action="store_true", help="upload (default: dry run)")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     api = HfApi()
     tasks = autocomplete_tasks(api, args.repo, args.dataset)
