@@ -9,6 +9,7 @@ and are skipped.
     python provenance/check_provenance.py stanford-star/relbench-v1/rel-f1
     python provenance/check_provenance.py your-org/your-dataset
     python provenance/check_provenance.py ./path/to/local/dataset
+    python provenance/check_provenance.py rel-f1 rel-hm rel-trial   # several, one report each
 """
 
 from __future__ import annotations
@@ -82,11 +83,14 @@ def check_provenance(dataset: str) -> bool:
     return ok_all
 
 
-def main() -> None:
-    if len(sys.argv) != 2:
+def main(argv: list[str] | None = None) -> None:
+    specs = sys.argv[1:] if argv is None else list(argv)
+    if not specs:
         print(__doc__)
         sys.exit(2)
-    sys.exit(0 if check_provenance(sys.argv[1]) else 1)
+    drifted = [spec for spec in specs if not check_provenance(spec)]
+    if drifted:
+        raise RuntimeError(f"provenance drift in {', '.join(drifted)}")
 
 
 if __name__ == "__main__":

@@ -565,8 +565,8 @@ def check(df: pd.DataFrame) -> None:
     )
 
 
-def main() -> None:
-    args = sys.argv[1:]
+def main(argv: list[str] | None = None) -> None:
+    args = sys.argv[1:] if argv is None else list(argv)
     if not args or args[0].startswith("-"):
         sys.exit(__doc__)
     spec = args[0]
