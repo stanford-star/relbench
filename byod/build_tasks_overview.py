@@ -266,9 +266,29 @@ def _download_one(repo_id: str, name: str) -> Path:
     for attempt in range(3):
         local = _snapshot(repo_id, patterns, force=attempt > 0)
         dsdir = Path(local) / name if name else Path(local)
-        if (dsdir / "manifest.yaml").exists():
+        # A task-only subtree has no dataset manifest of its own; the tasks are what we
+        # came for, and `_dataset_manifest` sources the database manifest elsewhere.
+        if (dsdir / "manifest.yaml").exists() or (dsdir / "tasks").exists():
             return dsdir
     raise FileNotFoundError(f"{prefix}manifest.yaml missing after download")
+
+
+def _dataset_manifest(dsdir: Path, name: str) -> DatasetManifest:
+    r"""The database manifest for ``name``: local if this repo holds it, else fetched from
+    whichever RelBench repo does (a repo may host tasks for a database it does not hold).
+    """
+    local = dsdir / "manifest.yaml"
+    if local.exists():
+        return DatasetManifest.load(local)
+
+    from huggingface_hub import hf_hub_download
+
+    repo_id, subdir = resolve_repo(name)
+    path = hf_hub_download(
+        repo_id, f"{subdir}/manifest.yaml" if subdir else "manifest.yaml",
+        repo_type="dataset",
+    )
+    return DatasetManifest.load(path)
 
 
 def _hub_dataset_names(repo_id: str, subdir: str) -> list[str]:
@@ -283,13 +303,19 @@ def _hub_dataset_names(repo_id: str, subdir: str) -> list[str]:
     if subdir:
         return [subdir]
     files = HfApi().list_repo_files(repo_id, repo_type="dataset")
-    return sorted(
-        {
-            f.split("/")[0]
-            for f in files
-            if f.endswith("/manifest.yaml") and f.count("/") == 1
-        }
-    )
+    names = {
+        f.split("/")[0] for f in files if f.endswith("/manifest.yaml") and f.count("/") == 1
+    }
+    # A repo can host tasks for a database it does not itself hold (the v2-only tasks on
+    # the v1 databases): a `<name>/tasks/<task>/manifest.yaml` with no `<name>/manifest.yaml`
+    # next to it. Those tasks belong in this repo's overview; their database manifest is
+    # fetched from whichever RelBench repo holds it.
+    names |= {
+        f.split("/")[0]
+        for f in files
+        if f.endswith("/manifest.yaml") and f.count("/") == 3 and f.split("/")[1] == "tasks"
+    }
+    return sorted(names)
 
 
 def iter_datasets(spec: str):
@@ -324,7 +350,7 @@ def iter_datasets(spec: str):
             print(f"[{i}/{len(names)}] {name}", flush=True)
         try:
             dsdir = _download_one(repo_id, name)
-            canonical = DatasetManifest.load(dsdir / "manifest.yaml").name
+            canonical = _dataset_manifest(dsdir, name).name
         except Exception as e:  # one flaky dataset must not abort a 1000-dataset run
             print(f"  WARNING: skipping {name}: {type(e).__name__}: {e}", flush=True)
             yield name, None
@@ -368,7 +394,7 @@ def build(spec: str) -> pd.DataFrame:
         tasks_dir = dsdir / "tasks"
         if not tasks_dir.exists():
             continue
-        dm = DatasetManifest.load(dsdir / "manifest.yaml")
+        dm = _dataset_manifest(dsdir, name)
         for task_dir in sorted(p for p in tasks_dir.iterdir() if p.is_dir()):
             if not (task_dir / "manifest.yaml").exists():
                 continue

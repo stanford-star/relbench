@@ -43,6 +43,7 @@ from typing import Optional
 import pandas as pd
 import pyarrow.parquet as pq
 
+from relbench import hf
 from relbench.hf import resolve_repo
 from relbench.manifest import DatasetManifest, TaskManifest
 
@@ -197,14 +198,26 @@ def _rows_from_local(root: Path) -> list[dict]:
         tasks_dir = dsdir / "tasks"
 
         def task_names():
-            if not tasks_dir.exists():
-                return []
-            return sorted(
-                p.name for p in tasks_dir.iterdir() if (p / "manifest.yaml").exists()
+            local = (
+                {p.name for p in tasks_dir.iterdir() if (p / "manifest.yaml").exists()}
+                if tasks_dir.exists()
+                else set()
             )
+            # Tasks for this database can be hosted in a different RelBench repo (the
+            # v2-only tasks on the v1 databases), and they count towards it all the same.
+            # Only for the RelBench repos: a third-party repo owns its own task list.
+            if repo_id not in hf.RELBENCH_REPOS:
+                return sorted(local)
+            return sorted(local | set(hf.list_task_names(name)))
 
         def load_tm(task):
-            return TaskManifest.load(tasks_dir / task / "manifest.yaml")
+            local = tasks_dir / task / "manifest.yaml"
+            if local.exists():
+                return TaskManifest.load(local)
+            path = hf.download_task_manifest(name, task)
+            if path is None:
+                raise FileNotFoundError(f"no manifest for task {name}/{task}")
+            return TaskManifest.load(path)
 
         return database_row(name, dm, open_pq, folder_bytes, task_names, load_tm)
 
@@ -264,14 +277,26 @@ def _rows_from_hub(repo_id: str, subdir: str) -> list[dict]:
         tasks_dir = mdir / "tasks"
 
         def task_names():
-            if not tasks_dir.exists():
-                return []
-            return sorted(
-                p.name for p in tasks_dir.iterdir() if (p / "manifest.yaml").exists()
+            local = (
+                {p.name for p in tasks_dir.iterdir() if (p / "manifest.yaml").exists()}
+                if tasks_dir.exists()
+                else set()
             )
+            # Tasks for this database can be hosted in a different RelBench repo (the
+            # v2-only tasks on the v1 databases), and they count towards it all the same.
+            # Only for the RelBench repos: a third-party repo owns its own task list.
+            if repo_id not in hf.RELBENCH_REPOS:
+                return sorted(local)
+            return sorted(local | set(hf.list_task_names(name)))
 
         def load_tm(task):
-            return TaskManifest.load(tasks_dir / task / "manifest.yaml")
+            local = tasks_dir / task / "manifest.yaml"
+            if local.exists():
+                return TaskManifest.load(local)
+            path = hf.download_task_manifest(name, task)
+            if path is None:
+                raise FileNotFoundError(f"no manifest for task {name}/{task}")
+            return TaskManifest.load(path)
 
         return database_row(name, dm, open_pq, folder_bytes, task_names, load_tm)
 

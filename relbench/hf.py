@@ -121,6 +121,27 @@ def find_task_dir(
     return None
 
 
+def download_task_manifest(
+    dataset_name: str, task_name: str, revision: Optional[str] = None
+) -> Optional[Path]:
+    r"""The task's ``manifest.yaml`` alone, from whichever repo hosts it.
+
+    For callers that need the task spec but not its label tables (overview builders);
+    :func:`find_task_dir` fetches the whole task directory. ``None`` if no repo has it.
+    """
+    from huggingface_hub import hf_hub_download
+
+    path = f"{dataset_name}/tasks/{task_name}/manifest.yaml"
+    for repo_id in RELBENCH_REPOS:
+        if _repo_has(repo_id, path, revision):
+            return Path(
+                hf_hub_download(
+                    repo_id, path, repo_type="dataset", revision=revision
+                )
+            )
+    return None
+
+
 def list_task_names(dataset_name: str, revision: Optional[str] = None) -> list[str]:
     r"""Every task hosted for ``dataset_name``, across :data:`RELBENCH_REPOS`."""
     from huggingface_hub import HfApi
