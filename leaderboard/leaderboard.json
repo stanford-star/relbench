@@ -582,5 +582,49 @@
     "cov": 1.0
    }
   }
+ },
+ {
+  "name": "RT-PluRel (in-context)",
+  "in_context": true,
+  "url": "https://huggingface.co/stanford-star/rt-plurel",
+  "note": null,
+  "date": "2026-08-27T23:26:42Z",
+  "author": "rishabh-ranjan",
+  "issue": 396,
+  "boards": {
+   "binary_classification": {
+    "results": {
+     "rel-amazon/user-churn": 0.6508977189190064,
+     "rel-amazon/item-churn": 0.747674474681665,
+     "rel-avito/user-visits": 0.6202685305369284,
+     "rel-avito/user-clicks": 0.5001483295128547,
+     "rel-event/user-repeat": 0.7777072192513369,
+     "rel-event/user-ignore": 0.8374805706193222,
+     "rel-f1/driver-dnf": 0.8111843068364808,
+     "rel-f1/driver-top3": 0.9029839046822742,
+     "rel-hm/user-churn": 0.6599217647773862,
+     "rel-stack/user-engagement": 0.8799735313652026,
+     "rel-stack/user-badge": 0.8315094370186732,
+     "rel-trial/study-outcome": 0.6733258266439045
+    },
+    "mean": 0.7410896345704194,
+    "cov": 1.0
+   },
+   "regression": {
+    "results": {
+     "rel-amazon/user-ltv": 0.2890554840409213,
+     "rel-amazon/item-ltv": 0.08756836710436032,
+     "rel-avito/ad-ctr": 0.43337922326976447,
+     "rel-event/user-attendance": 0.40807732942234626,
+     "rel-f1/driver-position": 0.4150344641490253,
+     "rel-hm/item-sales": 0.12233156602544813,
+     "rel-stack/post-votes": 0.15742553136205487,
+     "rel-trial/study-adverse": 0.1606361981632742,
+     "rel-trial/site-success": 0.8954767076705705
+    },
+    "mean": 0.3298872079119739,
+    "cov": 1.0
+   }
+  }
  }
 ]
