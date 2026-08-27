@@ -629,7 +629,7 @@
  },
  {
   "name": "RT-PluRel (fine-tuned)",
-  "in_context": true,
+  "in_context": false,
   "url": "https://github.com/stanford-star/relational-transformer",
   "note": null,
   "date": "2026-08-27T23:28:07Z",
