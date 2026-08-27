@@ -1,0 +1,44 @@
+{
+ "name": "RT",
+ "in_context": false,
+ "url": "https://github.com/stanford-star/relational-transformer",
+ "note": null,
+ "date": "2026-08-27T23:29:24Z",
+ "author": "rishabh-ranjan",
+ "issue": 398,
+ "boards": {
+  "binary_classification": {
+   "results": {
+    "rel-amazon/user-churn": 0.712984600239051,
+    "rel-amazon/item-churn": 0.829553756282021,
+    "rel-avito/user-visits": 0.6621276150604158,
+    "rel-avito/user-clicks": 0.6859330604093175,
+    "rel-event/user-repeat": 0.7897058823529411,
+    "rel-event/user-ignore": 0.814119258977813,
+    "rel-f1/driver-dnf": 0.7992875616064022,
+    "rel-f1/driver-top3": 0.838426264632107,
+    "rel-hm/user-churn": 0.7023624036461857,
+    "rel-stack/user-engagement": 0.9073917253153062,
+    "rel-stack/user-badge": 0.8933258534411425,
+    "rel-trial/study-outcome": 0.6954766142409163
+   },
+   "mean": 0.7775578830169683,
+   "cov": 1.0
+  },
+  "regression": {
+   "results": {
+    "rel-amazon/user-ltv": 0.24148120476879137,
+    "rel-amazon/item-ltv": 0.07497072274799504,
+    "rel-avito/ad-ctr": 0.3853302935253623,
+    "rel-event/user-attendance": 0.32516589631592824,
+    "rel-f1/driver-position": 0.48747652454885,
+    "rel-hm/item-sales": 0.07750789256889826,
+    "rel-stack/post-votes": 0.13768042414065634,
+    "rel-trial/study-adverse": 0.12058233128858097,
+    "rel-trial/site-success": 0.783635521074599
+   },
+   "mean": 0.2926478678866291,
+   "cov": 1.0
+  }
+ }
+}
