@@ -1,0 +1,26 @@
+{
+ "name": "Kurve-RSC + CatBoost",
+ "in_context": false,
+ "url": "https://github.com/kurveai/kurve-rsc-benchmark",
+ "note": null,
+ "date": "2026-08-26T22:58:42Z",
+ "author": "wesmadrigal",
+ "issue": 395,
+ "boards": {
+  "regression": {
+   "results": {
+    "rel-amazon/user-ltv": 0.24758268309860526,
+    "rel-amazon/item-ltv": 0.07232058910539883,
+    "rel-avito/ad-ctr": 0.3189650234598773,
+    "rel-event/user-attendance": 0.3387769551685343,
+    "rel-f1/driver-position": 0.41400625674104385,
+    "rel-hm/item-sales": 0.0687122251021431,
+    "rel-stack/post-votes": 0.12462172773160173,
+    "rel-trial/study-adverse": 0.11986124242821272,
+    "rel-trial/site-success": 0.7948188589711535
+   },
+   "mean": 0.2777406179785078,
+   "cov": 1.0
+  }
+ }
+}
