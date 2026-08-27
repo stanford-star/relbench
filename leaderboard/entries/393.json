@@ -1,0 +1,60 @@
+{
+ "name": "Kapso (Leeroo Team)",
+ "in_context": false,
+ "url": "https://github.com/Leeroo-AI/kapso",
+ "note": null,
+ "date": "2026-08-26T10:05:08Z",
+ "author": "alirezamshi",
+ "issue": 393,
+ "boards": {
+  "binary_classification": {
+   "results": {
+    "rel-amazon/user-churn": 0.7155089625654834,
+    "rel-amazon/item-churn": 0.8312954987414322,
+    "rel-avito/user-visits": 0.6777924268662243,
+    "rel-avito/user-clicks": 0.7021014920456261,
+    "rel-event/user-repeat": 0.8115641711229946,
+    "rel-event/user-ignore": 0.888945689843759,
+    "rel-f1/driver-dnf": 0.8327331283853023,
+    "rel-f1/driver-top3": 0.9356579222408027,
+    "rel-hm/user-churn": 0.7162340063583654,
+    "rel-stack/user-engagement": 0.915121468723483,
+    "rel-stack/user-badge": 0.8949043003034881,
+    "rel-trial/study-outcome": 0.8208383277033162
+   },
+   "mean": 0.811891449575023,
+   "cov": 1.0
+  },
+  "regression": {
+   "results": {
+    "rel-amazon/user-ltv": 0.23766044510351428,
+    "rel-amazon/item-ltv": 0.0655004695189943,
+    "rel-avito/ad-ctr": 0.33375212642441626,
+    "rel-event/user-attendance": 0.3157184364832515,
+    "rel-f1/driver-position": 0.3440447462279162,
+    "rel-hm/item-sales": 0.06342959087677044,
+    "rel-stack/post-votes": 0.12213573458527752,
+    "rel-trial/study-adverse": 0.08717506983199792,
+    "rel-trial/site-success": 0.6590770375482983
+   },
+   "mean": 0.24761040628893738,
+   "cov": 1.0
+  },
+  "recommendation": {
+   "results": {
+    "rel-amazon/user-item-purchase": 0.0254400552420944,
+    "rel-amazon/user-item-rate": 0.023107505650886515,
+    "rel-amazon/user-item-review": 0.029500157042940317,
+    "rel-avito/user-ad-visit": 0.042010102143412935,
+    "rel-f1/driver-circuit-compete": 0.8794580918787268,
+    "rel-hm/user-item-purchase": 0.03256021417044058,
+    "rel-stack/user-post-comment": 0.13134517617924238,
+    "rel-stack/post-post-related": 0.21780391765716897,
+    "rel-trial/condition-sponsor-run": 0.12284791671489534,
+    "rel-trial/site-sponsor-run": 0.33334960252607404
+   },
+   "mean": 0.18374227392058823,
+   "cov": 1.0
+  }
+ }
+}
