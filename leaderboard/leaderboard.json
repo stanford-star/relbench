@@ -670,5 +670,34 @@
     "cov": 1.0
    }
   }
+ },
+ {
+  "name": "LEDGER",
+  "in_context": false,
+  "url": "https://github.com/ShantanuAnant/ledger",
+  "note": "In Reference to the previous submission, preds-classification.zip It was an accidental upload. Consider this attached file for the submission.",
+  "date": "2026-09-10T04:34:24Z",
+  "author": "ShantanuAnant",
+  "issue": 403,
+  "boards": {
+   "binary_classification": {
+    "results": {
+     "rel-amazon/user-churn": 0.6662035239826996,
+     "rel-amazon/item-churn": 0.797125592135749,
+     "rel-avito/user-visits": 0.6491323393547679,
+     "rel-avito/user-clicks": 0.656154888382542,
+     "rel-event/user-repeat": 0.7616644385026737,
+     "rel-event/user-ignore": 0.7119109299621199,
+     "rel-f1/driver-dnf": 0.6786610061972381,
+     "rel-f1/driver-top3": 0.7386470526755853,
+     "rel-hm/user-churn": 0.6698712855402607,
+     "rel-stack/user-engagement": 0.8902282767103815,
+     "rel-stack/user-badge": 0.8522924906585329,
+     "rel-trial/study-outcome": 0.6743912922402626
+    },
+    "mean": 0.728856926361901,
+    "cov": 1.0
+   }
+  }
  }
 ]
