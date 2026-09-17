@@ -40,7 +40,7 @@ preferred-citation:
   year: 2024
   url: https://arxiv.org/abs/2407.20060
 references:
-  - type: article
+  - type: conference-paper
     title: "RelBench v2: A Large-Scale Benchmark and Repository for Relational Data"
     authors:
       - family-names: Gu
@@ -65,5 +65,7 @@ references:
         given-names: Fengyu
       - family-names: Leskovec
         given-names: Jure
+    collection-title: "3rd Workshop on Navigating and Addressing Data Problems for Foundation Models (DATA-FM) at ICLR 2026"
     year: 2026
+    notes: "arXiv:2602.12606 [cs.LG]"
     url: https://arxiv.org/abs/2602.12606

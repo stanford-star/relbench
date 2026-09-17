@@ -129,13 +129,12 @@ If you use RelBench, please cite the benchmark papers:
   year={2024}
 }
 
-@misc{relbenchv2,
+@inproceedings{relbenchv2,
   title={RelBench v2: A Large-Scale Benchmark and Repository for Relational Data},
   author={Gu, Justin and Ranjan, Rishabh and Kanatsoulis, Charilaos and Tang, Haiming and Jurkovic, Martin and Hudovernik, Valter and Znidar, Mark and Chaturvedi, Pranshu and Shroff, Parth and Li, Fengyu and Leskovec, Jure},
+  booktitle={3rd Workshop on Navigating and Addressing Data Problems for Foundation Models (DATA-FM) at ICLR 2026},
   year={2026},
-  eprint={2602.12606},
-  archivePrefix={arXiv},
-  primaryClass={cs.LG},
+  note={arXiv:2602.12606 [cs.LG]},
   url={https://arxiv.org/abs/2602.12606}
 }
 ```
