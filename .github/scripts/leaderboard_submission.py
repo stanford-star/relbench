@@ -48,6 +48,7 @@ FORM_FIELDS = {
 IN_CONTEXT_HEADING = "In-context"
 NO_RESPONSE = "_No response_"
 MAX_UNZIPPED_BYTES = 4 << 30
+LEADERBOARD = Path(__file__).resolve().parents[2] / "leaderboard" / "leaderboard.json"
 
 # GitHub handle pinged in the validation report to review the submission. Set via the
 # LEADERBOARD_MAINTAINER repository variable; the workflow falls back to the repo owner.
@@ -204,7 +205,7 @@ def leaderboard_preview(entries: list, new: dict) -> str:
 
 
 def write_report(
-    path: Path, problems: list, result: dict | None, preview: str = ""
+    path: Path, problems: list, result: dict | None, entry: dict | None
 ) -> None:
     lines = ["## RelBench leaderboard validation report", ""]
     for p in problems:
@@ -218,8 +219,8 @@ def write_report(
                 f"@{MAINTAINER} please review and either add the `accept` label "
                 "or close this issue."
             )
-            if preview:
-                lines += ["", preview]
+            current = json.loads(LEADERBOARD.read_text())
+            lines += ["", leaderboard_preview(current, entry)]
         else:
             lines.append(
                 "No leaderboard was validated. Edit the issue (fix the "
@@ -281,10 +282,6 @@ def main() -> int:
         default="",
         help="issue creation time, ISO 8601 UTC (publish mode)",
     )
-    ap.add_argument(
-        "--leaderboard",
-        help="current leaderboard.json; the report previews it with this submission",
-    )
     ap.add_argument("--num-workers", type=int, default=None)
     args = ap.parse_args()
 
@@ -316,16 +313,10 @@ def main() -> int:
     ok = bool(result and result["validated"]) and not any(
         p.startswith("the form") for p in problems
     )
-    entry = (
-        build_entry(fields, result, args.issue, args.author, args.created_at)
-        if ok
-        else None
+    entry = result and build_entry(
+        fields, result, args.issue, args.author, args.created_at
     )
-    preview = ""
-    if entry and args.leaderboard and Path(args.leaderboard).exists():
-        current = json.loads(Path(args.leaderboard).read_text())
-        preview = leaderboard_preview(current, entry)
-    write_report(Path(args.report), problems, result, preview)
+    write_report(Path(args.report), problems, result, entry)
     if not ok:
         return 1
 
