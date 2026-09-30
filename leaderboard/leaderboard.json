@@ -803,5 +803,34 @@
     "cov": 1.0
    }
   }
+ },
+ {
+  "name": "reldfs (time-aware relational DFS + LightGBM)",
+  "in_context": false,
+  "url": "https://github.com/KenWuqianghao/reldfs",
+  "note": "CPU-only, non-neural, non-LLM. Automated time-windowed aggregates over the schema's foreign-key paths (1-hop windows, 2-hop track records, grandchild and parent-context aggregates, day-level recency), cut strictly before each prediction time; LightGBM; per-task feature families chosen by a pre-registered rule on train-internal backtests; refit on train+val; 2-seed mean. Test labels are public, so this result is self-reported; test was scored once, locally, for this system (local 12-task mean AUROC 0.7742).",
+  "date": "2026-09-30T02:59:23Z",
+  "author": "KenWuqianghao",
+  "issue": 406,
+  "boards": {
+   "binary_classification": {
+    "results": {
+     "rel-amazon/user-churn": 0.7074812733347976,
+     "rel-amazon/item-churn": 0.8167719685735145,
+     "rel-avito/user-visits": 0.6696129451310093,
+     "rel-avito/user-clicks": 0.6506074303734918,
+     "rel-event/user-repeat": 0.8048128342245989,
+     "rel-event/user-ignore": 0.8433652263019125,
+     "rel-f1/driver-dnf": 0.7334455667789002,
+     "rel-f1/driver-top3": 0.8266291283444817,
+     "rel-hm/user-churn": 0.709603524785952,
+     "rel-stack/user-engagement": 0.9057550130806055,
+     "rel-stack/user-badge": 0.8748799925947573,
+     "rel-trial/study-outcome": 0.7468368990108121
+    },
+    "mean": 0.774150150211236,
+    "cov": 1.0
+   }
+  }
  }
 ]
