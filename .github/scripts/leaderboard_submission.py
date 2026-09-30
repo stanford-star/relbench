@@ -29,7 +29,14 @@ import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 
-from relbench.submit import _markdown_report, evaluate_submission  # noqa: E402
+from relbench.submit import (  # noqa: E402
+    _FAMILY_METRIC,
+    LEADERBOARD_TASKS,
+    _format_value,
+    _markdown_report,
+    _metric_display,
+    evaluate_submission,
+)
 
 # Issue-form section headings (as rendered by GitHub) -> entry fields. The "In-context"
 # dropdown section is handled separately (rendered as a "Yes"/"No" line).
@@ -138,7 +145,67 @@ def download_attachments(body: str, dest: Path) -> list[str]:
     return problems
 
 
-def write_report(path: Path, problems: list, result: dict | None) -> None:
+BOARD_TITLES = {
+    "binary_classification": "Classification",
+    "regression": "Regression",
+    "recommendation": "Recommendation",
+}
+LOWER_IS_BETTER = {"nmae"}
+
+
+def _rank_key(entry: dict, board_key: str, sign: float) -> tuple:
+    board = entry["boards"][board_key]
+    mean = board.get("mean")
+    return (mean is None, sign * mean if mean is not None else 0.0, -board["cov"])
+
+
+def leaderboard_preview(entries: list, new: dict) -> str:
+    entries = [
+        e for e in entries if not new.get("issue") or e.get("issue") != new["issue"]
+    ]
+    entries.append(new)
+    lines = ["## Leaderboard preview (if accepted)", ""]
+    for family, board_key in FAMILY_TO_BOARD.items():
+        if board_key not in new["boards"]:
+            continue
+        metric = _FAMILY_METRIC[family]
+        sign = 1.0 if metric in LOWER_IS_BETTER else -1.0
+        rows = sorted(
+            (e for e in entries if board_key in e.get("boards", {})),
+            key=lambda e: _rank_key(e, board_key, sign),
+        )
+        tasks = LEADERBOARD_TASKS[family]
+        arrow = "↓" if metric in LOWER_IS_BETTER else "↑"
+        lines += [
+            f"<details open><summary><b>{BOARD_TITLES[board_key]}</b> "
+            f"({_metric_display(metric)} {arrow})</summary>",
+            "",
+            "| # | method | in-context | mean | cov | "
+            + " | ".join(f"`{t.removeprefix('rel-')}`" for t in tasks)
+            + " |",
+            "|---:|---|:---:|---:|---:|" + "---:|" * len(tasks),
+        ]
+        for rank, e in enumerate(rows, 1):
+            board = e["boards"][board_key]
+            is_new = e is new
+            name = (e.get("name") or "?").replace("|", "\\|")
+            cells = [
+                str(rank) if board.get("mean") is not None else "-",
+                f"🆕 {name}" if is_new else name,
+                "✓" if e.get("in_context") else "",
+                _format_value(metric, board.get("mean")),
+                f"{100 * board['cov']:.0f}%",
+            ] + [_format_value(metric, board["results"].get(t)) for t in tasks]
+            if is_new:
+                cells = [f"**{c}**" if c not in ("-", "") else c for c in cells]
+            lines.append("| " + " | ".join(cells) + " |")
+        lines += ["", "</details>", ""]
+    return "\n".join(lines)
+
+
+def write_report(
+    path: Path, problems: list, result: dict | None, preview: str = ""
+) -> None:
     lines = ["## RelBench leaderboard validation report", ""]
     for p in problems:
         lines.append(f"- :x: {p}")
@@ -151,6 +218,8 @@ def write_report(path: Path, problems: list, result: dict | None) -> None:
                 f"@{MAINTAINER} please review and either add the `accept` label "
                 "or close this issue."
             )
+            if preview:
+                lines += ["", preview]
         else:
             lines.append(
                 "No leaderboard was validated. Edit the issue (fix the "
@@ -212,6 +281,10 @@ def main() -> int:
         default="",
         help="issue creation time, ISO 8601 UTC (publish mode)",
     )
+    ap.add_argument(
+        "--leaderboard",
+        help="current leaderboard.json; the report previews it with this submission",
+    )
     ap.add_argument("--num-workers", type=int, default=None)
     args = ap.parse_args()
 
@@ -240,18 +313,25 @@ def main() -> int:
             except Exception as exc:  # noqa: BLE001 -- surfaced in the report
                 problems.append(f"could not evaluate the submission: {exc}")
 
-    write_report(Path(args.report), problems, result)
-
     ok = bool(result and result["validated"]) and not any(
         p.startswith("the form") for p in problems
     )
+    entry = (
+        build_entry(fields, result, args.issue, args.author, args.created_at)
+        if ok
+        else None
+    )
+    preview = ""
+    if entry and args.leaderboard and Path(args.leaderboard).exists():
+        current = json.loads(Path(args.leaderboard).read_text())
+        preview = leaderboard_preview(current, entry)
+    write_report(Path(args.report), problems, result, preview)
     if not ok:
         return 1
 
     if args.entry:
         entry_path = Path(args.entry)
         entry_path.parent.mkdir(parents=True, exist_ok=True)
-        entry = build_entry(fields, result, args.issue, args.author, args.created_at)
         entry_path.write_text(json.dumps(entry, indent=1) + "\n")
         if args.aggregate:
             rebuild_aggregate(entry_path.parent, Path(args.aggregate))

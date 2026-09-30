@@ -123,3 +123,20 @@ def test_build_entry_and_aggregate(script, tmp_path):
     out = tmp_path / "leaderboard.json"
     script.rebuild_aggregate(entries, out)
     assert [e["issue"] for e in json.loads(out.read_text())] == [7, 10]
+
+
+def test_leaderboard_preview(script):
+    new = script.build_entry(
+        {"name": "M", "in_context": False}, _result(), issue=7, author="me"
+    )
+    old = {
+        "name": "Old",
+        "issue": 3,
+        "boards": {"regression": {"results": {}, "mean": 0.9, "cov": 1.0}},
+    }
+    stale = {**new, "name": "stale"}
+    md = script.leaderboard_preview([old, stale], new)
+    assert "stale" not in md
+    assert "Regression" in md and "Classification" in md
+    reg = md.split("Regression")[1]
+    assert reg.index("🆕 M") < reg.index("Old")

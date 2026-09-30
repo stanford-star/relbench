@@ -51,7 +51,11 @@ jobs:
           LEADERBOARD_MAINTAINER: ${{ vars.LEADERBOARD_MAINTAINER || github.repository_owner }}
         run: |
           python .github/scripts/leaderboard_submission.py \
-            --body /tmp/issue_body.md --report /tmp/report.md
+            --body /tmp/issue_body.md --report /tmp/report.md \
+            --leaderboard leaderboard/leaderboard.json \
+            --issue ${{ github.event.issue.number }} \
+            --author "${{ github.event.issue.user.login }}" \
+            --created-at "${{ github.event.issue.created_at }}"
 
       - name: Post report
         if: always()
