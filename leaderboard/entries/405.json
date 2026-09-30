@@ -1,0 +1,44 @@
+{
+ "name": "InRTL",
+ "in_context": false,
+ "url": "https://arxiv.org/html/2609.12712v1",
+ "note": "Hi RelBench team!\n\nWe'd like to submit InRTL to the classification and regression leaderboards.\n\nInRTL (Effective Intra\u2013Inter Interaction Learning for Relational Tables) is our model for relational prediction. The submitted prediction files passed the official RelBench evaluator for all 12 classification tasks and all 9 regression tasks.\n\n## Results & deliverables\n\nSystem name: InRTL  \nSubmission files: https://drive.google.com/file/d/1wX-mqWPOFY6W4-J-25Tn6UmXdRDI75Ir/view?usp=sharing, or you can find it in attachments below.\n\nClassification \u2014 mean AUROC 77.72%:\namazon/user-churn 70.08 \u00b7 amazon/item-churn 82.13 \u00b7 avito/user-visits 66.37 \u00b7 avito/user-clicks 67.47 \u00b7 event/user-repeat 78.98 \u00b7 event/user-ignore 89.82 \u00b7 f1/driver-dnf 74.89 \u00b7 f1/driver-top3 83.49 \u00b7 hm/user-churn 70.04 \u00b7 stack/user-engagement 90.66 \u00b7 stack/user-badge 89.03 \u00b7 trial/study-outcome 69.64\n\nRegression \u2014 mean nMAE 28.89% (lower is better):\namazon/user-ltv 24.81 \u00b7 amazon/item-ltv 8.27 \u00b7 avito/ad-ctr 38.58 \u00b7 event/user-attendance 31.35 \u00b7 f1/driver-position 53.97 \u00b7 hm/item-sales 10.89 \u00b7 stack/post-votes 12.72 \u00b7 trial/study-adverse 12.75 \u00b7 trial/site-success 66.71\n\nThanks for maintaining RelBench!",
+ "date": "2026-09-28T03:31:55Z",
+ "author": "W1nterFloW",
+ "issue": 405,
+ "boards": {
+  "binary_classification": {
+   "results": {
+    "rel-amazon/user-churn": 0.7007714065980911,
+    "rel-amazon/item-churn": 0.8212886339533183,
+    "rel-avito/user-visits": 0.6637453049215057,
+    "rel-avito/user-clicks": 0.6746603033963369,
+    "rel-event/user-repeat": 0.7898395721925133,
+    "rel-event/user-ignore": 0.8982050130680576,
+    "rel-f1/driver-dnf": 0.7488557068267213,
+    "rel-f1/driver-top3": 0.8349315426421404,
+    "rel-hm/user-churn": 0.7004073242602816,
+    "rel-stack/user-engagement": 0.906614241705507,
+    "rel-stack/user-badge": 0.8903110961811866,
+    "rel-trial/study-outcome": 0.696427057983122
+   },
+   "mean": 0.7771714336440652,
+   "cov": 1.0
+  },
+  "regression": {
+   "results": {
+    "rel-amazon/user-ltv": 0.2480668056920681,
+    "rel-amazon/item-ltv": 0.08270726567342386,
+    "rel-avito/ad-ctr": 0.3858481211777881,
+    "rel-event/user-attendance": 0.3135438943142619,
+    "rel-f1/driver-position": 0.5396735543117123,
+    "rel-hm/item-sales": 0.10892038594428861,
+    "rel-stack/post-votes": 0.12721724797264433,
+    "rel-trial/study-adverse": 0.12745080315186955,
+    "rel-trial/site-success": 0.6671010465260883
+   },
+   "mean": 0.2889476805293494,
+   "cov": 1.0
+  }
+ }
+}
