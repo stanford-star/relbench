@@ -181,24 +181,35 @@ def leaderboard_preview(entries: list, new: dict) -> str:
             f"<details open><summary><b>{BOARD_TITLES[board_key]}</b> "
             f"({_metric_display(metric)} {arrow})</summary>",
             "",
-            "| # | method | in-context | mean | cov | "
+            "| # | method | in-context | mean | "
             + " | ".join(f"`{t.removeprefix('rel-')}`" for t in tasks)
             + " |",
-            "|---:|---|:---:|---:|---:|" + "---:|" * len(tasks),
+            "|---:|---|:---:|---:|" + "---:|" * len(tasks),
         ]
-        for rank, e in enumerate(rows, 1):
-            board = e["boards"][board_key]
-            is_new = e is new
+        values = [
+            [e["boards"][board_key].get("mean")]
+            + [e["boards"][board_key]["results"].get(t) for t in tasks]
+            for e in rows
+        ]
+        best = [
+            min((v for v in col if v is not None), key=lambda v: sign * v, default=None)
+            for col in zip(*values)
+        ]
+        for rank, (e, vals) in enumerate(zip(rows, values), 1):
             name = (e.get("name") or "?").replace("|", "\\|")
             cells = [
-                str(rank) if board.get("mean") is not None else "-",
-                f"🆕 {name}" if is_new else name,
+                str(rank) if vals[0] is not None else "-",
+                f"🆕 {name}" if e is new else name,
                 "✓" if e.get("in_context") else "",
-                _format_value(metric, board.get("mean")),
-                f"{100 * board['cov']:.0f}%",
-            ] + [_format_value(metric, board["results"].get(t)) for t in tasks]
-            if is_new:
-                cells = [f"**{c}**" if c not in ("-", "") else c for c in cells]
+            ] + [
+                (
+                    f"**{_format_value(metric, v)}**"
+                    if v is not None
+                    and _format_value(metric, v) == _format_value(metric, b)
+                    else _format_value(metric, v)
+                )
+                for v, b in zip(vals, best)
+            ]
             lines.append("| " + " | ".join(cells) + " |")
         lines += ["", "</details>", ""]
     return "\n".join(lines)
