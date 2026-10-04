@@ -82,7 +82,7 @@ To submit, write one prediction CSV per task, validate and package them with
 [submission issue](https://github.com/stanford-star/relbench/issues/new?template=submit.yml)
 — or let `python -m relbench.submit --submit` do the upload and open the issue for you.
 
-[**`leaderboard/README.md`**](leaderboard/README.md) has the full instructions, including
+[**`leaderboard/README.md`**](leaderboard/README.md) has the [rules](leaderboard/README.md#rules) and the full instructions, including
 the prediction CSV format for writing predictions with your own code.
 
 ## BYOD (Bring Your Own Data)
