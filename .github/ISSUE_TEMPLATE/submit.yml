@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for your interest in RelBench! Please see [this](https://github.com/stanford-star/relbench#leaderboard) for how to prepare and validate your submission if you haven't already.
+        Thanks for your interest in RelBench! Please see [this](https://github.com/stanford-star/relbench/blob/main/leaderboard/README.md) for how to prepare and validate your submission if you haven't already.
   - type: input
     id: method-name
     attributes:
@@ -43,6 +43,6 @@ body:
     attributes:
       label: File(s)
       description: As written by `python -m relbench.submit`.
-      placeholder: See attach button below to add files.
+      placeholder: See attach button below to add files, or paste Hugging Face links pinned to a commit.
     validations:
       required: true

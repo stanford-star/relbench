@@ -1055,9 +1055,11 @@ def _markdown_report(result: Dict[str, Any]) -> str:
 # Where validated submissions are turned into leaderboard entries: a submission is a GitHub
 # issue on the RelBench repository, created from the submission form with the prediction
 # tables attached. CI validates it and a maintainer approval publishes the entry.
+SUBMISSION_REPO = "stanford-star/relbench"
 SUBMISSION_ISSUE_URL = (
-    "https://github.com/stanford-star/relbench/issues/new?template=submit.yml"
+    f"https://github.com/{SUBMISSION_REPO}/issues/new?template=submit.yml"
 )
+SUBMISSION_HF_REPO = "relbench-submissions"
 
 
 def _zip_files(pred_dir: Path, filenames: Sequence[str]) -> bytes:
@@ -1078,7 +1080,8 @@ def _package(
     validated: Sequence[str],
     extra: Sequence[str],
     out: Path,
-) -> None:
+    show_next_step: bool = True,
+) -> List[Path]:
     r"""Write one submission zip per validated family and print how to submit them.
 
     A single all-in-one zip easily exceeds GitHub's issue-attachment size limit; the
@@ -1101,10 +1104,107 @@ def _package(
         fam_out.write_bytes(zip_bytes)
         outputs.append((fam_out, len(zip_bytes)))
     print("\r", end="", flush=True)
+    if not show_next_step:
+        return [p for p, _ in outputs]
     print(st.bold("Next step     "))
     print(f"  Upload these files at {st.underline_cyan(SUBMISSION_ISSUE_URL)}:")
     for fam_out, size in outputs:
         print(f"    {st.bold(str(fam_out))} " + st.italic(f"({size / 1e6:.1f} MB)"))
+    print()
+    return [p for p, _ in outputs]
+
+
+def _github_token() -> str:
+    import subprocess
+
+    for var in ("GH_TOKEN", "GITHUB_TOKEN"):
+        if os.environ.get(var):
+            return os.environ[var]
+    try:
+        token = subprocess.run(
+            ["gh", "auth", "token"], capture_output=True, text=True, check=True
+        ).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        token = ""
+    if not token:
+        raise RuntimeError(
+            "no GitHub token: set GH_TOKEN or GITHUB_TOKEN, or run `gh auth login`"
+        )
+    return token
+
+
+def _upload_to_hf(zips: Sequence[Path]) -> List[str]:
+    import tempfile
+    from datetime import datetime, timezone
+
+    from huggingface_hub import CommitOperationAdd, HfApi
+
+    api = HfApi()
+    user = api.whoami()["name"]
+    repo_id = f"{user}/{SUBMISSION_HF_REPO}"
+    api.create_repo(repo_id, repo_type="dataset", private=False, exist_ok=True)
+    folder = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    ops = [
+        CommitOperationAdd(path_in_repo=f"{folder}/{z.name}", path_or_fileobj=str(z))
+        for z in zips
+    ]
+    commit = api.create_commit(
+        repo_id,
+        operations=ops,
+        repo_type="dataset",
+        commit_message=f"RelBench leaderboard submission {folder}",
+    )
+    return [
+        f"https://huggingface.co/datasets/{repo_id}/resolve/{commit.oid}/{op.path_in_repo}"
+        for op in ops
+    ]
+
+
+def _issue_body(
+    name: str, url: str, in_context: bool, note: str, links: Sequence[str]
+) -> str:
+    files = "\n".join(f"[{u.rsplit('/', 1)[-1]}]({u})" for u in links)
+    return (
+        f"### Name\n\n{name}\n\n"
+        f"### Note\n\n{note or '_No response_'}\n\n"
+        f"### In-context?\n\n{'Yes' if in_context else 'No'}\n\n"
+        f"### URL\n\n{url}\n\n"
+        f"### File(s)\n\n{files}\n"
+    )
+
+
+def _open_issue(body: str) -> str:
+    import urllib.request
+
+    req = urllib.request.Request(
+        f"https://api.github.com/repos/{SUBMISSION_REPO}/issues",
+        data=json.dumps(
+            {"title": "Leaderboard submission", "body": body, "labels": ["submit"]}
+        ).encode(),
+        headers={
+            "Authorization": f"Bearer {_github_token()}",
+            "Accept": "application/vnd.github+json",
+            "User-Agent": "relbench-submit",
+        },
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=60) as r:
+        return json.load(r)["html_url"]
+
+
+def _submit(zips: Sequence[Path], args: argparse.Namespace) -> None:
+    st = _Style(_use_color())
+    print("Uploading to the Hugging Face Hub...", flush=True)
+    links = _upload_to_hf(zips)
+    for u in links:
+        print(f"  {u}")
+    body = _issue_body(
+        args.name, args.url, args.in_context == "yes", args.note or "", links
+    )
+    issue = _open_issue(body)
+    print()
+    print(st.bold("Submitted     ") + st.underline_cyan(issue))
+    print("  Validation results will be posted on the issue.")
     print()
 
 
@@ -1139,7 +1239,32 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             "<base>-<family>.zip (default base: <dir-name>.zip in the cwd)"
         ),
     )
+    parser.add_argument(
+        "--submit",
+        action="store_true",
+        help=(
+            "upload the zips to <hf-user>/relbench-submissions on the Hugging Face Hub "
+            "(needs a Hugging Face login) and open the submission issue on GitHub "
+            "(needs GH_TOKEN / GITHUB_TOKEN or `gh auth login`)"
+        ),
+    )
+    parser.add_argument("--name", help="with --submit: display name on the leaderboard")
+    parser.add_argument("--url", help="with --submit: project / code / paper link")
+    parser.add_argument(
+        "--in-context",
+        choices=["yes", "no"],
+        help="with --submit: yes if the method did NOT train on the target database",
+    )
+    parser.add_argument("--note", help="with --submit: optional note, shown on hover")
     args = parser.parse_args(argv)
+    if args.submit:
+        missing = [
+            f"--{k.replace('_', '-')}"
+            for k in ("name", "url", "in_context")
+            if not getattr(args, k)
+        ]
+        if missing:
+            parser.error("--submit requires " + ", ".join(missing))
     if args.out is not None and not args.out.endswith(".zip"):
         args.out += ".zip"
 
@@ -1154,13 +1279,16 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         print()
         return 1
     out = Path(args.out or f"{Path(args.pred_dir).resolve().name}.zip")
-    _package(
+    zips = _package(
         args.pred_dir,
         result["families"],
         result["validated"],
         result.get("extra_files") or [],
         out,
+        show_next_step=not args.submit,
     )
+    if args.submit:
+        _submit(zips, args)
     return 0
 
 

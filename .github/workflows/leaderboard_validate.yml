@@ -3,11 +3,13 @@ name: Validate leaderboard submission
 # Runs on every leaderboard submission issue (and whenever it is edited): downloads the
 # attached prediction tables, scores them against the test tables, and posts the report
 # as an issue comment. Only issue *data* is consumed — no submitter code ever runs.
-# No "opened" trigger: the issue template auto-applies the submit label, so a new
-# submission already fires "labeled"; listening to both would run validation twice.
+# The issue template auto-applies the submit label, so a new form submission fires
+# "labeled". Issues opened through the API by `python -m relbench.submit --submit` lose
+# the label when the author lacks triage permission, so "opened" handles unlabeled
+# submissions and adds the label (label events from GITHUB_TOKEN do not re-trigger).
 on:  # yamllint disable-line rule:truthy
   issues:
-    types: [edited, labeled]
+    types: [opened, edited, labeled]
 
 permissions:
   contents: read
@@ -16,11 +18,17 @@ permissions:
 jobs:
   validate:
     # Runs when the "submit" label is added (which includes issue creation, via the
-    # template) or a submission issue is edited. Other label additions (ok / fail /
-    # accept) must not re-trigger validation.
+    # template), when an unlabeled submission is opened through the API, or when a
+    # submission issue is edited. Other label additions (ok / fail / accept) must not
+    # re-trigger validation.
     if: >
-      contains(github.event.issue.labels.*.name, 'submit') &&
-      (github.event.action != 'labeled' || github.event.label.name == 'submit')
+      (github.event.action == 'opened' &&
+       !contains(github.event.issue.labels.*.name, 'submit') &&
+       github.event.issue.title == 'Leaderboard submission' &&
+       contains(github.event.issue.body, '### File(s)')) ||
+      (github.event.action != 'opened' &&
+       contains(github.event.issue.labels.*.name, 'submit') &&
+       (github.event.action != 'labeled' || github.event.label.name == 'submit'))
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -69,6 +77,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          if [ "${{ github.event.action }}" = "opened" ]; then
+            gh issue edit ${{ github.event.issue.number }} --repo ${{ github.repository }} \
+              --add-label submit || true
+          fi
           if [ "${{ steps.validate.outcome }}" = "success" ]; then
             gh issue edit ${{ github.event.issue.number }} --repo ${{ github.repository }} \
               --add-label ok --remove-label fail || true

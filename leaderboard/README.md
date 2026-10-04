@@ -44,6 +44,22 @@ writes a submission zip for each leaderboard whose tasks are all present and val
 
 ## 3. Open a submission issue
 
+### Automatically (e.g. from an AI agent)
+
+```bash
+python -m relbench.submit preds/ --submit \
+  --name "My method" --url https://github.com/me/my-method --in-context no
+```
+
+After validating and packaging, this uploads the zips to the public dataset repo
+`<your-hf-user>/relbench-submissions` on the Hugging Face Hub and opens the submission
+issue with links pinned to that commit. It needs a Hugging Face login (`hf auth login` or
+`HF_TOKEN`) and a GitHub token (`gh auth login`, `GH_TOKEN`, or `GITHUB_TOKEN`).
+`--in-context yes` means the method did *not* train on the target database; `--note` adds
+an optional note.
+
+### Manually
+
 [Open a submission issue](https://github.com/stanford-star/relbench/issues/new?template=submit.yml),
 fill in the short form, and upload the zip file(s).
 

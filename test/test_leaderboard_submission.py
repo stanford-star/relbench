@@ -64,6 +64,29 @@ def test_attachment_regex(script):
         "https://github.com/user-attachments/files/123/preds-classification.zip"
     ]
     assert script.ATTACHMENT_RE.findall("https://evil.example/files/1/x.zip") == []
+    sha = "0123456789abcdef0123456789abcdef01234567"
+    hf = f"https://huggingface.co/datasets/alice/relbench-submissions/resolve/{sha}/a/preds-regression.zip"
+    assert script.ATTACHMENT_RE.findall(f"[x]({hf})") == [hf]
+    assert script.ATTACHMENT_RE.findall(hf.replace(sha, "main")) == []
+
+
+def test_cli_issue_body_round_trip(script):
+    from relbench.submit import _issue_body
+
+    hf = (
+        "https://huggingface.co/datasets/alice/relbench-submissions/resolve/"
+        + "a" * 40
+        + "/20261004T000000Z/preds-classification.zip"
+    )
+    body = _issue_body("My method", "https://example.org", False, "", [hf])
+    fields, errors = script.form_metadata(script.parse_form(body))
+    assert errors == []
+    assert fields == {
+        "name": "My method",
+        "url": "https://example.org",
+        "in_context": False,
+    }
+    assert script.ATTACHMENT_RE.findall(body) == [hf]
 
 
 def _result():

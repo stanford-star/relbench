@@ -64,7 +64,8 @@ FAMILY_TO_BOARD = {
 # Attachment URLs GitHub produces for files dragged into an issue.
 ATTACHMENT_RE = re.compile(
     r"https://(?:github\.com/user-attachments/files/\d+/[^\s()\[\]]+"
-    r"|github\.com/[\w.-]+/[\w.-]+/files/\d+/[^\s()\[\]]+)"
+    r"|github\.com/[\w.-]+/[\w.-]+/files/\d+/[^\s()\[\]]+"
+    r"|huggingface\.co/datasets/[\w.-]+/[\w.-]+/resolve/[0-9a-f]{40}/[^\s()\[\]]+)"
 )
 
 
@@ -109,7 +110,10 @@ def download_attachments(body: str, dest: Path) -> list[str]:
     """
     urls = ATTACHMENT_RE.findall(body)
     if not urls:
-        return ["no attachments found — drag the submission zip into the issue body"]
+        return [
+            "no attachments found — drag the submission zip into the issue body, or link it "
+            "from the Hugging Face Hub at a pinned commit (see leaderboard/README.md)"
+        ]
     problems = []
     for url in urls:
         name = url.rstrip("/").rsplit("/", 1)[-1]

@@ -77,8 +77,9 @@ The [**RelBench leaderboard**](https://star-project.stanford.edu/relbench/leader
 ranks methods by their test-set performance, averaged over a fixed task set, with three
 independent boards: **classification**, **regression**, and **recommendation**.
 To submit, write one prediction CSV per task, validate and package them with
-`python -m relbench.submit`, and upload the result in a
-[submission issue](https://github.com/stanford-star/relbench/issues/new?template=submit.yml).
+`python -m relbench.submit`, and open a
+[submission issue](https://github.com/stanford-star/relbench/issues/new?template=submit.yml)
+— or let `python -m relbench.submit --submit` do the upload and open the issue for you.
 
 [**`leaderboard/README.md`**](leaderboard/README.md) has the full instructions, including
 the prediction CSV format for writing predictions with your own code.
