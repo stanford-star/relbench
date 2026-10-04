@@ -16,8 +16,7 @@ except the following two rules. We request authors to ensure compliance.
    database rows with a timestamp strictly before that row's `time_col` (its seed time).
    In particular:
    - When building context, features, or neighborhoods for a row, drop every row dated
-     at or after its seed time, and treat columns that reveal the outcome (e.g. rows
-     created when the outcome happens) as future information.
+     at or after its seed time.
    - Never use the test labels in any way, including for model or hyperparameter selection.
      Train and validation labels may be used freely.
    - `get_db(upto_test_timestamp=False)` is allowed and encouraged if your method is compatible.
