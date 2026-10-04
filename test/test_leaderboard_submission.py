@@ -87,6 +87,9 @@ def test_cli_issue_body_round_trip(script):
         "in_context": False,
     }
     assert script.ATTACHMENT_RE.findall(body) == [hf]
+    body = _issue_body("M", "https://e.org", True, "", [hf], "https://e.org/repro")
+    fields, _ = script.form_metadata(script.parse_form(body))
+    assert fields["repro_link"] == "https://e.org/repro"
 
 
 def _result():

@@ -38,6 +38,12 @@ body:
       placeholder: https://github.com/...
     validations:
       required: true
+  - type: input
+    id: repro-link
+    attributes:
+      label: Repro link
+      description: Link to code / instructions to reproduce the results (optional).
+      placeholder: https://github.com/...
   - type: textarea
     id: files
     attributes:

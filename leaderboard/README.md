@@ -55,8 +55,9 @@ After validating and packaging, this uploads the zips to the public dataset repo
 `<your-hf-user>/relbench-submissions` on the Hugging Face Hub and opens the submission
 issue with links pinned to that commit. It needs a Hugging Face login (`hf auth login` or
 `HF_TOKEN`) and a GitHub token (`gh auth login`, `GH_TOKEN`, or `GITHUB_TOKEN`).
-`--in-context yes` means the method did *not* train on the target database; `--note` adds
-an optional note.
+`--in-context yes` means the method did *not* train on the target database. Optionally,
+`--repro-link` links to code or instructions to reproduce the results, and `--note` adds
+a note shown on hover.
 
 ### Manually
 

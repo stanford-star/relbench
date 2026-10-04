@@ -1161,7 +1161,12 @@ def _upload_to_hf(zips: Sequence[Path]) -> List[str]:
 
 
 def _issue_body(
-    name: str, url: str, in_context: bool, note: str, links: Sequence[str]
+    name: str,
+    url: str,
+    in_context: bool,
+    note: str,
+    links: Sequence[str],
+    repro_link: str = "",
 ) -> str:
     files = "\n".join(f"[{u.rsplit('/', 1)[-1]}]({u})" for u in links)
     return (
@@ -1169,6 +1174,7 @@ def _issue_body(
         f"### Note\n\n{note or '_No response_'}\n\n"
         f"### In-context?\n\n{'Yes' if in_context else 'No'}\n\n"
         f"### URL\n\n{url}\n\n"
+        f"### Repro link\n\n{repro_link or '_No response_'}\n\n"
         f"### File(s)\n\n{files}\n"
     )
 
@@ -1199,7 +1205,12 @@ def _submit(zips: Sequence[Path], args: argparse.Namespace) -> None:
     for u in links:
         print(f"  {u}")
     body = _issue_body(
-        args.name, args.url, args.in_context == "yes", args.note or "", links
+        args.name,
+        args.url,
+        args.in_context == "yes",
+        args.note or "",
+        links,
+        args.repro_link or "",
     )
     issue = _open_issue(body)
     print()
@@ -1256,6 +1267,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         help="with --submit: yes if the method did NOT train on the target database",
     )
     parser.add_argument("--note", help="with --submit: optional note, shown on hover")
+    parser.add_argument(
+        "--repro-link",
+        help="with --submit: optional link to code / instructions to reproduce the results",
+    )
     args = parser.parse_args(argv)
     if args.submit:
         missing = [

@@ -1,7 +1,7 @@
 r"""CI driver for GitHub-issue leaderboard submissions.
 
 A submission is an issue created from ``.github/ISSUE_TEMPLATE/submit.yml``: the form
-fields carry the method metadata (name, type, url, note) and the prediction tables are
+fields carry the method metadata (name, type, url, repro link, note) and the prediction tables are
 attached to the issue body as a zip.
 
 This script is run by the leaderboard workflows with the issue body in a file:
@@ -43,6 +43,7 @@ from relbench.submit import (  # noqa: E402
 FORM_FIELDS = {
     "Name": "name",
     "URL": "url",
+    "Repro link": "repro_link",
     "Note": "note",
 }
 IN_CONTEXT_HEADING = "In-context"
@@ -262,6 +263,7 @@ def build_entry(
         "name": fields.get("name"),
         "in_context": bool(fields.get("in_context")),
         "url": fields.get("url"),
+        "repro_link": fields.get("repro_link"),
         "note": fields.get("note"),
         "date": created_at or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "author": author,
