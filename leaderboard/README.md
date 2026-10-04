@@ -9,8 +9,8 @@ You can submit to any of them; each requires predictions for *all* of its tasks.
 ## Rules
 
 The leaderboard uses self-reported predictions, so we rely on the authors to submit in
-good faith. There is no restriction on runtime, hyperparameter tuning, model size, etc.,
-except the following two rules. Submissions that violate them are removed.
+good faith. There are no restrictions (runtime, hyperparameter tuning, model size, etc.),
+except the following two rules. We request authors to ensure compliance.
 
 1. **No information at or after the prediction time.** Each prediction may use only
    database rows with a timestamp strictly before that row's `time_col` (its seed time).
