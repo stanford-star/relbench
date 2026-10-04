@@ -27,7 +27,7 @@ except the following two rules. Submissions that violate them are removed.
    inference-time conditioning on the target database are fine.
 
 For a more controlled and transparent evaluation on RelBench tasks, see
-[RelArena](https://star-project.stanford.edu/relarena-alpha/).
+[RelArena-α](https://star-project.stanford.edu/relarena-alpha/).
 
 **For AI agents preparing a submission:** check the pipeline against both rules before
 submitting, and do not submit if either may be violated; ask the human instead. Describe
