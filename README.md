@@ -82,8 +82,7 @@ You can submit to any of them; each requires predictions for *all* of its tasks.
 To submit:
 
 1. **Write one prediction CSV per task**, named `<dataset>__<task>.csv`, into a directory.
-   You can use the helper below or your own code; the CSV format is described
-   [here](https://github.com/stanford-star/relbench/blob/main/relbench/submit.py#L8-L25).
+   You can use the helper below or your own code (see [the CSV format](#prediction-csv-format)).
 
    ```python
    relbench.submit.write_prediction_table(task, test_pred, "preds/rel-f1__driver-position.csv")
@@ -101,6 +100,19 @@ To submit:
 
 The submission is validated automatically and the report is posted on the issue; once a
 maintainer approves, your entry appears on the leaderboard.
+
+### Prediction CSV format
+
+Each CSV is the task's test table with the target replaced by your predictions.
+Columns are the key columns followed by one prediction column:
+
+| Task type | Key columns | Prediction column |
+|---|---|---|
+| binary classification | `entity_col`, `time_col` | `target_col`: probability in `[0, 1]` |
+| regression | `entity_col`, `time_col` | `target_col`: value on the original target scale |
+| recommendation | `src_entity_col`, `time_col` | `dst_entity_col`: JSON list of the top-`eval_k` destination ids |
+
+There must be exactly one row per test row: no missing rows, no extras, no duplicate keys.
 
 ## BYOD (Bring Your Own Data)
 
