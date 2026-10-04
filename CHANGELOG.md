@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.0.2 — 2026-10
+## 3.0.2 — 2026-10-04
 
 - Agentic submissions: `python -m relbench.submit preds/ --submit ...` uploads the
   submission zips to the Hugging Face Hub and opens the submission issue, so an AI agent
@@ -11,7 +11,7 @@
   `python -m relbench.submit --edit <issue> ...` or the edit issue form; edits by the
   entry's author are applied automatically.
 
-## 3.0.1 — 2026-08
+## 3.0.1 — 2026-08-24
 
 - `python -m relbench.submit` no longer crashes on Windows consoles that cannot print
   the report's check-mark glyphs (ASCII fallback).
@@ -24,7 +24,7 @@
 - Hosted labels regenerated where the provenance check found drift (`rel-event/user-repeat`,
   `rel-stack/post-votes`, `rel-stack/user-post-comment`); see the 3.0.0 notes below.
 
-## 3.0.0 — 2026-08
+## 3.0.0 — 2026-08-24
 
 RelBench 3 replaces the per-dataset Python classes and the download server with a
 manifest-driven loader backed by the Hugging Face Hub. See `MIGRATION.md` for the API
