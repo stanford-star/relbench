@@ -272,6 +272,46 @@ def build_entry(
     }
 
 
+EDIT_FIELDS = ("name", "url", "repro_link", "note")
+
+
+def apply_edit(
+    body: str, entries_dir: Path, author: str, approved: bool
+) -> tuple[str, str]:
+    sections = parse_form(body)
+    fields, _ = form_metadata(sections)
+    ref = sections.get("Entry", "").strip().lstrip("#")
+    ref = ref.rsplit("/", 1)[-1]
+    lines = ["## RelBench leaderboard edit", ""]
+    if not ref.isdigit() or not (entries_dir / f"{ref}.json").exists():
+        lines.append(
+            f"- :x: no leaderboard entry for submission issue `{ref or '?'}` — put the "
+            "number of the issue that published your entry in the Entry field"
+        )
+        return "error", "\n".join(lines) + "\n"
+    path = entries_dir / f"{ref}.json"
+    entry = json.loads(path.read_text())
+    changes = {
+        k: fields[k] for k in EDIT_FIELDS if fields.get(k) and fields[k] != entry.get(k)
+    }
+    if not changes:
+        lines.append(f"- :x: no changes to entry #{ref} ({entry.get('name')})")
+        return "error", "\n".join(lines) + "\n"
+    lines += [f"Entry #{ref} ({entry.get('name')}):", ""]
+    lines += [f"- `{k}`: {entry.get(k) or '—'} → {v}" for k, v in changes.items()]
+    lines.append("")
+    if not approved and author != entry.get("author"):
+        lines.append(
+            f"@{author} is not the author of #{ref} (@{entry.get('author')}). "
+            f"@{MAINTAINER} please review and either add the `accept` label or close "
+            "this issue."
+        )
+        return "pending", "\n".join(lines) + "\n"
+    entry.update(changes)
+    path.write_text(json.dumps(entry, indent=1) + "\n")
+    return "applied", "\n".join(lines) + "\n"
+
+
 def rebuild_aggregate(entries_dir: Path, out: Path) -> None:
     entries = []
     for p in sorted(entries_dir.glob("*.json")):
@@ -300,7 +340,26 @@ def main() -> int:
         help="issue creation time, ISO 8601 UTC (publish mode)",
     )
     ap.add_argument("--num-workers", type=int, default=None)
+    ap.add_argument(
+        "--edit",
+        help="edit mode: apply the edit issue in --body to this entries dir",
+    )
+    ap.add_argument(
+        "--approved",
+        action="store_true",
+        help="edit mode: a maintainer approved the edit",
+    )
     args = ap.parse_args()
+
+    if args.edit:
+        status, report = apply_edit(
+            Path(args.body).read_text(), Path(args.edit), args.author, args.approved
+        )
+        Path(args.report).write_text(report)
+        print(status)
+        if status == "applied" and args.aggregate:
+            rebuild_aggregate(Path(args.edit), Path(args.aggregate))
+        return 0 if status != "error" else 1
 
     # Rebuild-only: regenerate the aggregate from whatever entry files are on disk. The
     # publish workflow uses this to rebase its result onto a moved main without ever

@@ -1,0 +1,39 @@
+name: Edit a RelBench leaderboard entry
+description: Update the name, URL, repro link, or note of an existing leaderboard entry.
+title: "Leaderboard entry edit"
+labels: ["edit"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Fill in only the fields you want to change; empty fields are left as they are. Edits by the author of the entry are applied automatically; other edits are reviewed by a maintainer.
+  - type: input
+    id: entry
+    attributes:
+      label: Entry
+      description: Number of the submission issue that published the entry, e.g. 393 for github.com/stanford-star/relbench/issues/393.
+      placeholder: "393"
+    validations:
+      required: true
+  - type: input
+    id: method-name
+    attributes:
+      label: Name
+      description: New display name.
+  - type: input
+    id: url
+    attributes:
+      label: URL
+      description: New project / code / paper link.
+      placeholder: https://github.com/...
+  - type: input
+    id: repro-link
+    attributes:
+      label: Repro link
+      description: Link to code / instructions to reproduce the results.
+      placeholder: https://github.com/...
+  - type: textarea
+    id: note
+    attributes:
+      label: Note
+      description: New note, shown on hover.

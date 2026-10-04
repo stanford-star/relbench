@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.0.2 — 2026-10
+
+- Agentic submissions: `python -m relbench.submit preds/ --submit ...` uploads the
+  submission zips to the Hugging Face Hub and opens the submission issue, so an AI agent
+  can submit end to end.
+- Optional repro link on leaderboard entries (`--repro-link`, or the issue form), linking
+  to code or instructions that reproduce the submitted results.
+- Existing entries can be edited (name, URL, repro link, note) with
+  `python -m relbench.submit --edit <issue> ...` or the edit issue form; edits by the
+  entry's author are applied automatically.
+
 ## 3.0.1 — 2026-08
 
 - `python -m relbench.submit` no longer crashes on Windows consoles that cannot print

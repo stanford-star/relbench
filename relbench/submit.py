@@ -1179,14 +1179,29 @@ def _issue_body(
     )
 
 
-def _open_issue(body: str) -> str:
+def _edit_issue_body(
+    entry: int, name: str = "", url: str = "", repro_link: str = "", note: str = ""
+) -> str:
+    return "".join(
+        f"### {h}\n\n{v or '_No response_'}\n\n"
+        for h, v in [
+            ("Entry", str(entry)),
+            ("Name", name),
+            ("URL", url),
+            ("Repro link", repro_link),
+            ("Note", note),
+        ]
+    )
+
+
+def _open_issue(
+    body: str, title: str = "Leaderboard submission", label: str = "submit"
+) -> str:
     import urllib.request
 
     req = urllib.request.Request(
         f"https://api.github.com/repos/{SUBMISSION_REPO}/issues",
-        data=json.dumps(
-            {"title": "Leaderboard submission", "body": body, "labels": ["submit"]}
-        ).encode(),
+        data=json.dumps({"title": title, "body": body, "labels": [label]}).encode(),
         headers={
             "Authorization": f"Bearer {_github_token()}",
             "Accept": "application/vnd.github+json",
@@ -1234,7 +1249,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         ),
     )
     parser.add_argument(
-        "pred_dir", help="directory of <dataset>__<task>.csv prediction files"
+        "pred_dir",
+        nargs="?",
+        help="directory of <dataset>__<task>.csv prediction files",
     )
     parser.add_argument(
         "--num-workers",
@@ -1271,7 +1288,35 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         "--repro-link",
         help="with --submit: optional link to code / instructions to reproduce the results",
     )
+    parser.add_argument(
+        "--edit",
+        type=int,
+        metavar="ISSUE",
+        help=(
+            "instead of submitting, open an issue that updates the --name, --url, "
+            "--repro-link, and/or --note of the leaderboard entry published from "
+            "submission issue ISSUE (needs a GitHub token, as for --submit)"
+        ),
+    )
     args = parser.parse_args(argv)
+    if args.edit is not None:
+        if not (args.name or args.url or args.repro_link or args.note):
+            parser.error("--edit requires --name, --url, --repro-link, or --note")
+        issue = _open_issue(
+            _edit_issue_body(
+                args.edit,
+                args.name or "",
+                args.url or "",
+                args.repro_link or "",
+                args.note or "",
+            ),
+            title="Leaderboard entry edit",
+            label="edit",
+        )
+        print(f"Opened {issue}")
+        return 0
+    if args.pred_dir is None:
+        parser.error("pred_dir is required unless --edit is given")
     if args.submit:
         missing = [
             f"--{k.replace('_', '-')}"

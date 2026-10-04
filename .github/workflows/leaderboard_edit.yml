@@ -1,0 +1,86 @@
+name: Edit leaderboard entry
+
+# Applies an edit issue (.github/ISSUE_TEMPLATE/edit.yml) to leaderboard/entries/<n>.json.
+# Edits by the entry's author are applied right away; others wait for a maintainer to add
+# the "accept" label. Only metadata changes; scores are never touched.
+on:  # yamllint disable-line rule:truthy
+  issues:
+    types: [opened, edited, labeled]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  edit:
+    if: >
+      github.event.issue.state == 'open' &&
+      ((github.event.action == 'opened' &&
+        !contains(github.event.issue.labels.*.name, 'edit') &&
+        github.event.issue.title == 'Leaderboard entry edit' &&
+        contains(github.event.issue.body, '### Entry')) ||
+       (github.event.action == 'edited' &&
+        contains(github.event.issue.labels.*.name, 'edit')) ||
+       (github.event.action == 'labeled' &&
+        (github.event.label.name == 'edit' ||
+         (github.event.label.name == 'accept' &&
+          contains(github.event.issue.labels.*.name, 'edit')))))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install relbench
+        run: pip install .
+
+      - name: Write issue body to file
+        env:
+          BODY: ${{ github.event.issue.body }}
+        run: printf '%s' "$BODY" > /tmp/issue_body.md
+
+      - name: Apply edit
+        id: apply
+        env:
+          LEADERBOARD_MAINTAINER: ${{ vars.LEADERBOARD_MAINTAINER || github.repository_owner }}
+          APPROVED: ${{ contains(github.event.issue.labels.*.name, 'accept') && '--approved' || '' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          for i in 1 2 3 4 5 6; do
+            git fetch -q origin main
+            git reset -q --hard origin/main
+            status=$(python .github/scripts/leaderboard_submission.py \
+              --edit leaderboard/entries --aggregate leaderboard/leaderboard.json \
+              --body /tmp/issue_body.md --report /tmp/report.md \
+              --author "${{ github.event.issue.user.login }}" $APPROVED) || status=error
+            echo "status=$status" >> "$GITHUB_OUTPUT"
+            [ "$status" = applied ] || exit 0
+            git add leaderboard/
+            git commit -q -m "Leaderboard entry edit from #${{ github.event.issue.number }}"
+            git push && exit 0
+            sleep $((i * 3 + RANDOM % 5))
+          done
+          echo "push to main failed after 6 attempts" >&2
+          exit 1
+
+      - name: Report
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          N: ${{ github.event.issue.number }}
+          R: ${{ github.repository }}
+        run: |
+          [ -f /tmp/report.md ] && gh issue comment $N --repo $R --body-file /tmp/report.md
+          if [ "${{ github.event.action }}" = "opened" ]; then
+            gh issue edit $N --repo $R --add-label edit || true
+          fi
+          if [ "${{ steps.apply.outputs.status }}" = applied ] && [ "${{ steps.apply.outcome }}" = success ]; then
+            gh issue close $N --repo $R --comment "Applied: https://star-project.stanford.edu/relbench/leaderboard/"
+          fi

@@ -66,3 +66,19 @@ fill in the short form, and upload the zip file(s).
 
 The submission is validated automatically and the report is posted on the issue; once a
 maintainer approves, your entry appears on the leaderboard.
+
+## Editing an entry
+
+To change the name, URL, repro link, or note of a published entry (e.g. to add a repro
+link), run
+
+```bash
+python -m relbench.submit --edit 393 --repro-link https://github.com/me/my-method
+```
+
+where `393` is the number of the submission issue that published the entry. This needs a
+GitHub token, as for `--submit`. Alternatively,
+[open an edit issue](https://github.com/stanford-star/relbench/issues/new?template=edit.yml)
+and fill in only the fields to change. Edits by the entry's author are applied
+automatically; others are reviewed by a maintainer. Scores cannot be edited — resubmit
+instead.

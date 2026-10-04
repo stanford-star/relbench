@@ -166,3 +166,34 @@ def test_leaderboard_preview(script):
     assert "Regression" in md and "Classification" in md
     reg = md.split("Regression")[1]
     assert reg.index("🆕 M") < reg.index("Old")
+
+
+def test_apply_edit(script, tmp_path):
+    from relbench.submit import _edit_issue_body
+
+    entries = tmp_path / "entries"
+    entries.mkdir()
+    entry = {"name": "M", "url": "u", "repro_link": None, "author": "alice", "issue": 7}
+    (entries / "7.json").write_text(json.dumps(entry))
+    body = _edit_issue_body(7, repro_link="https://e.org/repro")
+
+    status, report = script.apply_edit(body, entries, "bob", approved=False)
+    assert status == "pending" and "accept" in report
+    assert json.loads((entries / "7.json").read_text())["repro_link"] is None
+
+    status, _ = script.apply_edit(body, entries, "alice", approved=False)
+    assert status == "applied"
+    updated = json.loads((entries / "7.json").read_text())
+    assert updated == {**entry, "repro_link": "https://e.org/repro"}
+
+    status, _ = script.apply_edit(body, entries, "alice", approved=False)
+    assert status == "error"
+    status, _ = script.apply_edit(
+        _edit_issue_body(8, name="X"), entries, "alice", approved=True
+    )
+    assert status == "error"
+    status, _ = script.apply_edit(
+        _edit_issue_body(7, name="X"), entries, "bob", approved=True
+    )
+    assert status == "applied"
+    assert json.loads((entries / "7.json").read_text())["name"] == "X"
