@@ -81,7 +81,9 @@ You can submit to any of them; each requires predictions for *all* of its tasks.
 
 To submit:
 
-1. **Write one prediction CSV per task**, named `<dataset>__<task>.csv`, into a directory:
+1. **Write one prediction CSV per task**, named `<dataset>__<task>.csv`, into a directory.
+   You can use the helper below or your own code; the CSV format is described
+   [here](https://github.com/stanford-star/relbench/blob/main/relbench/submit.py#L8-L25).
 
    ```python
    relbench.submit.write_prediction_table(task, test_pred, "preds/rel-f1__driver-position.csv")

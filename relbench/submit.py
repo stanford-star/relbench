@@ -5,8 +5,8 @@ library, ``pandas``/``numpy`` and the rest of RelBench's data layer (no torch /
 torch_geometric / pyg), so it imports cleanly in a minimal environment and can score a
 submission produced by any modelling stack.
 
-Concept -- the prediction table
-================================
+The prediction table
+====================
 The test split of a task is a *task table*. A *prediction table* is the same table with
 the target column replaced by predictions:
 
