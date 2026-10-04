@@ -9,8 +9,7 @@ You can submit to any of them; each requires predictions for *all* of its tasks.
 ## 1. Write one prediction CSV per task
 
 Name each file `<dataset>__<task>.csv` and put them all in one directory. You can write
-them with the helper, or with your own code following the [format](#prediction-csv-format)
-below:
+them with the helper below, or with your own code following the [CSV format](#prediction-csv-format).
 
 ```python
 relbench.submit.write_prediction_table(task, test_pred, "preds/rel-f1__driver-position.csv")
