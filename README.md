@@ -21,7 +21,7 @@
 
 ## News
 
-- **Oct 2026** — [Agentic leaderboard submissions](leaderboard/README.md#automatically-eg-from-an-ai-agent): point your AI agent at the [leaderboard README](leaderboard/README.md) and it can submit end to end. Entries can now carry an optional repro link for reproducibility.
+- **Oct 2026** — [Agentic leaderboard submissions](leaderboard/README.md#automatically-eg-from-an-ai-agent): point your AI agent at the [leaderboard README](leaderboard/README.md) and it can submit end to end. Entries can now carry an optional repro link for reproducibility and [can be edited](leaderboard/README.md#editing-an-entry).
 - **Aug 2026** — RelBench v3 released: datasets and tasks load straight from [Hugging Face](https://huggingface.co/stanford-star), a new [leaderboard](https://star-project.stanford.edu/relbench/leaderboard/) with automated submissions, and bug fixes ([migration guide](MIGRATION.md)).
 - **Jun 2026** — Datasets, models, and community hub migrated to [Hugging Face](https://huggingface.co/stanford-star).
 - **Mar 2026** — [RelBench v2 paper](https://arxiv.org/abs/2602.12606) accepted at the [ICLR 2026 DATA-FM workshop](https://data-fm-iclr2026.github.io/).
