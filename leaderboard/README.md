@@ -15,12 +15,14 @@ except the following two rules. We request authors to ensure compliance.
 1. **No information at or after the prediction time.** Each prediction may use only
    database rows with a timestamp strictly before that row's `time_col` (its seed time).
    In particular:
-   - Never use the raw source data or any external copy of the dataset.
    - When building context, features, or neighborhoods for a row, drop every row dated
      at or after its seed time, and treat columns that reveal the outcome (e.g. rows
      created when the outcome happens) as future information.
    - Never use the test labels in any way, including for model or hyperparameter selection.
      Train and validation labels may be used freely.
+   - `get_db(upto_test_timestamp=False)` is allowed and encouraged if your method is compatible.
+     It affects results only on `rel-f1`. But also decreases protection against temporal leakage bugs
+     and increases the responsibility on the authors.
 2. **In-context submissions (`--in-context yes`) do not train on the target database.**
    No gradient-based training of any kind (pre-training, fine-tuning, or learning
    embeddings) on any part of the target database. Pre-training on other databases and
