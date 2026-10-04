@@ -74,45 +74,14 @@ Open these directly in Google Colab — no setup required:
 ## Leaderboard
 
 The [**RelBench leaderboard**](https://star-project.stanford.edu/relbench/leaderboard/)
-ranks methods by their test-set performance, averaged over a fixed task set. There are
-three independent boards — **classification** (12 tasks), **regression** (9), and
-**recommendation** (10); the task lists are in `relbench.submit.LEADERBOARD_TASKS`.
-You can submit to any of them; each requires predictions for *all* of its tasks.
+ranks methods by their test-set performance, averaged over a fixed task set, with three
+independent boards: **classification**, **regression**, and **recommendation**.
+To submit, write one prediction CSV per task, validate and package them with
+`python -m relbench.submit`, and upload the result in a
+[submission issue](https://github.com/stanford-star/relbench/issues/new?template=submit.yml).
 
-To submit:
-
-1. **Write one prediction CSV per task**, named `<dataset>__<task>.csv`, into a directory.
-   You can use the helper below or your own code (see [the CSV format](#prediction-csv-format)).
-
-   ```python
-   relbench.submit.write_prediction_table(task, test_pred, "preds/rel-f1__driver-position.csv")
-   ```
-
-2. **Validate and package** the directory — this scores every CSV against the test tables,
-   prints a verdict per leaderboard, and writes clean submission zip file(s):
-
-   ```bash
-   python -m relbench.submit preds/
-   ```
-
-3. **[Open a submission issue](https://github.com/stanford-star/relbench/issues/new?template=submit.yml)**
-   on this repository: fill in the short form and upload the zip file(s) into it.
-
-The submission is validated automatically and the report is posted on the issue; once a
-maintainer approves, your entry appears on the leaderboard.
-
-### Prediction CSV format
-
-Each CSV is the task's test table with the target replaced by your predictions.
-Columns are the key columns followed by one prediction column:
-
-| Task type | Key columns | Prediction column |
-|---|---|---|
-| binary classification | `entity_col`, `time_col` | `target_col`: probability in `[0, 1]` |
-| regression | `entity_col`, `time_col` | `target_col`: value on the original target scale |
-| recommendation | `src_entity_col`, `time_col` | `dst_entity_col`: JSON list of the top-`eval_k` destination ids |
-
-There must be exactly one row per test row: no missing rows, no extras, no duplicate keys.
+[**`leaderboard/README.md`**](leaderboard/README.md) has the full instructions, including
+the prediction CSV format for writing predictions with your own code.
 
 ## BYOD (Bring Your Own Data)
 
