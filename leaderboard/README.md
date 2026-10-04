@@ -73,7 +73,7 @@ To change the name, URL, repro link, or note of a published entry (e.g. to add a
 link), run
 
 ```bash
-python -m relbench.submit --edit 393 --repro-link https://github.com/me/my-method
+python -m relbench.submit --edit 393 --repro-link https://github.com/me/my-method/repro/README.md
 ```
 
 where `393` is the number of the submission issue that published the entry. This needs a

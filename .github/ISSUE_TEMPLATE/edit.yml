@@ -31,7 +31,7 @@ body:
     attributes:
       label: Repro link
       description: Link to code / instructions to reproduce the results.
-      placeholder: https://github.com/...
+      placeholder: https://github.com/.../repro/README.md
   - type: textarea
     id: note
     attributes:
