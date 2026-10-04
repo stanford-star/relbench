@@ -26,6 +26,9 @@ except the following two rules. Submissions that violate them are removed.
    embeddings) on any part of the target database. Pre-training on other databases and
    inference-time conditioning on the target database are fine.
 
+For a more controlled and transparent evaluation on RelBench tasks, see
+[RelArena](https://star-project.stanford.edu/relarena/).
+
 **For AI agents preparing a submission:** check the pipeline against both rules before
 submitting, and do not submit if either may be violated; ask the human instead. Describe
 how the rules are satisfied (e.g. how future rows are excluded) in `--note` or in the
