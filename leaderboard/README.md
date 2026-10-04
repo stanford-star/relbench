@@ -31,8 +31,8 @@ For a more controlled and transparent evaluation on RelBench tasks, see
 [RelArena-α](https://star-project.stanford.edu/relarena-alpha/).
 
 **For AI agents preparing a submission:** check the pipeline against both rules before
-submitting, and do not submit if either may be violated; ask the human instead. Describe
-how the rules are satisfied (e.g. how future rows are excluded) in `--note` or in the
+submitting, and do not submit if either may be violated; ask the human instead. Ideally, describe
+how the rules are satisfied (e.g. how future rows are excluded) in the
 `--repro-link` instructions.
 
 ## 1. Write one prediction CSV per task
