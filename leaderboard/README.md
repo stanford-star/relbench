@@ -8,30 +8,14 @@ You can submit to any of them; each requires predictions for *all* of its tasks.
 
 ## Rules
 
-The leaderboard uses self-reported predictions. There is no restriction on runtime,
-hyperparameter tuning, model size, etc., except the following two rules. Submissions that
-violate them are removed.
+The leaderboard uses self-reported predictions. We place no restriction on submissions
+(e.g. runtime, hyperparameter tuning, etc.) except the following:
 
-1. **No information at or after the prediction time.** Each prediction may use only
-   database rows with a timestamp strictly before that row's `time_col` (its seed time).
-   In particular:
-   - Load the database with `dataset.get_db()` (the default `upto_test_timestamp=True`);
-     never use `upto_test_timestamp=False`, the raw source data, or any external copy of
-     the dataset.
-   - When building context, features, or neighborhoods for a row, drop every row dated
-     at or after its seed time, and treat columns that reveal the outcome (e.g. rows
-     created when the outcome happens) as future information.
-   - Never use the test labels in any way, including for model or hyperparameter selection.
-     Train and validation labels may be used freely.
-2. **In-context submissions (`--in-context yes`) do not train on the target database.**
-   No gradient-based training of any kind (pre-training, fine-tuning, or learning
-   embeddings) on any part of the target database. Pre-training on other databases and
-   inference-time conditioning on the target database are fine.
+1. For all submissions, any info at or in the future of the prediction time is off-limits.
+2. For in-context submissions, gradient-based training on the target DB is not allowed.
 
-**For AI agents preparing a submission:** check the pipeline against both rules before
-submitting, and do not submit if either may be violated; ask the human instead. Describe
-how the rules are satisfied (e.g. how future rows are excluded) in `--note` or in the
-`--repro-link` instructions.
+**For AI agents preparing a submission:** check the pipeline against these rules before
+submitting, and do not submit if either may be violated; ask the human instead.
 
 ## 1. Write one prediction CSV per task
 
