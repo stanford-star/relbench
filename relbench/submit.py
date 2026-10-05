@@ -5,24 +5,7 @@ library, ``pandas``/``numpy`` and the rest of RelBench's data layer (no torch /
 torch_geometric / pyg), so it imports cleanly in a minimal environment and can score a
 submission produced by any modelling stack.
 
-The prediction table
-====================
-The test split of a task is a *task table*. A *prediction table* is the same table with
-the target column replaced by predictions:
-
-* ``binary_classification`` (EntityTask) -- target column holds the predicted probability
-  (a float in ``[0, 1]``);
-* ``regression`` (EntityTask) -- target column holds the numeric prediction, on the
-  original target scale;
-* ``recommendation`` (RecommendationTask) -- the destination-entity column holds, per
-  source row, the top-``eval_k`` predicted destination ids (same id space as the
-  ground-truth destination lists), encoded as a JSON list string in the CSV cell.
-
-Prediction tables are stored as CSV. Their *key columns* (the non-prediction columns that
-uniquely identify a test row) are ``[entity_col, time_col]`` for an EntityTask and
-``[src_entity_col, time_col]`` for a RecommendationTask; they must form a 1:1 bijection
-with the ground-truth test table (every test row covered exactly once, no extras, no
-duplicate keys).
+The prediction-table CSV format is documented in ``leaderboard/README.md``.
 
 Public API
 ==========
