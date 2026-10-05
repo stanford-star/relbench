@@ -85,8 +85,10 @@ if task.task_type == TaskType.REGRESSION:
         train_metrics = evaluate(train_table, train_table, name=name)
         val_metrics = evaluate(train_table, val_table, name=name)
         test_pred = predict(trainval_table, test_table, name=name)
-        os.makedirs(args.pred_dir, exist_ok=True)
-        pred_path = os.path.join(args.pred_dir, f"{args.dataset}__{args.task}.csv")
+        os.makedirs(os.path.join(args.pred_dir, name), exist_ok=True)
+        pred_path = os.path.join(
+            args.pred_dir, name, f"{args.dataset}__{args.task}.csv"
+        )
         write_prediction_table(task, test_pred, pred_path)
         test_metrics = evaluate_task(f"{args.dataset}/{args.task}", pred_path)
         print(f"{name}:")
@@ -101,8 +103,10 @@ elif task.task_type == TaskType.BINARY_CLASSIFICATION:
         train_metrics = evaluate(train_table, train_table, name=name)
         val_metrics = evaluate(train_table, val_table, name=name)
         test_pred = predict(trainval_table, test_table, name=name)
-        os.makedirs(args.pred_dir, exist_ok=True)
-        pred_path = os.path.join(args.pred_dir, f"{args.dataset}__{args.task}.csv")
+        os.makedirs(os.path.join(args.pred_dir, name), exist_ok=True)
+        pred_path = os.path.join(
+            args.pred_dir, name, f"{args.dataset}__{args.task}.csv"
+        )
         write_prediction_table(task, test_pred, pred_path)
         test_metrics = evaluate_task(f"{args.dataset}/{args.task}", pred_path)
         print(f"{name}:")

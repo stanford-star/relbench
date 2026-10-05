@@ -2,6 +2,7 @@
  "name": "GNN",
  "in_context": false,
  "url": "https://star-project.stanford.edu/relbench/",
+ "repro_link": "https://github.com/stanford-star/relbench/blob/main/examples/README.md#reproducing-the-leaderboard",
  "note": "RelBench implementation",
  "date": "2026-08-25T01:23:01Z",
  "author": "rishabh-ranjan",

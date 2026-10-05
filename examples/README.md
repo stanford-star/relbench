@@ -44,3 +44,34 @@ pip install pyg-lib -f https://data.pyg.org/whl/torch-2.9.0+cpu.html  # neighbor
   rows after `test_timestamp` and use `materialized_full/` next to `materialized/`.
 - `--pred_dir` (default `/tmp/relbench_preds`): where the prediction CSV
   `<dataset>__<task>.csv` is written; pass it to `python -m relbench.submit`.
+  The trivial scripts run several baselines and write each to `<pred_dir>/<baseline>/`.
+
+## Reproducing the leaderboard
+
+The RelBench baselines on the [leaderboard](https://star-project.stanford.edu/relbench/leaderboard/)
+come from these scripts with default flags. Run a script on every task of a board, then
+score the predictions:
+
+```sh
+board() {  # board <script> <classification|regression|recommendation> <pred_dir>
+  for t in $(python -c "from relbench.submit import LEADERBOARD_TASKS as L; print(*L['$2'])"); do
+    python examples/$1 --dataset "${t%/*}" --task "${t#*/}" --pred_dir "$3"
+  done
+}
+board gnn_entity.py classification preds/gnn
+board gnn_entity.py regression preds/gnn
+board gnn_recommendation.py recommendation preds/gnn
+python -m relbench.submit preds/gnn
+```
+
+| Leaderboard entry | Classification / regression | Recommendation |
+| --- | --- | --- |
+| GNN | `gnn_entity.py` | `gnn_recommendation.py` |
+| ID-GNN | | `idgnn_recommendation.py` |
+| LightGBM | `lightgbm_entity.py` | `lightgbm_recommendation.py` |
+| GNN + LightGBM | `hybrid_entity.py` | |
+| Random, Majority, Zero, Global / Entity Mean, Global / Entity Median | `trivial_entity.py` | |
+| Past Visit, Global Popularity | | `trivial_recommendation.py` |
+
+The trivial scripts write one subdirectory per baseline; score each separately, e.g.
+`python -m relbench.submit preds/trivial/entity_mean`.

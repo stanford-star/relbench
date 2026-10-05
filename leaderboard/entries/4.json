@@ -2,6 +2,7 @@
  "name": "Random",
  "in_context": true,
  "url": "https://github.com/stanford-star/relbench",
+ "repro_link": "https://github.com/stanford-star/relbench/blob/main/examples/README.md#reproducing-the-leaderboard",
  "note": "RelBench baseline",
  "date": "2026-07-23T06:25:37Z",
  "author": "rishabh-ranjan",

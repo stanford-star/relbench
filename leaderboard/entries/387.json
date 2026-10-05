@@ -2,6 +2,7 @@
  "name": "Zero",
  "in_context": true,
  "url": "https://star-project.stanford.edu/relbench",
+ "repro_link": "https://github.com/stanford-star/relbench/blob/main/examples/README.md#reproducing-the-leaderboard",
  "note": "RelBench baseline",
  "date": "2026-08-25T03:13:41Z",
  "author": "rishabh-ranjan",
