@@ -721,7 +721,7 @@
   "name": "RT-J (in-context)",
   "in_context": true,
   "url": "https://huggingface.co/stanford-star/rt-j",
-  "repro_link": "https://github.com/stanford-star/relational-transformer/tree/main/pipelines/icl",
+  "repro_link": "https://github.com/stanford-star/relational-transformer/blob/main/examples/icl/README.md",
   "note": null,
   "date": "2026-10-04T23:51:12Z",
   "author": "rishabh-ranjan",
