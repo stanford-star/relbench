@@ -1,0 +1,45 @@
+{
+ "name": "RT-PluRel (in-context)",
+ "in_context": true,
+ "url": "https://huggingface.co/stanford-star/rt-plurel",
+ "repro_link": "https://github.com/stanford-star/relational-transformer/tree/main/pipelines/icl",
+ "note": null,
+ "date": "2026-10-04T23:51:44Z",
+ "author": "rishabh-ranjan",
+ "issue": 410,
+ "boards": {
+  "binary_classification": {
+   "results": {
+    "rel-amazon/user-churn": 0.6624066732280528,
+    "rel-amazon/item-churn": 0.744049296592277,
+    "rel-avito/user-visits": 0.6143835953111347,
+    "rel-avito/user-clicks": 0.4620224973576929,
+    "rel-event/user-repeat": 0.7765374331550802,
+    "rel-event/user-ignore": 0.7677777393987543,
+    "rel-f1/driver-dnf": 0.8189186551505392,
+    "rel-f1/driver-top3": 0.8969220317725752,
+    "rel-hm/user-churn": 0.6577041726879996,
+    "rel-stack/user-engagement": 0.878584168500428,
+    "rel-stack/user-badge": 0.8378031443167564,
+    "rel-trial/study-outcome": 0.6408260990640853
+   },
+   "mean": 0.729827958877948,
+   "cov": 1.0
+  },
+  "regression": {
+   "results": {
+    "rel-amazon/user-ltv": 0.2960269863716241,
+    "rel-amazon/item-ltv": 0.08651700179700308,
+    "rel-avito/ad-ctr": 0.41712644969293894,
+    "rel-event/user-attendance": 0.4378428318450515,
+    "rel-f1/driver-position": 0.42412113946711305,
+    "rel-hm/item-sales": 0.11438992993727304,
+    "rel-stack/post-votes": 0.1469834114585936,
+    "rel-trial/study-adverse": 0.16565698757211839,
+    "rel-trial/site-success": 0.8765349161279212
+   },
+   "mean": 0.32946662825218187,
+   "cov": 1.0
+  }
+ }
+}
