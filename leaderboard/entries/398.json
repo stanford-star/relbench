@@ -40,5 +40,6 @@
    "mean": 0.2926478678866291,
    "cov": 1.0
   }
- }
+ },
+ "repro_link": "https://github.com/stanford-star/relational-transformer/tree/main/pipelines/finetune"
 }
