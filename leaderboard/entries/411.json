@@ -2,7 +2,7 @@
  "name": "RT-PluRel (fine-tuned)",
  "in_context": false,
  "url": "https://github.com/stanford-star/relational-transformer",
- "repro_link": "https://github.com/stanford-star/relational-transformer/blob/main/examples/finetune/README.md",
+ "repro_link": "https://github.com/stanford-star/relational-transformer/tree/main/pipelines/finetune",
  "note": null,
  "date": "2026-10-04T23:51:58Z",
  "author": "rishabh-ranjan",
