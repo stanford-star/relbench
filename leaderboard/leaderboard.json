@@ -587,6 +587,48 @@
   "repro_link": "https://github.com/stanford-star/relational-transformer/blob/main/examples/finetune/README.md"
  },
  {
+  "name": "LEDGER",
+  "in_context": false,
+  "url": "https://github.com/ShantanuAnant/ledger",
+  "note": "Event-sequence transformer pretrained on window sufficient statistics; no task labels are used in training, the task enters only at readout.",
+  "date": "2026-09-08T15:05:42Z",
+  "author": "ShantanuAnant",
+  "issue": 400,
+  "boards": {
+   "regression": {
+    "results": {
+     "rel-amazon/user-ltv": 0.26354720194761583,
+     "rel-amazon/item-ltv": 0.09285079395439816,
+     "rel-avito/ad-ctr": 0.3877997719004767,
+     "rel-event/user-attendance": 0.34442011252718346,
+     "rel-f1/driver-position": 0.6556611257925418,
+     "rel-hm/item-sales": 0.15361148606895705,
+     "rel-stack/post-votes": 0.1243152078671801,
+     "rel-trial/study-adverse": 0.15718528343064314,
+     "rel-trial/site-success": 0.8721997654354516
+    },
+    "mean": 0.3390656387693831,
+    "cov": 1.0
+   },
+   "recommendation": {
+    "results": {
+     "rel-amazon/user-item-purchase": 0.011308485134818637,
+     "rel-amazon/user-item-rate": 0.011709765213234778,
+     "rel-amazon/user-item-review": 0.007935345062371956,
+     "rel-avito/user-ad-visit": 0.006841071318459807,
+     "rel-f1/driver-circuit-compete": 0.6053101116990006,
+     "rel-hm/user-item-purchase": 0.0241262806342567,
+     "rel-stack/user-post-comment": 0.02339523792666247,
+     "rel-stack/post-post-related": 0.011062295389004283,
+     "rel-trial/condition-sponsor-run": 0.059767004827642724,
+     "rel-trial/site-sponsor-run": 0.11330710942574385
+    },
+    "mean": 0.08747627066311958,
+    "cov": 1.0
+   }
+  }
+ },
+ {
   "name": "Rel-MOSS",
   "in_context": false,
   "url": "https://github.com/Esperanto-mega/Rel-MOSS",
