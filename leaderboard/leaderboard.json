@@ -939,5 +939,66 @@
     "cov": 1.0
    }
   }
+ },
+ {
+  "name": "GelGT",
+  "in_context": false,
+  "url": "https://arxiv.org/abs/2605.15575",
+  "repro_link": null,
+  "note": null,
+  "date": "2026-10-09T12:24:31Z",
+  "author": "AderoseYR",
+  "issue": 420,
+  "boards": {
+   "binary_classification": {
+    "results": {
+     "rel-amazon/user-churn": 0.695136979350008,
+     "rel-amazon/item-churn": 0.8188439815768593,
+     "rel-avito/user-visits": 0.6712490060489635,
+     "rel-avito/user-clicks": 0.6835070850433977,
+     "rel-event/user-repeat": 0.8413101604278075,
+     "rel-event/user-ignore": 0.8844300139315855,
+     "rel-f1/driver-dnf": 0.7562777533792027,
+     "rel-f1/driver-top3": 0.8590222617056857,
+     "rel-hm/user-churn": 0.6818558102235439,
+     "rel-stack/user-engagement": 0.9066296636957197,
+     "rel-stack/user-badge": 0.8749467547382915,
+     "rel-trial/study-outcome": 0.7249040475585098
+    },
+    "mean": 0.7831761264732978,
+    "cov": 1.0
+   },
+   "regression": {
+    "results": {
+     "rel-amazon/user-ltv": 0.25181907438784534,
+     "rel-amazon/item-ltv": 0.08304138277626681,
+     "rel-avito/ad-ctr": 0.35317954783545974,
+     "rel-event/user-attendance": 0.30645252796240796,
+     "rel-f1/driver-position": 0.5331175760627835,
+     "rel-hm/item-sales": 0.11249648683706456,
+     "rel-stack/post-votes": 0.12912511964167162,
+     "rel-trial/study-adverse": 0.12141769699553036,
+     "rel-trial/site-success": 0.683504682587988
+    },
+    "mean": 0.2860171216763353,
+    "cov": 1.0
+   },
+   "recommendation": {
+    "results": {
+     "rel-amazon/user-item-purchase": 0.0017535597753984423,
+     "rel-amazon/user-item-rate": 0.0012136717854814932,
+     "rel-amazon/user-item-review": 0.0013448150995138911,
+     "rel-avito/user-ad-visit": 5.006890811653184e-05,
+     "rel-f1/driver-circuit-compete": 0.7455864197530866,
+     "rel-hm/user-item-purchase": 0.005688687403215682,
+     "rel-stack/user-post-comment": 0.0009043736280315679,
+     "rel-stack/post-post-related": 0.007956847555379246,
+     "rel-trial/condition-sponsor-run": 0.012038460471424567,
+     "rel-trial/site-sponsor-run": 0.016731449934583073
+    },
+    "mean": 0.07932683543142312,
+    "cov": 1.0
+   }
+  }
  }
 ]
