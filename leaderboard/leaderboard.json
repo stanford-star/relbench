@@ -1000,5 +1000,50 @@
     "cov": 1.0
    }
   }
+ },
+ {
+  "name": "KumoRelational",
+  "in_context": true,
+  "url": "https://github.com/NVIDIA/structured-data-models",
+  "repro_link": "http://github.com/NVIDIA/structured-data-models/tree/main/examples/relational/relbench/",
+  "note": "KumoRelational from Hudovernik et al.: 'KumoRFM-2: Scaling Foundation Models for Relational Learning'. KumoRelational extends the in-context learning structure of tabular foundation models from single tables to relational, multi-table inputs. It processes task rows together with one or more related tables, avoiding manual flattening of relational data into a single table.",
+  "date": "2026-10-09T14:48:00Z",
+  "author": "fedelopez77",
+  "issue": 421,
+  "boards": {
+   "binary_classification": {
+    "results": {
+     "rel-amazon/user-churn": 0.6949578634256045,
+     "rel-amazon/item-churn": 0.8254021045491523,
+     "rel-avito/user-visits": 0.6703517298735713,
+     "rel-avito/user-clicks": 0.6805397655781733,
+     "rel-event/user-repeat": 0.8157085561497326,
+     "rel-event/user-ignore": 0.850872163310421,
+     "rel-f1/driver-dnf": 0.8433513882789245,
+     "rel-f1/driver-top3": 0.90798756270903,
+     "rel-hm/user-churn": 0.6988903635931824,
+     "rel-stack/user-engagement": 0.901876947410302,
+     "rel-stack/user-badge": 0.8813526645996186,
+     "rel-trial/study-outcome": 0.7399234801980796
+    },
+    "mean": 0.7926012158063159,
+    "cov": 1.0
+   },
+   "regression": {
+    "results": {
+     "rel-amazon/user-ltv": 0.25007678418874285,
+     "rel-amazon/item-ltv": 0.07493622421052977,
+     "rel-avito/ad-ctr": 0.3321735599248224,
+     "rel-event/user-attendance": 0.31739624587344467,
+     "rel-f1/driver-position": 0.4374200333345981,
+     "rel-hm/item-sales": 0.07970096264968647,
+     "rel-stack/post-votes": 0.1248147791081891,
+     "rel-trial/study-adverse": 0.0939842041053222,
+     "rel-trial/site-success": 0.8518037369169228
+    },
+    "mean": 0.28470072559025095,
+    "cov": 1.0
+   }
+  }
  }
 ]
