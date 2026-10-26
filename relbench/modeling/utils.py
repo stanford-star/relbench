@@ -49,7 +49,10 @@ def get_stype_proposal(db: Database) -> Dict[str, Dict[str, stype]]:
     inferred_col_to_stype_dict = {}
     for table_name, table in db.table_dict.items():
         df = table.df
-        df = df.sample(min(1_000, len(df)))
+        # Seeded, so the same database always gets the same proposal; unseeded, a
+        # column can flip between stypes across calls (e.g. rel-f1's
+        # qualifying.position between numerical and categorical).
+        df = df.sample(min(1_000, len(df)), random_state=0)
         inferred_col_to_stype = infer_df_stype(df)
         # Hack for now. This is relevant for rel-amazon.
         for col, stype_ in inferred_col_to_stype.items():
