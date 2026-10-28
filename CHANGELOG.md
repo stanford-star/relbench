@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.1.0 — 2026-10-27
+
+- `python -m relbench.validate <dataset_dir>` checks a bring-your-own-data folder against
+  its manifests (missing tables and columns, null or duplicate primary keys, foreign keys
+  that don't resolve, time columns and split timestamps, task labels, the key contract)
+  and reports every problem in one pass.
+- `get_stype_proposal` is deterministic: the same tables always get the same proposal.
+- Manifests are read and written as UTF-8 regardless of locale.
+- Relicensed from MIT to Apache-2.0.
+
 ## 3.0.2 — 2026-10-04
 
 - Agentic submissions: `python -m relbench.submit preds/ --submit ...` uploads the
