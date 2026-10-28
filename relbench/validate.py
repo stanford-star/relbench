@@ -65,11 +65,12 @@ def _fmt(values) -> str:
     return ", ".join(repr(v) for v in values)
 
 
+MAX_EXAMPLES = 5
+
+
 class _Validator:
-    def __init__(self, root: Path, key_contract: bool, max_examples: int):
+    def __init__(self, root: Path):
         self.root = root
-        self.key_contract = key_contract
-        self.k = max_examples
         self.issues: list[Issue] = []
         self.con = duckdb.connect()
         self.manifest: Optional[DatasetManifest] = None
@@ -97,7 +98,7 @@ class _Validator:
             and col in self.schemas[table].names
         )
 
-    def run(self, tasks: bool) -> list[Issue]:
+    def run(self) -> list[Issue]:
         if self.load_manifest():
             tables = self.manifest.tables
             for name, spec in tables.items():
@@ -110,8 +111,7 @@ class _Validator:
             for name, spec in tables.items():
                 self.check_time(name, spec)
             self.check_split_timestamps()
-            if tasks:
-                self.check_tasks()
+            self.check_tasks()
         return self.issues
 
     def load_manifest(self) -> bool:
@@ -198,14 +198,14 @@ class _Validator:
         if dups:
             ex = self.q(
                 f"SELECT {k}, count(*) AS n FROM {scan} WHERE {k} IS NOT NULL "
-                f"GROUP BY {k} HAVING count(*) > 1 ORDER BY n DESC LIMIT {self.k}"
+                f"GROUP BY {k} HAVING count(*) > 1 ORDER BY n DESC LIMIT {MAX_EXAMPLES}"
             )
             self.error(
                 where,
                 f"primary key has {dups:,} duplicate values, e.g. "
                 + ", ".join(f"{v!r} (x{n})" for v, n in ex),
             )
-        if not self.key_contract or nulls or dups:
+        if nulls or dups:
             return
         typ = self.schemas[name].field(spec.pkey).type
         if not pa.types.is_integer(typ):
@@ -251,18 +251,19 @@ class _Validator:
                     f"foreign key type {ft} does not match {target}.{pkey} type {pt}",
                 )
                 continue
-            if self.key_contract and not pa.types.is_integer(ft):
+            raw = not pa.types.is_integer(ft)
+            if raw:
                 self.error(
                     where,
                     f"foreign key has type {ft}; RelBench needs integer row indices "
                     f"of '{target}', {REINDEX_HINT}",
                 )
-                continue
             self.check_refs(
                 where,
                 f"SELECT {_id(fkey)} AS v FROM {_scan(self.path(name))}",
                 target,
                 f"{target}.{pkey}",
+                dangling_ok=raw,
             )
 
     def ref_set(self, table: str) -> Optional[str]:
@@ -276,7 +277,13 @@ class _Validator:
         return f"(SELECT DISTINCT {_id(pkey)} AS k FROM {_scan(self.path(table))})"
 
     def check_refs(
-        self, where: str, values: str, table: str, target: str, nulls_ok=True
+        self,
+        where: str,
+        values: str,
+        table: str,
+        target: str,
+        nulls_ok=True,
+        dangling_ok=False,
     ) -> None:
         ref = self.ref_set(table)
         if ref is None:
@@ -291,12 +298,13 @@ class _Validator:
         if missing:
             ex = self.q(
                 f"SELECT DISTINCT l.v FROM ({values}) l ANTI JOIN {ref} r "
-                f"ON l.v = r.k WHERE l.v IS NOT NULL LIMIT {self.k}"
+                f"ON l.v = r.k WHERE l.v IS NOT NULL LIMIT {MAX_EXAMPLES}"
             )
-            self.error(
+            (self.warn if dangling_ok else self.error)(
                 where,
                 f"{missing:,} of {total - nulls:,} non-null values do not resolve to "
-                f"{target}, e.g. {_fmt(v for (v,) in ex)}",
+                f"{target}, e.g. {_fmt(v for (v,) in ex)}"
+                + ("; reindexing will null them" if dangling_ok else ""),
             )
 
     def check_time(self, name: str, spec) -> None:
@@ -311,8 +319,7 @@ class _Validator:
         [(lo, hi)] = self.q(f"SELECT min({c}), max({c}) FROM {_scan(self.path(name))}")
         if lo is not None:
             self.time_ranges[name] = (pd.Timestamp(lo), pd.Timestamp(hi))
-        if self.key_contract:
-            self.check_sorted(where, name, col)
+        self.check_sorted(where, name, col)
 
     def check_time_type(self, where: str, path: Path, col: str, typ) -> bool:
         if pa.types.is_timestamp(typ):
@@ -331,7 +338,7 @@ class _Validator:
             if bad:
                 ex = self.q(
                     f"SELECT DISTINCT {c} FROM {_scan(path)} WHERE {unparsed} "
-                    f"LIMIT {self.k}"
+                    f"LIMIT {MAX_EXAMPLES}"
                 )
                 message += (
                     f"; {bad:,} values do not parse as timestamps, e.g. "
@@ -550,15 +557,8 @@ class _Validator:
                 leak(self.data_max, "the last data timestamp")
 
 
-def validate_dataset(
-    dataset_dir: Union[str, Path],
-    *,
-    tasks: bool = True,
-    key_contract: bool = True,
-    max_examples: int = 5,
-) -> list[Issue]:
-    root = Path(dataset_dir).resolve()
-    return _Validator(root, key_contract, max_examples).run(tasks)
+def validate_dataset(dataset_dir: Union[str, Path]) -> list[Issue]:
+    return _Validator(Path(dataset_dir).resolve()).run()
 
 
 def main(argv: Optional[list[str]] = None) -> int:
@@ -567,22 +567,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         description="Check a local RelBench dataset folder against its manifests.",
     )
     parser.add_argument("dataset_dir", type=Path)
-    parser.add_argument(
-        "--no-tasks", action="store_true", help="skip tasks/*/ label tables"
-    )
-    parser.add_argument(
-        "--raw",
-        action="store_true",
-        help="keys are not normalized yet: skip the 0..n-1 / time-sorted checks",
-    )
-    parser.add_argument("--max-examples", type=int, default=5)
     args = parser.parse_args(argv)
-    issues = validate_dataset(
-        args.dataset_dir,
-        tasks=not args.no_tasks,
-        key_contract=not args.raw,
-        max_examples=args.max_examples,
-    )
+    issues = validate_dataset(args.dataset_dir)
     for issue in issues:
         print(issue)
     errors = sum(i.level == ERROR for i in issues)
