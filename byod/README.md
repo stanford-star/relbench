@@ -52,6 +52,34 @@ It maps primary keys to `0..n-1` (time-sorted), rewrites foreign keys to those i
 nulls dangling references, and leaves `manifest.yaml` untouched. Generate task labels
 *after* normalizing so their entity ids match.
 
+## Validate the folder
+
+Check a local dataset folder against its manifests before loading or preprocessing it:
+
+```bash
+python -m relbench.validate <dataset_dir>        # exits 1 if there are errors
+python -m relbench.validate <dataset_dir> --raw  # before reindex_dataset.py: skip key-contract checks
+```
+
+```python
+from relbench.validate import validate_dataset
+
+issues = validate_dataset("<dataset_dir>")   # list of Issue(level, where, message)
+```
+
+It reports every problem in one pass, naming the table / column / task split. It flags:
+manifest tables or columns that have no parquet behind them; primary keys that are null or
+duplicated; foreign keys that point at an unknown table, have a mismatched type, or hold
+values that don't resolve (with a count and examples; nulls are fine); time columns that
+are not naive timestamps (and whether string values would parse); `val_timestamp` /
+`test_timestamp` that are out of order or outside the data. For tasks: invalid manifests,
+unknown entity tables, label tables missing entity / time / target columns, entity ids not
+in the entity table, and label timestamps outside their split window (or, for `forecast`
+tasks, whose `timedelta` window crosses into the next split). Without `--raw` it also
+checks the key contract above (primary keys `0..n-1`, integer foreign keys, time-sorted
+tables). It runs vectorised DuckDB / pyarrow queries over only the key and time columns,
+so a 30M-row table takes seconds. Loading does not run it; it's opt-in.
+
 ## Three kinds of task
 
 A task declares how its labels are produced (`kind` in its `manifest.yaml`):
