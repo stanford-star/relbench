@@ -52,6 +52,21 @@ It maps primary keys to `0..n-1` (time-sorted), rewrites foreign keys to those i
 nulls dangling references, and leaves `manifest.yaml` untouched. Generate task labels
 *after* normalizing so their entity ids match.
 
+## Validate the folder
+
+```bash
+python -m relbench.validate <dataset_dir>
+```
+
+It reports every problem in one pass and exits 1 on errors:
+
+- manifest tables or columns with no parquet behind them
+- null or duplicate primary keys
+- foreign keys to unknown tables, or with values that don't resolve
+- time columns that aren't naive timestamps; `val_timestamp` / `test_timestamp` out of order or outside the data
+- task labels with missing columns, unknown entity ids, or timestamps outside their split
+- breaks of the key contract above, with a pointer to `reindex_dataset.py`
+
 ## Three kinds of task
 
 A task declares how its labels are produced (`kind` in its `manifest.yaml`):
