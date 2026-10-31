@@ -1,0 +1,30 @@
+{
+ "name": "amityai-lbm-v0.1",
+ "in_context": false,
+ "url": "https://eggai.tech/model",
+ "repro_link": null,
+ "note": "Amity AI Holdings Co.,Ltd. One relational foundation model with a history encoder and column writer. Schema-driven automatic input; per-task fine-tuning on the train split for some tasks (in-context: no). Rule 1: every input row strictly before each row's seed time (fail-closed canaries); train and val labels only; all model choices by validation. rel-f1 uses get_db(upto_test_timestamp=False) with per-row censoring. Disclosure: rel-f1/driver-top3 was scored twice. The first read used the default frozen DB by a pipeline omission (0.561). This entry is the second read, with the full-DB regime fixed before any test read. All other tasks were scored once. This entry covers the classification board; we intend to submit the regression and recommendation boards with a later release of the same model.",
+ "date": "2026-10-31T04:33:52Z",
+ "author": "aongwachi1",
+ "issue": 435,
+ "boards": {
+  "binary_classification": {
+   "results": {
+    "rel-amazon/user-churn": 0.7042685144087855,
+    "rel-amazon/item-churn": 0.8242166811161475,
+    "rel-avito/user-visits": 0.6735545872489807,
+    "rel-avito/user-clicks": 0.6599590957132857,
+    "rel-event/user-repeat": 0.8297459893048129,
+    "rel-event/user-ignore": 0.8496574672147191,
+    "rel-f1/driver-dnf": 0.8216073781291173,
+    "rel-f1/driver-top3": 0.8825969377090301,
+    "rel-hm/user-churn": 0.7089469500960123,
+    "rel-stack/user-engagement": 0.9051330968315292,
+    "rel-stack/user-badge": 0.8746202775995519,
+    "rel-trial/study-outcome": 0.7002863438790212
+   },
+   "mean": 0.786216109937583,
+   "cov": 1.0
+  }
+ }
+}
