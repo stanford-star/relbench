@@ -1104,5 +1104,35 @@
     "cov": 1.0
    }
   }
+ },
+ {
+  "name": "Temp-RDL (Attention)",
+  "in_context": false,
+  "url": "https://github.com/SomnusQue/Temp-RDL",
+  "repro_link": null,
+  "note": null,
+  "date": "2026-11-03T10:48:07Z",
+  "author": "SomnusQue",
+  "issue": 438,
+  "boards": {
+   "binary_classification": {
+    "results": {
+     "rel-amazon/user-churn": 0.7039843944033674,
+     "rel-amazon/item-churn": 0.8269753018446193,
+     "rel-avito/user-visits": 0.6676463589095779,
+     "rel-avito/user-clicks": 0.66929171585247,
+     "rel-event/user-repeat": 0.814639037433155,
+     "rel-event/user-ignore": 0.8701645308740056,
+     "rel-f1/driver-dnf": 0.8141999707217098,
+     "rel-f1/driver-top3": 0.8611582880434782,
+     "rel-hm/user-churn": 0.7099255813959544,
+     "rel-stack/user-engagement": 0.9092952996686472,
+     "rel-stack/user-badge": 0.8918417126415029,
+     "rel-trial/study-outcome": 0.7079413509619458
+    },
+    "mean": 0.7872552952292029,
+    "cov": 1.0
+   }
+  }
  }
 ]
