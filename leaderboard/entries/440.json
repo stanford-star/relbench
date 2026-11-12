@@ -1,0 +1,30 @@
+{
+ "name": "reldfs-v3 (relational DFS + LightGBM + TabPFN v2 on 3 tasks)",
+ "in_context": false,
+ "url": "https://github.com/KenWuqianghao/reldfs",
+ "repro_link": "https://github.com/KenWuqianghao/reldfs/blob/main/round3/README.md#v3-rel-f1-with-the-full-database",
+ "note": "Third version of reldfs (#406). CPU-only. Time-cut relational feature synthesis + LightGBM, hand-written point-in-time features (f1, event, trial text score), TabPFN v2 (Prior Labs; Built with PriorLabs-TabPFN) in context on f1 x2 and trial. 10 of the 12 CSVs are the second version's (never filed; local test mean 0.7785). New: the two rel-f1 CSVs use get_db(upto_test_timestamp=False). Rule 1: every feature query filters time < the row's seed time; features at test-era seeds are checked identical against the db truncated before the seed, and a planted leak fails that check. Models are fit on the train and val tables only; no label is rebuilt from rows after the test timestamp. Prepared after the test scores of #406 and of the second version were seen (the f1 val-to-test gap led to this change). All choices made on validation; test scored once (local 12-task mean AUROC 0.7953).",
+ "date": "2026-11-11T23:44:17Z",
+ "author": "KenWuqianghao",
+ "issue": 440,
+ "boards": {
+  "binary_classification": {
+   "results": {
+    "rel-amazon/user-churn": 0.7074812733347976,
+    "rel-amazon/item-churn": 0.8260476967310387,
+    "rel-avito/user-visits": 0.6696129451310093,
+    "rel-avito/user-clicks": 0.6506074303734918,
+    "rel-event/user-repeat": 0.8048128342245989,
+    "rel-event/user-ignore": 0.8670258943271965,
+    "rel-f1/driver-dnf": 0.8344410286439272,
+    "rel-f1/driver-top3": 0.9278715510033444,
+    "rel-hm/user-churn": 0.709603524785952,
+    "rel-stack/user-engagement": 0.9057550130806055,
+    "rel-stack/user-badge": 0.8748799925947573,
+    "rel-trial/study-outcome": 0.76571864443718
+   },
+   "mean": 0.795321485722325,
+   "cov": 1.0
+  }
+ }
+}
