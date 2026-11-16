@@ -1282,5 +1282,50 @@
     "cov": 1.0
    }
   }
+ },
+ {
+  "name": "MoREGT",
+  "in_context": false,
+  "url": "https://github.com/Graph-and-Geometric-Learning/MoREGT",
+  "repro_link": "https://github.com/Graph-and-Geometric-Learning/MoREGT/blob/main/README.md",
+  "note": null,
+  "date": "2026-11-15T16:22:33Z",
+  "author": "HirenMadhu",
+  "issue": 443,
+  "boards": {
+   "binary_classification": {
+    "results": {
+     "rel-amazon/user-churn": 0.7075195044283434,
+     "rel-amazon/item-churn": 0.8153170626713095,
+     "rel-avito/user-visits": 0.659236984270481,
+     "rel-avito/user-clicks": 0.6615789815335904,
+     "rel-event/user-repeat": 0.8296122994652407,
+     "rel-event/user-ignore": 0.8520235340172476,
+     "rel-f1/driver-dnf": 0.8365783438247206,
+     "rel-f1/driver-top3": 0.9378788670568561,
+     "rel-hm/user-churn": 0.7043186053092303,
+     "rel-stack/user-engagement": 0.9061033976538623,
+     "rel-stack/user-badge": 0.8921656092920864,
+     "rel-trial/study-outcome": 0.7242078626517986
+    },
+    "mean": 0.793878421014564,
+    "cov": 1.0
+   },
+   "regression": {
+    "results": {
+     "rel-amazon/user-ltv": 0.24901943307997373,
+     "rel-amazon/item-ltv": 0.07628409786908859,
+     "rel-avito/ad-ctr": 0.35662674068404393,
+     "rel-event/user-attendance": 0.30803626968307163,
+     "rel-f1/driver-position": 0.3810041094881357,
+     "rel-hm/item-sales": 0.08962597315519959,
+     "rel-stack/post-votes": 0.13303310099479038,
+     "rel-trial/study-adverse": 0.0946062784022582,
+     "rel-trial/site-success": 0.6912825865048284
+    },
+    "mean": 0.26439095442904337,
+    "cov": 1.0
+   }
+  }
  }
 ]
