@@ -1166,6 +1166,36 @@
   }
  },
  {
+  "name": "Structural_Optimizer_RDL",
+  "in_context": false,
+  "url": "https://arxiv.org/abs/2606.08491",
+  "repro_link": "https://github.com/cy623/Structural_Optimizer_RDL.git",
+  "note": "Each prediction uses only database rows whose timestamp is strictly before its seed time. Timestamps are cut to whole seconds, and temporal neighbor sampling (one subgraph per seed) stops at the seed time minus one second. Every batch is checked again after sampling: any later row other than the row being predicted stops the run. If the row being predicted is itself dated at or after its seed time, it and its subgraph are hidden, and hidden rows are never encoded or connected. The edges our model adds (KNN, behavioral similarity, two-hop, temporal) are built only among visible rows of the same seed's subgraph. In a table with a time column, a row without a timestamp is never used. Tables without a time column are static, as in RelBench.",
+  "date": "2026-11-11T05:23:45Z",
+  "author": "cy623",
+  "issue": 439,
+  "boards": {
+   "binary_classification": {
+    "results": {
+     "rel-amazon/user-churn": 0.708121181097537,
+     "rel-amazon/item-churn": 0.8280362393937631,
+     "rel-avito/user-visits": 0.6696093312020215,
+     "rel-avito/user-clicks": 0.678805436975828,
+     "rel-event/user-repeat": 0.8320187165775401,
+     "rel-event/user-ignore": 0.8859417636696487,
+     "rel-f1/driver-dnf": 0.8040892011906504,
+     "rel-f1/driver-top3": 0.9033366429765887,
+     "rel-hm/user-churn": 0.6988111350833182,
+     "rel-stack/user-engagement": 0.9048150651541468,
+     "rel-stack/user-badge": 0.8875293099426205,
+     "rel-trial/study-outcome": 0.7119126318210985
+    },
+    "mean": 0.7927522212570635,
+    "cov": 1.0
+   }
+  }
+ },
+ {
   "name": "reldfs-v3 (relational DFS + LightGBM + TabPFN v2 on 3 tasks)",
   "in_context": false,
   "url": "https://github.com/KenWuqianghao/reldfs",
