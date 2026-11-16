@@ -1,0 +1,30 @@
+{
+ "name": "reldfs-v4 (relational DFS + LightGBM + TabPFN v2 on 3 tasks)",
+ "in_context": false,
+ "url": "https://github.com/KenWuqianghao/reldfs",
+ "repro_link": "https://github.com/KenWuqianghao/reldfs/blob/main/round3/README.md#v4-seven-tasks-changed",
+ "note": "Fourth version of reldfs (#406, #440). CPU-only. Time-cut relational feature synthesis + LightGBM, hand-written point-in-time features, TabPFN v2 (Prior Labs; Built with PriorLabs-TabPFN) in context on f1 x2 and trial. 5 of the 12 CSVs are those of #440. New on 7 tasks: rel-avito x2 are refit on label rows rebuilt with task.make_table at daily anchors from the default db, with window-bounded features; rel-stack x2 add badge-state features; rel-hm and rel-amazon x2 add activity-cadence features. Disclosure: rel-stack/user-badge uses the length of users.AboutMe, and rel-hm / rel-amazon item-churn use numeric summaries of postal_code, brand, title and description. These static columns are in the hosted db on rows dated before the seed, but they are state as of the dump date (a user with profile text and no Autobiographer badge yet gets it later); AboutMe adds 0.015 val AUROC on user-badge. Rule 1 otherwise: every feature query filters time < the row's seed time; each new feature file is checked identical against the db truncated before the seed, and a planted leak fails that check. Built in three steps after the test scores of #440 were seen; each step was chosen on validation by a rule written down first, and test was scored once per step on files hashed before the run (local means 0.7990, 0.8018, 0.8023). No choice used test labels.",
+ "date": "2026-11-12T04:44:07Z",
+ "author": "KenWuqianghao",
+ "issue": 441,
+ "boards": {
+  "binary_classification": {
+   "results": {
+    "rel-amazon/user-churn": 0.7090302542586719,
+    "rel-amazon/item-churn": 0.8290112698857387,
+    "rel-avito/user-visits": 0.6810397063312262,
+    "rel-avito/user-clicks": 0.6949245827213704,
+    "rel-event/user-repeat": 0.8048128342245989,
+    "rel-event/user-ignore": 0.8670258943271965,
+    "rel-f1/driver-dnf": 0.8344410286439272,
+    "rel-f1/driver-top3": 0.9278715510033444,
+    "rel-hm/user-churn": 0.7110826641500818,
+    "rel-stack/user-engagement": 0.9081415799760512,
+    "rel-stack/user-badge": 0.8941756862446499,
+    "rel-trial/study-outcome": 0.76571864443718
+   },
+   "mean": 0.8022729746836698,
+   "cov": 1.0
+  }
+ }
+}
