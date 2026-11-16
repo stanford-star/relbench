@@ -1,0 +1,30 @@
+{
+ "name": "Temp-RDL (Mean pooling)",
+ "in_context": false,
+ "url": "https://github.com/SomnusQue/Temp-RDL",
+ "repro_link": null,
+ "note": null,
+ "date": "2026-11-03T10:34:27Z",
+ "author": "SomnusQue",
+ "issue": 437,
+ "boards": {
+  "binary_classification": {
+   "results": {
+    "rel-amazon/user-churn": 0.7031209575815732,
+    "rel-amazon/item-churn": 0.8251898178405034,
+    "rel-avito/user-visits": 0.6697182283166159,
+    "rel-avito/user-clicks": 0.6714838870739709,
+    "rel-event/user-repeat": 0.8158422459893048,
+    "rel-event/user-ignore": 0.8440998008128676,
+    "rel-f1/driver-dnf": 0.8134387351778656,
+    "rel-f1/driver-top3": 0.8469181124581939,
+    "rel-hm/user-churn": 0.7099134942270402,
+    "rel-stack/user-engagement": 0.9083855594899196,
+    "rel-stack/user-badge": 0.8884940518060916,
+    "rel-trial/study-outcome": 0.7059012264961921
+   },
+   "mean": 0.7835421764391782,
+   "cov": 1.0
+  }
+ }
+}
