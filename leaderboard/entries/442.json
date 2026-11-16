@@ -1,0 +1,28 @@
+{
+ "name": "RelConduit: Candidates + LightGBM Ranker",
+ "in_context": false,
+ "url": "https://github.com/alsiola/relconduit",
+ "repro_link": "https://github.com/alsiola/relconduit/blob/main/experiments/rec-board/SUBMISSION.md",
+ "note": "Per task: time-safe candidate generation (the entity's own past targets, recent popularity, co-occurrence and multi-hop walks over the relational graph, plus frozen MiniLM text kNN on rel-stack post-post-related, all from rows strictly before the seed time), pair and entity aggregate features, and a LightGBM lambdarank/binary ranker. Configs were chosen on val only. Each table is seed 0 or the rank average of the seeds, chosen on val by a fixed rule. Test MAP over 3 seeds (5 on two tasks), mean \u00b1 std, is in the repro link. Built by Open Conduit.",
+ "date": "2026-11-15T12:31:14Z",
+ "author": "alsiola",
+ "issue": 442,
+ "boards": {
+  "recommendation": {
+   "results": {
+    "rel-amazon/user-item-purchase": 0.02900062402218152,
+    "rel-amazon/user-item-rate": 0.03212068662599348,
+    "rel-amazon/user-item-review": 0.025731453112734934,
+    "rel-avito/user-ad-visit": 0.040396071099406246,
+    "rel-f1/driver-circuit-compete": 0.8769066515495086,
+    "rel-hm/user-item-purchase": 0.03313477860932796,
+    "rel-stack/user-post-comment": 0.1353494450361348,
+    "rel-stack/post-post-related": 0.2503970480723084,
+    "rel-trial/condition-sponsor-run": 0.12328748939122633,
+    "rel-trial/site-sponsor-run": 0.3047659243045573
+   },
+   "mean": 0.18510901718233796,
+   "cov": 1.0
+  }
+ }
+}
