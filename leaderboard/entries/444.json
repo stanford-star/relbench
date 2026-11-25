@@ -1,0 +1,30 @@
+{
+ "name": "amityai-lbm-v0.2",
+ "in_context": false,
+ "url": "https://eggai.tech/model",
+ "repro_link": null,
+ "note": "Amity AI Holdings Co.,Ltd. A stock our Table Foundation Model in-context reader reads each task table plus extra columns written by our own relation-stream model (trained per database on the train split); the set of written columns is chosen per task, the reader is fine-tuned on the train split for three tasks (rel-stack/user-engagement, rel-amazon/user-churn, rel-amazon/item-churn), one written column comes from review text (rel-amazon/user-churn), and rel-trial/study-outcome also uses hand-made term columns from the trial text (not written by the model). On the two rel-stack tasks the reader also reads one column holding the score of an auxiliary model of ours, trained per task on the train and val splits (inputs strictly before each seed time), and the rel-stack/user-engagement reader was fine-tuned with that score as a soft target. On rel-avito/user-visits the reader context also holds the newest closed label anchor. Time rule: on every task each input row is strictly before the row seed time (rel-f1 per row, with get_db(upto_test_timestamp=False)); entity-table attribute columns are used as the database hosts them (e.g. profile-text length on rel-stack). Labels: train and val only. Selection: every variant was chosen on validation.",
+ "date": "2026-11-19T15:03:01Z",
+ "author": "aongwachi1",
+ "issue": 444,
+ "boards": {
+  "binary_classification": {
+   "results": {
+    "rel-amazon/user-churn": 0.7114066514026351,
+    "rel-amazon/item-churn": 0.8321442223657652,
+    "rel-avito/user-visits": 0.6773248495601839,
+    "rel-avito/user-clicks": 0.6904556664333201,
+    "rel-event/user-repeat": 0.8357954545454546,
+    "rel-event/user-ignore": 0.8525704351029901,
+    "rel-f1/driver-dnf": 0.8235299858488264,
+    "rel-f1/driver-top3": 0.9319215091973244,
+    "rel-hm/user-churn": 0.7093414539830056,
+    "rel-stack/user-engagement": 0.9071394868720906,
+    "rel-stack/user-badge": 0.8942988733505699,
+    "rel-trial/study-outcome": 0.7634333418086279
+   },
+   "mean": 0.8024468275392329,
+   "cov": 1.0
+  }
+ }
+}
